@@ -9,8 +9,14 @@ import type { Config, LoadedFont, PagePlan } from './types';
 export interface GlyphShape {
   d: string;
   transform: string;
+  /** The same placement as `transform`, as numbers, for canvas rendering. */
+  x: number;
+  y: number;
+  scale: number;
   strokeWidth: number;
   dash?: string;
+  /** Dash pitch in font units, so a canvas can build its own dash array. */
+  dashUnits?: number;
   color: string;
   filled: boolean;
 }
@@ -65,11 +71,15 @@ function glyphsFor(
         // Paths stay in font units; the transform flips y and scales, so
         // stroke widths below are expressed in font units too.
         transform: `translate(${round(gx)} ${round(gy)}) scale(${round(unit)} ${round(-unit)})`,
+        x: gx,
+        y: gy,
+        scale: unit,
         strokeWidth: round(options.strokeWidth / unit),
         dash:
           options.dash === undefined
             ? undefined
             : `${round(0.01 / unit)} ${round(options.dash / unit)}`,
+        dashUnits: options.dash === undefined ? undefined : options.dash / unit,
         color: options.color,
         filled: options.filled,
       });
@@ -95,11 +105,13 @@ export function sheetShapes(font: LoadedFont, plan: PagePlan, config: Config): S
     );
   }
 
-  if (plan.title) {
+  // Titles, cover copy, footers and licence text are drawn filled, from the
+  // same outlines: one face, one rendering path, preview and print alike.
+  for (const text of plan.texts) {
     glyphs.push(
-      ...glyphsFor(font, plan.title.text, plan.title.size, plan.title.x, plan.title.y, plan.heightPt, {
+      ...glyphsFor(font, text.text, text.size, text.x, text.y, plan.heightPt, {
         strokeWidth: 0,
-        color: inkColor(0.78),
+        color: inkColor(text.ink),
         filled: true,
       }),
     );
@@ -114,6 +126,17 @@ export function sheetShapes(font: LoadedFont, plan: PagePlan, config: Config): S
     color: inkColor(guide.kind === 'base' ? ink.guide : ink.guide * 0.8),
     dash: guide.kind === 'mid' ? '3 3' : undefined,
   }));
+
+  for (const rule of plan.rules) {
+    guides.push({
+      x1: round(rule.x1),
+      x2: round(rule.x2),
+      y1: round(plan.heightPt - rule.y),
+      y2: round(plan.heightPt - rule.y),
+      width: rule.width,
+      color: inkColor(rule.ink),
+    });
+  }
 
   return { glyphs, guides };
 }

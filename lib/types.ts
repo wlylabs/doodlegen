@@ -1,4 +1,4 @@
-export type ContentType = 'letters' | 'numbers';
+export type ContentType = 'letters' | 'numbers' | 'words';
 export type LetterCase = 'upper' | 'lower' | 'both';
 export type StyleId = 'outline' | 'dotted' | 'combo';
 export type LayoutId = 'single' | 'grid' | 'worksheet';
@@ -14,6 +14,8 @@ export interface Config {
   letterCase: LetterCase;
   numberFrom: number;
   numberTo: number;
+  /** Free text for the `words` content type: one entry per line or comma. */
+  words: string;
   style: StyleId;
   layout: LayoutId;
   grid: GridId;
@@ -25,6 +27,16 @@ export interface Config {
   guides: boolean;
   showTitle: boolean;
   titleTemplate: string;
+  /** Numbered footer on every worksheet, the way a sold pack is expected to read. */
+  pageNumbers: boolean;
+  /** Branded title page in front of the worksheets. */
+  coverPage: boolean;
+  /** Licence and usage page at the back, standard for a paid download. */
+  termsPage: boolean;
+  /** Shop or brand name, printed on the cover, footer and licence page. */
+  brand: string;
+  /** Product title; empty means "derive it from the character set". */
+  productTitle: string;
 }
 
 /** A stroke mode for one drawn character group. */
@@ -59,21 +71,38 @@ export interface GuideLine {
   kind: 'base' | 'mid' | 'cap';
 }
 
-export interface TitleDraw {
+/** A filled line of type: page title, cover copy, footer, licence body. */
+export interface TextDraw {
   text: string;
   size: number;
   x: number;
   y: number;
+  /** K-only ink level, 0 = white, 1 = solid black. */
+  ink: number;
 }
 
+/** A hairline rule, used to structure the cover and licence pages. */
+export interface RuleDraw {
+  x1: number;
+  x2: number;
+  y: number;
+  width: number;
+  ink: number;
+}
+
+/** Worksheets carry characters; the front and back matter carry type. */
+export type PageKind = 'char' | 'cover' | 'terms';
+
 export interface PagePlan {
+  kind: PageKind;
   /** The character(s) this page teaches, e.g. "A", "Aa", "17". */
   label: string;
   widthPt: number;
   heightPt: number;
   placements: Placement[];
   guides: GuideLine[];
-  title?: TitleDraw;
+  texts: TextDraw[];
+  rules: RuleDraw[];
 }
 
 /** Minimal slice of the fontkit API this app relies on. */

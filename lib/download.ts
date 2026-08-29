@@ -18,6 +18,10 @@ export function downloadFile(file: GeneratedFile) {
   trigger(new Blob([bytes], { type: 'application/pdf' }), file.name);
 }
 
+export function downloadBlob(blob: Blob, name: string) {
+  trigger(blob, name);
+}
+
 export async function downloadZip(files: GeneratedFile[], name: string) {
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();

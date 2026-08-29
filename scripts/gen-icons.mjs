@@ -1,5 +1,6 @@
 /**
- * Renders the DoodleGen mark into the icon set the app and manifest link to.
+ * Renders the DoodleGen mark into the icon set the app and manifest link to,
+ * plus the social card the landing page's metadata points at.
  * The mark is a "D" whose stem is a solid contour and whose bowl is dotted —
  * the same two treatments the generator puts on a page.
  *
@@ -67,6 +68,51 @@ for (const target of targets) {
     .toFile(path.join(OUT, target.name));
   console.log(target.name);
 }
+
+/**
+ * The social card. Type is set in a generic sans so the file renders the same
+ * wherever this script runs; the shapes carry the brand.
+ */
+function socialCard() {
+  const W = 1200;
+  const H = 630;
+  const sheet = (x, y, w, rotation, dotted) => {
+    const h = w * 1.414;
+    return `<g transform="translate(${x} ${y}) rotate(${rotation} ${w / 2} ${h / 2})">
+      <rect width="${w}" height="${h}" rx="10" fill="#FFFFFF" stroke="#E7E5E4" stroke-width="2"/>
+      <rect x="${w * 0.22}" y="${h * 0.2}" width="${w * 0.56}" height="${h * 0.34}" rx="14"
+            fill="none" stroke="${INK}" stroke-width="6" ${dotted ? 'stroke-dasharray="0.01 12" stroke-linecap="round"' : ''}/>
+      ${[0, 1, 2]
+        .map(
+          (row) =>
+            `<line x1="${w * 0.16}" x2="${w * 0.84}" y1="${h * (0.66 + row * 0.09)}" y2="${h * (0.66 + row * 0.09)}" stroke="#D6D3D1" stroke-width="3"/>`,
+        )
+        .join('')}
+    </g>`;
+  };
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="${PAPER}"/>
+  <circle cx="${W * 0.08}" cy="${H * 0.12}" r="180" fill="${ACCENT}" opacity="0.07"/>
+  <circle cx="${W * 0.95}" cy="${H * 0.9}" r="200" fill="${ACCENT}" opacity="0.07"/>
+  <g transform="translate(72 84) scale(1.9)">${mark({ stem: INK, dots: ACCENT })}</g>
+  <text x="126" y="128" font-family="sans-serif" font-size="34" font-weight="700" fill="${INK}">DoodleGen</text>
+  <text x="72" y="252" font-family="sans-serif" font-size="54" font-weight="700" fill="${INK}">Halaman mewarnai &amp;</text>
+  <text x="72" y="318" font-family="sans-serif" font-size="54" font-weight="700" fill="${ACCENT}">tracing siap dijual</text>
+  <text x="72" y="388" font-family="sans-serif" font-size="25" fill="#57534E">PDF A4 + US Letter — vektor 300 DPI</text>
+  <text x="72" y="428" font-family="sans-serif" font-size="25" fill="#57534E">Tanpa watermark, lisensi komersial</text>
+  <text x="72" y="468" font-family="sans-serif" font-size="25" fill="#57534E">Kit listing Etsy, Gumroad, Shopee</text>
+  <g opacity="0.98">
+    ${sheet(786, 122, 178, -8, false)}
+    ${sheet(908, 160, 178, 4, false)}
+    ${sheet(1000, 206, 178, 12, true)}
+  </g>
+  <rect x="0" y="${H - 10}" width="${W}" height="10" fill="${ACCENT}"/>
+</svg>`;
+}
+
+await sharp(Buffer.from(socialCard())).png({ compressionLevel: 9 }).toFile(path.join(OUT, 'og.png'));
+console.log('og.png');
 
 // A 32px ICO keeps legacy tabs and bookmark bars happy.
 const ico = await sharp(Buffer.from(dark(64, 0.16))).resize(32, 32).png().toBuffer();

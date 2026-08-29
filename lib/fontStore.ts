@@ -9,10 +9,26 @@ interface FontkitApi {
     descent: number;
     capHeight: number;
     xHeight: number;
-    layout(text: string): GlyphRun;
+    layout(text: string, features?: Record<string, boolean>): GlyphRun;
     hasGlyphForCodePoint(codePoint: number): boolean;
   };
 }
+
+/**
+ * Ligatures off, everywhere.
+ *
+ * A ligature glyph is not reachable through the font's cmap, and pdf-lib only
+ * writes widths for the glyphs that are, so an embedded "fi" falls back to the
+ * default width and a title reading "PDF file" prints as "PDF fi le". Turning
+ * the feature off keeps every glyph cmap-reachable, and keeps the measured
+ * preview identical to the printed page, which is the whole promise here.
+ */
+export const FONT_FEATURES: Record<string, boolean> = {
+  liga: false,
+  clig: false,
+  rlig: false,
+  dlig: false,
+};
 
 export const fontkit = fontkitModule as unknown as FontkitApi;
 
@@ -39,7 +55,7 @@ async function fetchFont(id: FontId): Promise<LoadedFont> {
     layout(text: string) {
       let run = runs.get(text);
       if (!run) {
-        run = parsed.layout(text);
+        run = parsed.layout(text, FONT_FEATURES);
         runs.set(text, run);
       }
       return run;

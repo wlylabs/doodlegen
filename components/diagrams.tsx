@@ -143,3 +143,70 @@ export function DownloadIcon() {
     </svg>
   );
 }
+
+export function CheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M5 12.5 10 17.5 19 7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength={1}
+        className="animate-check-in"
+      />
+    </svg>
+  );
+}
+
+/** The marketplace kit: a page, a picture and a caption, stacked. */
+export function KitIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <rect x="3" y="3" width="12" height="15" rx="2" {...stroke} strokeWidth="1.8" />
+      <path d="M6.5 8.5h5M6.5 12h3.5" {...stroke} strokeWidth="1.6" />
+      <rect x="12" y="10" width="9" height="11" rx="2" {...stroke} fill="#FFF" strokeWidth="1.8" />
+      <path d="M14.4 18.2 16.6 15l2 2.2 1-1.1" {...stroke} strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <rect x="8" y="8" width="12" height="12" rx="2.5" {...stroke} strokeWidth="1.8" />
+      <path d="M16 5.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 5.5 16" {...stroke} strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+export function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7L11.5 6.8" {...stroke} strokeWidth="1.8" />
+      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 1 0 11 18.7l1.4-1.4" {...stroke} strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+export function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18" {...stroke} strokeWidth="2" />
+    </svg>
+  );
+}
+
+export function SparkIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 3.5 13.8 9 19.5 10.8 13.8 12.6 12 18.2 10.2 12.6 4.5 10.8 10.2 9z"
+        fill="currentColor"
+      />
+      <path d="M18.5 15.5 19.4 18l2.5.9-2.5.9-.9 2.5-.9-2.5-2.5-.9 2.5-.9z" fill="currentColor" opacity="0.55" />
+    </svg>
+  );
+}

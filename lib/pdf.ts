@@ -16,10 +16,13 @@ import {
   setTextRenderingMode,
 } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
-import { planDocument } from './geometry';
+import { FONT_FEATURES } from './fontStore';
+import { pageCountOf, planDocument } from './geometry';
+import { subjectOf } from './charset';
+import { autoTitle, brandName, packSlug, productTitle } from './naming';
 import { FONTS, INKS, PAPERS, papersFor } from './presets';
 import type { PaperSpec } from './presets';
-import type { Config, GuideLine, LoadedFont, PagePlan, Placement } from './types';
+import type { Config, GuideLine, LoadedFont, PagePlan, Placement, RuleDraw } from './types';
 
 /**
  * Round dots are drawn as zero-length dashes with a round cap. A hair of
@@ -43,6 +46,18 @@ function drawGuides(page: PDFPage, guides: GuideLine[], config: Config) {
       thickness: guide.kind === 'base' ? 0.8 : 0.55,
       color: ink(guide.kind === 'base' ? level : level * 0.8),
       dashArray: solid ? undefined : [3, 3],
+      lineCap: LineCapStyle.Butt,
+    });
+  }
+}
+
+function drawRules(page: PDFPage, rules: RuleDraw[]) {
+  for (const rule of rules) {
+    page.drawLine({
+      start: { x: rule.x1, y: rule.y },
+      end: { x: rule.x2, y: rule.y },
+      thickness: rule.width,
+      color: ink(rule.ink),
       lineCap: LineCapStyle.Butt,
     });
   }
@@ -79,20 +94,22 @@ function drawPage(doc: PDFDocument, font: PDFFont, plan: PagePlan, config: Confi
     color: cmyk(0, 0, 0, 0),
   });
   drawGuides(page, plan.guides, config);
+  drawRules(page, plan.rules);
   for (const place of plan.placements) drawPlacement(page, font, place, config);
-  if (plan.title) {
-    page.drawText(plan.title.text, {
-      x: plan.title.x,
-      y: plan.title.y,
-      size: plan.title.size,
+  for (const text of plan.texts) {
+    page.drawText(text.text, {
+      x: text.x,
+      y: text.y,
+      size: text.size,
       font,
-      color: ink(0.78),
+      color: ink(text.ink),
     });
   }
 }
 
 export interface GeneratedFile {
   name: string;
+  title: string;
   paperId: PaperSpec['id'];
   paperLabel: string;
   pages: number;
@@ -108,28 +125,14 @@ export interface GenerateOptions {
   signal?: AbortSignal;
 }
 
-const CONTENT_SLUG: Record<string, string> = {
-  upper: 'huruf-besar',
-  lower: 'huruf-kecil',
-  both: 'huruf-besar-kecil',
-};
-
-function fileName(config: Config, paper: PaperSpec, characters: string[]): string {
-  const subject =
-    config.content === 'letters'
-      ? `alfabet-${CONTENT_SLUG[config.letterCase]}`
-      : `angka-${characters[0]}-${characters[characters.length - 1]}`;
-  return `doodlegen-${subject}-${config.style}-${config.layout}-${paper.id}.pdf`;
+export function fileName(config: Config, paper: PaperSpec, characters: string[]): string {
+  return `${packSlug(config, characters)}-${paper.id}.pdf`;
 }
 
+/** Metadata title: what a buyer sees in their PDF reader's title bar. */
 function documentTitle(config: Config, characters: string[]): string {
-  const subject =
-    config.content === 'letters'
-      ? `Alphabet ${config.letterCase === 'lower' ? 'lowercase' : config.letterCase === 'both' ? 'upper and lowercase' : 'uppercase'}`
-      : `Numbers ${characters[0]}-${characters[characters.length - 1]}`;
-  const style =
-    config.style === 'outline' ? 'Outline' : config.style === 'dotted' ? 'Dotted tracing' : 'Outline and tracing';
-  return `${subject} — ${style} worksheets`;
+  const written = config.productTitle.trim();
+  return written || autoTitle(config, characters).en;
 }
 
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -146,20 +149,24 @@ async function buildOne(
   // (17-37 KB each), so the whole face goes in rather than a generator-side
   // subset. A complete embedded font is what a print shop's preflight wants
   // to see, and it costs a handful of kilobytes to give them one.
-  const pdfFont = await doc.embedFont(font.bytes, { subset: false });
+  // Same feature set the preview measured with, so the two cannot drift.
+  const pdfFont = await doc.embedFont(font.bytes, { subset: false, features: FONT_FEATURES });
 
   doc.setTitle(documentTitle(config, characters));
-  doc.setAuthor('DoodleGen');
+  // A sold file should carry its shop's name; an unbranded one still says
+  // what made it, which is what a preflight report wants to see.
+  doc.setAuthor(brandName(config) || 'DoodleGen');
   doc.setCreator('DoodleGen');
   doc.setProducer('DoodleGen');
   doc.setSubject(
-    `Printable ${config.content === 'letters' ? 'alphabet' : 'number'} coloring and tracing pages, ${paper.label}, ${FONTS[config.font].family}`,
+    `Printable ${subjectOf(config, characters).en} coloring and tracing pages, ${paper.label}, ${FONTS[config.font].family}`,
   );
   doc.setKeywords([
     'coloring pages',
     'tracing worksheet',
-    config.content === 'letters' ? 'alphabet' : 'numbers',
+    config.content === 'letters' ? 'alphabet' : config.content === 'numbers' ? 'numbers' : 'words',
     'handwriting practice',
+    'printable',
     paper.label,
   ]);
   doc.setLanguage('en-US');
@@ -178,6 +185,7 @@ async function buildOne(
   const bytes = await doc.save({ useObjectStreams: true });
   return {
     name: fileName(config, paper, characters),
+    title: productTitle(config, characters).id,
     paperId: paper.id,
     paperLabel: paper.label,
     pages: plans.length,
@@ -189,10 +197,11 @@ async function buildOne(
 /** Generates one PDF per selected paper size, sharing a single layout pass. */
 export async function generate(options: GenerateOptions): Promise<GeneratedFile[]> {
   const papers = papersFor(options.config.paper);
-  const total = papers.length * options.characters.length;
+  const perFile = pageCountOf(options.config, options.characters);
+  const total = papers.length * perFile;
   const files: GeneratedFile[] = [];
   for (let i = 0; i < papers.length; i += 1) {
-    files.push(await buildOne(papers[i], options, i * options.characters.length, total));
+    files.push(await buildOne(papers[i], options, i * perFile, total));
   }
   return files;
 }

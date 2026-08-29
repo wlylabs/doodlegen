@@ -1,5 +1,6 @@
-import { renderTitle } from './charset';
-import { GRIDS, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
+import { renderTitle, subjectOf } from './charset';
+import { FONTS, GRIDS, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
+import { brandName, productTitle } from './naming';
 import type {
   Box,
   Config,
@@ -8,6 +9,8 @@ import type {
   Mode,
   PagePlan,
   Placement,
+  RuleDraw,
+  TextDraw,
 } from './types';
 import type { PaperSpec } from './presets';
 
@@ -185,25 +188,76 @@ function repeatsFor(text: string): number {
 interface Frame {
   art: Box;
   title?: { size: number; y: number; centerX: number };
+  footer?: { size: number; y: number; left: number; right: number };
 }
 
-function frameFor(paper: PaperSpec, config: Config, hasTitle: boolean): Frame {
+function frameFor(paper: PaperSpec, config: Config, hasTitle: boolean, hasFooter: boolean): Frame {
   const margin = Math.max(config.marginIn, MIN_MARGIN_IN) * PT_PER_INCH;
-  const art: Box = {
+  const full: Box = {
     x: margin,
     y: margin,
     w: paper.widthPt - margin * 2,
     h: paper.heightPt - margin * 2,
   };
-  if (!hasTitle) return { art };
 
-  const size = Math.min(16, art.w * 0.032);
-  const band = size * 2.6;
-  const top = art.y + art.h;
-  return {
-    art: { ...art, h: art.h - band },
-    title: { size, y: top - size, centerX: art.x + art.w / 2 },
-  };
+  const frame: Frame = { art: full };
+  let art = full;
+
+  if (hasTitle) {
+    const size = Math.min(16, full.w * 0.032);
+    const band = size * 2.6;
+    frame.title = { size, y: full.y + full.h - size, centerX: full.x + full.w / 2 };
+    art = { ...art, h: art.h - band };
+  }
+
+  // The footer sits inside the safe area, never in the margin band: a page
+  // number that creeps into the trim zone is the classic reason a print shop
+  // sends a file back.
+  if (hasFooter) {
+    const size = Math.min(9.5, full.w * 0.02);
+    const band = size * 2.6;
+    frame.footer = { size, y: full.y + size * 0.9, left: full.x, right: full.x + full.w };
+    art = { ...art, y: art.y + band, h: art.h - band };
+  }
+
+  frame.art = art;
+  return frame;
+}
+
+/** Width of a line of type in points, at a given size. */
+export function textWidth(font: LoadedFont, text: string, size: number): number {
+  if (!text) return 0;
+  return (font.layout(text).advanceWidth * size) / font.unitsPerEm;
+}
+
+/** Greedy word wrap against a measured width, in the face that will draw it. */
+export function wrapText(
+  font: LoadedFont,
+  text: string,
+  size: number,
+  maxWidth: number,
+): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && textWidth(font, candidate, size) > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/** Largest size at or below `start` that keeps one line inside `maxWidth`. */
+function fitLine(font: LoadedFont, text: string, start: number, maxWidth: number): number {
+  const width = textWidth(font, text, start);
+  if (width <= maxWidth || width <= 0) return start;
+  return (start * maxWidth) / width;
 }
 
 /**
@@ -359,24 +413,272 @@ export interface PlanInput {
   characters: string[];
 }
 
+/** Drops anything the face cannot draw, so nothing renders as tofu. */
+function safeLine(font: LoadedFont, text: string): string {
+  return font.supports(text);
+}
+
+function centred(font: LoadedFont, text: string, size: number, box: Box, y: number, ink: number): TextDraw {
+  return { text, size, x: box.x + (box.w - textWidth(font, text, size)) / 2, y, ink };
+}
+
+interface MatterInput {
+  font: LoadedFont;
+  config: Config;
+  paper: PaperSpec;
+  characters: string[];
+  /** Title as printed, already language-resolved. */
+  title: string;
+  brand: string;
+  worksheetCount: number;
+}
+
+/**
+ * The title page a paid download is expected to open with: who made it, what
+ * is inside, and what it prints as. Built from the same glyph outlines as the
+ * worksheets, so the cover is vector too.
+ */
+function planCover({
+  font,
+  config,
+  paper,
+  characters,
+  title,
+  brand,
+  worksheetCount,
+}: MatterInput): PagePlan {
+  const margin = Math.max(config.marginIn, MIN_MARGIN_IN) * PT_PER_INCH;
+  const art: Box = {
+    x: margin,
+    y: margin,
+    w: paper.widthPt - margin * 2,
+    h: paper.heightPt - margin * 2,
+  };
+  const texts: TextDraw[] = [];
+  const rules: RuleDraw[] = [];
+  const placements: Placement[] = [];
+
+  let cursor = art.y + art.h; // walking down from the top of the safe area
+
+  const brandLine = safeLine(font, (brand || 'DoodleGen').toUpperCase());
+  if (brandLine) {
+    const size = 10;
+    cursor -= size;
+    texts.push(centred(font, brandLine, size, art, cursor, 0.45));
+    cursor -= size * 0.9;
+    rules.push({ x1: art.x, x2: art.x + art.w, y: cursor, width: 0.6, ink: 0.22 });
+  }
+
+  cursor -= art.h * 0.06;
+
+  const titleLines = wrapText(font, safeLine(font, title) || 'Worksheets', 30, art.w * 0.94).slice(0, 3);
+  const titleSize = Math.min(30, ...titleLines.map((line) => fitLine(font, line, 30, art.w * 0.94)));
+  for (const line of titleLines) {
+    cursor -= titleSize;
+    texts.push(centred(font, line, titleSize, art, cursor, 1));
+    cursor -= titleSize * 0.28;
+  }
+
+  const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
+  const subtitle = safeLine(font, `${worksheetCount} halaman siap cetak — ${papers}`);
+  if (subtitle) {
+    const size = 12;
+    cursor -= size * 1.4;
+    texts.push(centred(font, subtitle, size, art, cursor, 0.5));
+  }
+
+  // A strip of real sample characters, drawn exactly as the pages draw them.
+  const sampleTexts = [
+    characters[0],
+    characters[Math.floor(characters.length / 2)],
+    characters[characters.length - 1],
+  ].filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
+
+  const specLines = [
+    safeLine(font, 'Vector 300 DPI — margin aman 0.5 inci — tinta hitam K100'),
+    safeLine(font, 'Cetak ulang sebanyak yang dibutuhkan untuk pemakaian pribadi dan kelas'),
+  ].filter(Boolean);
+
+  const specSize = 10;
+  const specBlock = specLines.length * specSize * 1.9 + specSize * 2;
+  const stripTop = cursor - art.h * 0.04;
+  const stripBottom = art.y + specBlock + art.h * 0.04;
+  const free = stripTop - stripBottom;
+  // The samples sit in the middle of whatever the copy left, capped so three
+  // letters never grow into a second cover of their own.
+  const stripH = Math.min(free, art.h * 0.42);
+
+  if (sampleTexts.length && stripH > 20) {
+    const top = stripTop - (free - stripH) / 2;
+    const boxes = strip({ x: art.x, y: top - stripH, w: art.w, h: stripH }, sampleTexts.length, 0.04);
+    const strokeBase = STROKES[config.stroke].base;
+    sampleTexts.forEach((text, index) => {
+      const box = boxes[index];
+      const size = fitWithStroke(font, text, box, { w: 0.82, h: 0.82 }, strokeBase, 'fill', bandFor(font, [text]));
+      placements.push(
+        placeFill(font, text, box, size, index === sampleTexts.length - 1 ? 'dotted' : 'solid', strokeBase),
+      );
+    });
+  }
+
+  let bottom = art.y + specSize * 0.4;
+  for (let i = specLines.length - 1; i >= 0; i -= 1) {
+    texts.push(centred(font, specLines[i], specSize, art, bottom, 0.45));
+    bottom += specSize * 1.9;
+  }
+  rules.push({ x1: art.x, x2: art.x + art.w, y: bottom - specSize * 0.6, width: 0.6, ink: 0.22 });
+
+  return {
+    kind: 'cover',
+    label: 'Sampul',
+    widthPt: paper.widthPt,
+    heightPt: paper.heightPt,
+    placements,
+    guides: [],
+    texts,
+    rules,
+  };
+}
+
+interface TermsSection {
+  heading: string;
+  body: string[];
+}
+
+function termsSections(
+  brand: string,
+  fontFamily: string,
+  contents: string,
+): TermsSection[] {
+  const owner = brand || 'the seller';
+  return [
+    {
+      heading: 'Isi paket / What is inside',
+      body: [contents],
+    },
+    {
+      heading: 'Tips mencetak / Printing tips',
+      body: [
+        'Cetak pada ukuran asli 100% tanpa "fit to page", pakai kertas 80-120 gsm agar krayon tidak tembus.',
+        'Print at 100% scale with page scaling off, on 80-120 gsm paper, in black and white or greyscale.',
+      ],
+    },
+    {
+      heading: 'Yang boleh dilakukan / What you may do',
+      body: [
+        'Cetak ulang tanpa batas untuk pemakaian pribadi, keluarga, kelas, atau perpustakaan.',
+        'Print an unlimited number of copies for personal, family, classroom or library use.',
+      ],
+    },
+    {
+      heading: 'Yang tidak boleh / What you may not do',
+      body: [
+        'Menjual kembali, membagikan, atau mengunggah ulang berkas PDF ini, baik utuh maupun sebagian.',
+        'Resell, share, or re-upload this PDF file, in whole or in part, and do not claim it as your own work.',
+      ],
+    },
+    {
+      heading: 'Font & lisensi / Fonts and licence',
+      body: [
+        `Huruf pada berkas ini memakai ${fontFamily}, dilisensikan di bawah SIL Open Font License 1.1.`,
+        'The embedded typeface is licensed under the SIL Open Font License 1.1, which permits this use.',
+      ],
+    },
+    {
+      heading: 'Hak cipta / Copyright',
+      body: [
+        `Isi berkas ini adalah milik ${owner}. Semua hak dilindungi.`,
+        `This file and its contents belong to ${owner}. All rights reserved.`,
+      ],
+    },
+  ];
+}
+
+/** The licence page a marketplace buyer expects to find at the back. */
+function planTerms(
+  { font, config, paper, brand, worksheetCount }: MatterInput,
+  fontFamily: string,
+): PagePlan {
+  const margin = Math.max(config.marginIn, MIN_MARGIN_IN) * PT_PER_INCH;
+  const art: Box = {
+    x: margin,
+    y: margin,
+    w: paper.widthPt - margin * 2,
+    h: paper.heightPt - margin * 2,
+  };
+  const texts: TextDraw[] = [];
+  const rules: RuleDraw[] = [];
+
+  let cursor = art.y + art.h;
+
+  const titleSize = 20;
+  cursor -= titleSize;
+  texts.push({
+    text: safeLine(font, 'Ketentuan Penggunaan / Terms of Use'),
+    size: titleSize,
+    x: art.x,
+    y: cursor,
+    ink: 1,
+  });
+  cursor -= titleSize * 0.8;
+  rules.push({ x1: art.x, x2: art.x + art.w, y: cursor, width: 0.8, ink: 0.3 });
+  cursor -= titleSize * 1.1;
+
+  const headingSize = 12;
+  const bodySize = 10.5;
+  const papers = config.paper === 'both' ? 'A4 dan US Letter' : paper.label;
+  const contents = `${worksheetCount} halaman latihan dalam format PDF, ${papers}, siap cetak berulang kali.`;
+  for (const section of termsSections(brand, fontFamily, contents)) {
+    cursor -= headingSize;
+    texts.push({ text: safeLine(font, section.heading), size: headingSize, x: art.x, y: cursor, ink: 0.85 });
+    cursor -= headingSize * 0.7;
+    for (const paragraph of section.body) {
+      for (const line of wrapText(font, safeLine(font, paragraph), bodySize, art.w)) {
+        cursor -= bodySize * 1.45;
+        texts.push({ text: line, size: bodySize, x: art.x, y: cursor, ink: 0.55 });
+      }
+      cursor -= bodySize * 0.35;
+    }
+    cursor -= headingSize * 0.9;
+  }
+
+  const footer = safeLine(font, 'Dibuat dengan DoodleGen — halaman mewarnai dan tracing siap cetak');
+  texts.push(centred(font, footer, 9.5, art, art.y + 4, 0.4));
+  rules.push({ x1: art.x, x2: art.x + art.w, y: art.y + 18, width: 0.6, ink: 0.2 });
+
+  return {
+    kind: 'terms',
+    label: 'Lisensi',
+    widthPt: paper.widthPt,
+    heightPt: paper.heightPt,
+    placements: [],
+    guides: [],
+    texts,
+    rules,
+  };
+}
+
 /** Builds every page of a document, with tracing sizes harmonised across it. */
 export function planDocument({ font, config, paper, characters }: PlanInput): PagePlan[] {
   if (!characters.length) return [];
 
   const hasTitle = config.showTitle && config.titleTemplate.trim().length > 0;
-  const frame = frameFor(paper, config, hasTitle);
+  const frame = frameFor(paper, config, hasTitle, config.pageNumbers);
   const art = frame.art;
   const strokeBase = STROKES[config.stroke].base;
   const band = bandFor(font, characters);
+  const title = productTitle(config, characters).id;
+  const brand = brandName(config);
 
   const heroRatio = config.layout === 'single' ? HERO_RATIO : WORKSHEET_HERO_RATIO;
   const cellRatio = config.layout === 'single' ? STRIP_RATIO : CELL_RATIO;
   const cellSizes = lockedCellSizes(font, config, art, characters, cellRatio, strokeBase, band);
 
-  return characters.map((text) => {
+  const worksheets = characters.map((text, pageIndex) => {
     const boxes = slotBoxes(art, config, text);
     const placements: Placement[] = [];
     const guides: GuideLine[] = [];
+    const texts: TextDraw[] = [];
 
     // The model character is sized per page so each one fills its area, the
     // way a printed alphabet set reads best.
@@ -401,31 +703,71 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
       }
     }
 
-    const plan: PagePlan = {
+    if (hasTitle && frame.title) {
+      const line = safeLine(font, renderTitle(config.titleTemplate, text));
+      if (line) {
+        texts.push({
+          text: line,
+          size: frame.title.size,
+          x: frame.title.centerX - textWidth(font, line, frame.title.size) / 2,
+          y: frame.title.y,
+          ink: 0.78,
+        });
+      }
+    }
+
+    // A numbered footer, so a printed pack can be reassembled in order and a
+    // buyer can be told exactly which sheet is which.
+    if (frame.footer) {
+      const { size, y, left, right } = frame.footer;
+      const stamp = safeLine(font, brand ? `${brand} — ${title}` : title);
+      if (stamp) {
+        const room = (right - left) * 0.7;
+        const fitted = fitLine(font, stamp, size, room);
+        texts.push({ text: stamp, size: fitted, x: left, y, ink: 0.35 });
+      }
+      const number = safeLine(font, `${pageIndex + 1} / ${characters.length}`);
+      texts.push({
+        text: number,
+        size,
+        x: right - textWidth(font, number, size),
+        y,
+        ink: 0.35,
+      });
+    }
+
+    return {
+      kind: 'char' as const,
       label: text,
       widthPt: paper.widthPt,
       heightPt: paper.heightPt,
       placements,
       guides,
+      texts,
+      rules: [],
     };
-
-    if (hasTitle && frame.title) {
-      const line = renderTitle(config.titleTemplate, text);
-      const safe = font.supports(line);
-      if (safe) {
-        const run = font.layout(safe);
-        const width = (run.advanceWidth * frame.title.size) / font.unitsPerEm;
-        plan.title = {
-          text: safe,
-          size: frame.title.size,
-          x: frame.title.centerX - width / 2,
-          y: frame.title.y,
-        };
-      }
-    }
-
-    return plan;
   });
+
+  const matter: MatterInput = {
+    font,
+    config,
+    paper,
+    characters,
+    title,
+    brand,
+    worksheetCount: characters.length,
+  };
+
+  return [
+    ...(config.coverPage ? [planCover(matter)] : []),
+    ...worksheets,
+    ...(config.termsPage ? [planTerms(matter, FONTS[config.font].family)] : []),
+  ];
+}
+
+/** Pages in one generated file, front and back matter included. */
+export function pageCountOf(config: Config, characters: string[]): number {
+  return characters.length + (config.coverPage ? 1 : 0) + (config.termsPage ? 1 : 0);
 }
 
 /** Safe-area rectangle, exposed so the preview can show the margin guard. */

@@ -41,7 +41,7 @@ async function loadFont(id) {
     capHeight: parsed.capHeight,
     xHeight: parsed.xHeight,
     layout(text) {
-      if (!runs.has(text)) runs.set(text, parsed.layout(text));
+      if (!runs.has(text)) runs.set(text, parsed.layout(text, lib.FONT_FEATURES));
       return runs.get(text);
     },
     svgPath(glyph) {
@@ -72,6 +72,36 @@ const cases = [
   {
     name: 'letters-both-grid',
     patch: { letterCase: 'both', layout: 'grid', grid: '2x2', style: 'combo', font: 'playful', paper: 'a4' },
+  },
+  {
+    name: 'marketplace-pack-cover-terms',
+    patch: {
+      layout: 'worksheet',
+      style: 'combo',
+      font: 'rounded',
+      paper: 'a4',
+      showTitle: true,
+      pageNumbers: true,
+      coverPage: true,
+      termsPage: true,
+      brand: 'Studio Cerdas',
+      productTitle: 'Alfabet A-Z Trace and Color',
+    },
+  },
+  {
+    name: 'words-worksheet',
+    patch: {
+      content: 'words',
+      words: 'Ayah, Bunda, Adik, Kakak',
+      layout: 'worksheet',
+      style: 'combo',
+      font: 'school',
+      paper: 'letter',
+      pageNumbers: true,
+      coverPage: true,
+      termsPage: true,
+      brand: 'Rumah Belajar',
+    },
   },
 ];
 
