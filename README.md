@@ -22,12 +22,20 @@ host. Nothing is generated server-side: PDFs are built in the browser, which
 also means the tool keeps working offline once the service worker has cached
 the shell and the fonts.
 
-The two included deploy configs differ on purpose. Netlify publishes `out/`
-directly. Vercel does **not**: its Next.js builder reads `.next/`, recognises
-`output: 'export'` from there, and serves the export itself — so `vercel.json`
-deliberately sets no `outputDirectory`. Pointing it at `out/` makes the build
-fail looking for `out/routes-manifest.json`, which only ever exists in
-`.next/`.
+Both deploy configs publish `out/` as plain static files, and neither uses a
+Next.js server preset. That is deliberate on Vercel: `vercel.json` sets
+`"framework": null`, so the deployment is treated as a static directory rather
+than handed to the Next.js builder. That builder reads its manifests from
+`.next/`, and if anything points it at the export directory instead — an
+`outputDirectory` of `out` in `vercel.json` or in the project's dashboard
+settings — the build compiles fine and then fails looking for
+`out/routes-manifest.json`, a file that only ever exists in `.next/`. Pinning
+`framework`, `buildCommand`, and `outputDirectory` in `vercel.json` keeps that
+lookup from happening at all and overrides the dashboard, so the repo alone
+decides how the site deploys.
+
+Because nothing is served by the Next.js runtime, `vercel.json` also sets the
+long-lived cache headers for `/_next/static/*` itself, matching `netlify.toml`.
 
 ## Output guarantees
 
