@@ -45,6 +45,8 @@ export interface FontSpec {
   /** Family name as embedded in the file, used for licence reporting. */
   family: string;
   licence: string;
+  /** Full licence text, shipped with an exported pack. */
+  licenceFile: string;
 }
 
 /**
@@ -60,6 +62,7 @@ export const FONTS: Record<FontId, FontSpec> = {
     file: '/fonts/Baloo2-ExtraBold.ttf',
     family: 'Baloo 2 ExtraBold',
     licence: 'SIL OFL 1.1',
+    licenceFile: '/fonts/OFL-baloo2.txt',
   },
   boldsans: {
     id: 'boldsans',
@@ -68,6 +71,7 @@ export const FONTS: Record<FontId, FontSpec> = {
     file: '/fonts/ArchivoBlack-Regular.ttf',
     family: 'Archivo Black',
     licence: 'SIL OFL 1.1',
+    licenceFile: '/fonts/OFL-archivoblack.txt',
   },
   playful: {
     id: 'playful',
@@ -76,6 +80,7 @@ export const FONTS: Record<FontId, FontSpec> = {
     file: '/fonts/Fredoka-SemiBold.ttf',
     family: 'Fredoka SemiBold',
     licence: 'SIL OFL 1.1',
+    licenceFile: '/fonts/OFL-fredoka.txt',
   },
   school: {
     id: 'school',
@@ -84,6 +89,7 @@ export const FONTS: Record<FontId, FontSpec> = {
     file: '/fonts/DoodleGenSchool-Bold.ttf',
     family: 'DoodleGen School Bold (dari Andika)',
     licence: 'SIL OFL 1.1',
+    licenceFile: '/fonts/OFL-andika.txt',
   },
 };
 
@@ -165,6 +171,7 @@ export const DEFAULT_CONFIG: Config = {
   letterCase: 'upper',
   numberFrom: 1,
   numberTo: 10,
+  words: 'Ayah\nBunda\nAdik\nKakak',
   style: 'outline',
   layout: 'single',
   grid: '3x3',
@@ -176,7 +183,144 @@ export const DEFAULT_CONFIG: Config = {
   guides: true,
   showTitle: false,
   titleTemplate: 'Trace and color — {char}',
+  pageNumbers: false,
+  coverPage: false,
+  termsPage: false,
+  brand: '',
+  productTitle: '',
 };
+
+/**
+ * One-click starting points. Each one is a complete, sellable pack the way
+ * the marketplaces actually list them, so a first run needs no decisions.
+ */
+export interface StarterPreset {
+  id: string;
+  label: string;
+  note: string;
+  /** Where this shape of pack normally sells. */
+  market: string;
+  patch: Partial<Config>;
+}
+
+export const STARTER_PRESETS: StarterPreset[] = [
+  {
+    id: 'etsy-alphabet',
+    label: 'Alfabet A–Z Mewarnai',
+    note: '26 halaman outline, satu huruf per halaman',
+    market: 'Etsy / Gumroad',
+    patch: {
+      content: 'letters',
+      letterCase: 'upper',
+      style: 'outline',
+      layout: 'single',
+      font: 'rounded',
+      paper: 'both',
+      coverPage: true,
+      termsPage: true,
+      pageNumbers: true,
+    },
+  },
+  {
+    id: 'tracing-worksheet',
+    label: 'Lembar Kerja Tracing',
+    note: 'Contoh besar + 3 baris latihan bergaris',
+    market: 'TPT / Gumroad',
+    patch: {
+      content: 'letters',
+      letterCase: 'both',
+      style: 'combo',
+      layout: 'worksheet',
+      font: 'school',
+      paper: 'both',
+      guides: true,
+      showTitle: true,
+      titleTemplate: 'Trace and color — {char}',
+      coverPage: true,
+      termsPage: true,
+      pageNumbers: true,
+    },
+  },
+  {
+    id: 'numbers-1-20',
+    label: 'Angka 1–20',
+    note: 'Grid latihan menebalkan angka',
+    market: 'Shopee / Tokopedia',
+    patch: {
+      content: 'numbers',
+      numberFrom: 1,
+      numberTo: 20,
+      style: 'combo',
+      layout: 'grid',
+      grid: '3x3',
+      font: 'playful',
+      paper: 'a4',
+      coverPage: true,
+      termsPage: true,
+      pageNumbers: true,
+    },
+  },
+  {
+    id: 'name-practice',
+    label: 'Latihan Kata & Nama',
+    note: 'Kata sendiri, cocok untuk pesanan custom',
+    market: 'Shopee / Etsy custom',
+    patch: {
+      content: 'words',
+      words: 'Ayah\nBunda\nAdik\nKakak\nNenek\nKakek',
+      style: 'combo',
+      layout: 'worksheet',
+      font: 'school',
+      paper: 'both',
+      guides: true,
+      coverPage: true,
+      termsPage: true,
+      pageNumbers: true,
+    },
+  },
+];
+
+/** Marketplaces the export kit is shaped for, with their listing rules. */
+export interface MarketSpec {
+  id: 'etsy' | 'gumroad' | 'shopee';
+  label: string;
+  /** Hard limits the copy generator has to respect. */
+  titleMax: number;
+  tagMax: number;
+  tagCount: number;
+  language: 'en' | 'id';
+  note: string;
+}
+
+export const MARKETS: MarketSpec[] = [
+  {
+    id: 'etsy',
+    label: 'Etsy',
+    titleMax: 140,
+    tagMax: 20,
+    tagCount: 13,
+    language: 'en',
+    note: 'Judul 140 karakter, 13 tag maksimal 20 karakter',
+  },
+  {
+    id: 'gumroad',
+    label: 'Gumroad',
+    titleMax: 100,
+    tagMax: 30,
+    tagCount: 6,
+    language: 'en',
+    note: 'Deskripsi markdown, sampul 16:9',
+  },
+  {
+    id: 'shopee',
+    label: 'Shopee',
+    titleMax: 120,
+    tagMax: 25,
+    tagCount: 10,
+    language: 'id',
+    note: 'Judul bahasa Indonesia, gambar 1:1',
+  },
+];
 
 export function papersFor(choice: Config['paper']): PaperSpec[] {
   if (choice === 'both') return [PAPERS.a4, PAPERS.letter];

@@ -2,12 +2,24 @@
 
 # DoodleGen
 
-Internal tool for generating print-ready alphabet and number colouring and
-tracing pages. Pick a character set, a contour treatment, a page layout and a
-paper size; scroll the preview; get A4 and US Letter PDFs that are ready to
-list on Etsy, TPT, Gumroad or Shopee.
+Generator for print-ready alphabet, number and word colouring and tracing
+packs. Pick a character set, a contour treatment, a page layout and a paper
+size; scroll the preview; get A4 and US Letter PDFs — and the listing images,
+descriptions and paperwork that turn those PDFs into something sellable on
+Etsy, Gumroad, Shopee or TPT.
 
 Typography only — no companion illustrations, by design.
+
+Two routes:
+
+| Route | What it is |
+| --- | --- |
+| `/` | Landing page: what the tool makes, the print guarantees, the starter packs. Static, indexable, ~126 kB of JS. |
+| `/studio` | The generator itself. Everything runs in the browser. |
+
+The heavy parts — the font parser, `pdf-lib`, the ZIP writer — are all loaded
+on demand, so the landing page never pays for them and the studio only pays
+when output is actually asked for.
 
 ## Running it
 
@@ -17,10 +29,15 @@ npm run dev          # http://localhost:3000
 npm run build        # static export to out/
 ```
 
-The build is a fully static export, so `out/` can be dropped on any static
-host. Nothing is generated server-side: PDFs are built in the browser, which
-also means the tool keeps working offline once the service worker has cached
-the shell and the fonts.
+The build is a fully static export with directory-style URLs
+(`out/studio/index.html`), so `out/` can be dropped on any static host,
+including the ones that will not rewrite `/studio` to `studio.html`. Nothing is
+generated server-side: PDFs, listing images and the ZIP are built in the
+browser, which also means the tool keeps working offline once the service
+worker has cached the shell and the fonts.
+
+Set `NEXT_PUBLIC_SITE_URL` at build time to give the social card and other
+absolute metadata URLs a real origin.
 
 Both deploy configs publish `out/` as plain static files, and neither uses a
 Next.js server preset. That is deliberate on Vercel: `vercel.json` sets
@@ -36,6 +53,34 @@ decides how the site deploys.
 
 Because nothing is served by the Next.js runtime, `vercel.json` also sets the
 long-lived cache headers for `/_next/static/*` itself, matching `netlify.toml`.
+
+## What a pack contains
+
+A worksheet set is the middle of the product, not all of it. The studio can put
+the rest around it:
+
+| Part | What it is |
+| --- | --- |
+| Cover page | Brand line, product title, page count, three real sample characters, print specs. Vector, like every other page. |
+| Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
+| Terms page | What a buyer may and may not do, in Indonesian and English, plus printing tips and the font licence. |
+| Listing images | 2000×2000 (Etsy), 1280×720 (Gumroad), 1200×1200 (Shopee), 1000×1500 (Pinterest), drawn from the same page plans. |
+| Listing copy | Title, description and tags for Etsy, Gumroad and Shopee, already inside each marketplace's character and tag limits. |
+| Paperwork | `BACA-DULU.txt` for the buyer and the full SIL OFL text of the embedded face. |
+
+`Kit marketplace` builds all of it and hands back one ZIP:
+
+```
+doodlegen-<subject>-<style>-<layout>/
+  01-FILE-CETAK/        A4 and US Letter PDFs
+  02-GAMBAR-LISTING/    the four listing canvases, PNG
+  03-TEKS-LISTING/      etsy.txt, gumroad.txt, shopee.txt
+  BACA-DULU.txt
+  LISENSI-FONT.txt
+```
+
+Content is not limited to A–Z and 0–9: the `Kata & Nama` mode takes a list of
+words, one per line, which is what a custom name-tracing order actually is.
 
 ## Output guarantees
 
@@ -72,6 +117,18 @@ ascender-to-descender band and a dashed midline. Sizes are then locked per
 text length across the document, so every page in a set matches and every
 baseline lines up — while "7" still isn't shrunk to suit "100".
 
+**Front and back matter.** The cover and licence pages are laid out by the
+same engine, from the same glyph outlines, and are measured against the same
+0.5 inch floor — so `verify` checks them exactly as it checks a worksheet.
+Page numbers reserve a band inside the safe area rather than drifting into the
+margin, which is the usual reason a print shop sends a file back.
+
+**Ligatures are off, everywhere.** A ligature glyph is not reachable through
+the font's `cmap`, and `pdf-lib` only writes widths for the glyphs that are, so
+an embedded `fi` falls back to the default width: a title reading "PDF file"
+prints as "PDF fi le". The same feature set is passed to the measuring pass and
+to `embedFont`, so the preview and the page cannot drift apart.
+
 **Fill versus metric fitting.** A model character on show is fitted to its
 inked bounding box, so it fills the page. A character to be traced is fitted to
 the shared writing band, so `A` and `a` keep their true relative proportions.
@@ -89,7 +146,7 @@ that crosses the margin.
 | `npm run samples` | Renders sample PDFs across layouts into `.samples/` |
 | `npm run verify` | Checks those PDFs against the table above |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |
-| `npm run icons` | Regenerates the logo, favicon and PWA icons |
+| `npm run icons` | Regenerates the logo, favicon, PWA icons and the social card |
 
 `verify` drives a real browser. Either run `npx playwright install chromium`
 once, or point `CHROMIUM_PATH` at a browser you already have.
@@ -107,21 +164,43 @@ and why one face had to be renamed are documented in **[FONTS.md](FONTS.md)**.
 ## Layout
 
 ```
-app/                Next.js App Router shell, metadata, PWA wiring
-components/         UI — settings panel, preview deck, action bar
+app/
+  page.tsx          Landing page
+  studio/page.tsx   The generator
+  layout.tsx        Shell, metadata, PWA wiring
+components/
+  App.tsx           Studio state: config, generation, export
+  SettingsPanel.tsx Settings and starter packs
+  PreviewDeck.tsx   Page deck, PageSheet.tsx  One rendered page
+  ExportDialog.tsx  Listing images and copy, ready to paste
+  GenerateBar.tsx   Progress, cancel, downloads
+  motion.tsx        Ripple, reveal, count-up, copy-to-clipboard
+  landing/          Hero, live demo, sections
 lib/
-  geometry.ts       Page layout engine (pure)
+  geometry.ts       Page layout engine (pure), including cover and terms
   svg.ts            Plan to SVG shapes, for the preview
   pdf.ts            Plan to PDF, via pdf-lib
+  cover.ts          Plan to listing images, via canvas
+  listing.ts        Marketplace titles, descriptions and tags
+  bundle.ts         The ZIP everything ships in
+  share.ts          Config in a link, and in local storage
+  naming.ts         Product titles, slugs, file names
   fontStore.ts      Font loading, parsing and caching
-  presets.ts        Papers, faces, styles, layouts, ink levels
+  presets.ts        Papers, faces, styles, layouts, inks, starter packs
   charset.ts        Character set construction and validation
-scripts/            Font pipeline, icon generation, sample and verify tools
+scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts
 ```
 
 ## Stack
 
 Next.js 15 (static export), React 19, Tailwind CSS, `pdf-lib` with
-`@pdf-lib/fontkit`. `pdf-lib` is loaded on demand, so it is not part of the
-first paint. State is plain React — no store, no component library.
+`@pdf-lib/fontkit`, `jszip`. `pdf-lib`, the ZIP writer and the whole layout
+engine are loaded on demand, so none of them are part of the landing page's
+first paint. State is plain React — no store, no component library, and no
+animation library either: motion is CSS plus a ripple that appends one span.
+
+Every interactive surface answers the click — a press-in, a ripple from the
+pointer, a settle — and every one of those is switched off under
+`prefers-reduced-motion`, including the reveal-on-scroll, which is scoped to a
+class the document only gets when scripting runs.

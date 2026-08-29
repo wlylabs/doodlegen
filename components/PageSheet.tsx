@@ -13,6 +13,7 @@ export function PageSheet({
   config,
   showSafeArea,
   className = '',
+  animate = false,
 }: {
   plan: PagePlan;
   paper: PaperSpec;
@@ -20,6 +21,8 @@ export function PageSheet({
   config: Config;
   showSafeArea: boolean;
   className?: string;
+  /** Draws the solid contours on, one after another. Landing page only. */
+  animate?: boolean;
 }) {
   const shapes = useMemo(() => sheetShapes(font, plan, config), [font, plan, config]);
   const safe = useMemo(() => safeArea(paper, config), [paper, config]);
@@ -61,19 +64,27 @@ export function PageSheet({
         />
       ))}
 
-      {shapes.glyphs.map((glyph, index) => (
-        <path
-          key={`glyph-${index}`}
-          d={glyph.d}
-          transform={glyph.transform}
-          fill={glyph.filled ? glyph.color : 'none'}
-          stroke={glyph.filled ? undefined : glyph.color}
-          strokeWidth={glyph.filled ? undefined : glyph.strokeWidth}
-          strokeDasharray={glyph.filled ? undefined : glyph.dash}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
+      {shapes.glyphs.map((glyph, index) => {
+        // Only unbroken contours can be drawn on: a dotted glyph already owns
+        // its dash pattern, and a filled one has no line to travel along.
+        const drawn = animate && !glyph.filled && !glyph.dash;
+        return (
+          <path
+            key={`glyph-${index}`}
+            d={glyph.d}
+            transform={glyph.transform}
+            fill={glyph.filled ? glyph.color : 'none'}
+            stroke={glyph.filled ? undefined : glyph.color}
+            strokeWidth={glyph.filled ? undefined : glyph.strokeWidth}
+            strokeDasharray={glyph.filled ? undefined : glyph.dash}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            pathLength={drawn ? 1 : undefined}
+            className={drawn ? 'draw-path' : undefined}
+            style={drawn ? ({ '--draw-delay': `${index * 90}ms` } as React.CSSProperties) : undefined}
+          />
+        );
+      })}
     </svg>
   );
 }

@@ -2,7 +2,7 @@
   "name": "doodlegen",
   "version": "1.0.0",
   "private": true,
-  "description": "Internal tool for generating print-ready alphabet and number coloring / tracing PDFs.",
+  "description": "Generator for print-ready alphabet, number and word coloring / tracing packs, with marketplace listing images and copy.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -3,21 +3,49 @@ import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar';
 import './globals.css';
 
 const description =
-  'Alat internal untuk menyusun halaman mewarnai dan tracing alfabet serta angka, siap cetak dalam A4 dan US Letter.';
+  'Generator halaman mewarnai dan tracing alfabet, angka, dan kata: PDF A4 dan US Letter yang benar-benar vektor, plus gambar listing dan draf deskripsi untuk Etsy, Gumroad, dan Shopee.';
+
+// A deploy can point this at its own domain; localhost keeps dev links valid.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 export const metadata: Metadata = {
-  title: 'DoodleGen — Halaman Mewarnai Alfabet & Angka',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'DoodleGen — Halaman Mewarnai & Tracing Siap Cetak',
+    template: '%s · DoodleGen',
+  },
   description,
   applicationName: 'DoodleGen',
   manifest: '/manifest.webmanifest',
+  keywords: [
+    'halaman mewarnai',
+    'lembar kerja tracing',
+    'worksheet alfabet',
+    'belajar menulis anak',
+    'printable pdf',
+    'produk digital marketplace',
+  ],
   appleWebApp: {
     capable: true,
     title: 'DoodleGen',
     statusBarStyle: 'default',
   },
   formatDetection: { telephone: false },
-  // Internal tool, not a public product.
-  robots: { index: false, follow: false },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    siteName: 'DoodleGen',
+    title: 'DoodleGen — Halaman Mewarnai & Tracing Siap Cetak',
+    description,
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'DoodleGen' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DoodleGen — Halaman Mewarnai & Tracing Siap Cetak',
+    description,
+    images: ['/og.png'],
+  },
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -39,6 +67,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id">
       <head>
+        {/*
+          Reveal-on-scroll hides sections until an observer shows them, so the
+          hidden state is scoped to a class the document only gets when
+          scripting is actually running.
+        */}
+        <script
+          dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }}
+        />
         {/* The default face is needed before the first paint of the preview. */}
         <link
           rel="preload"
