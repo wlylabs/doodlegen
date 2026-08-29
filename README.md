@@ -17,10 +17,17 @@ npm run dev          # http://localhost:3000
 npm run build        # static export to out/
 ```
 
-The build is a fully static export, so `out/` can be dropped on Vercel,
-Netlify, or any static host. Nothing is generated server-side: PDFs are built
-in the browser, which also means the tool keeps working offline once the
-service worker has cached the shell and the fonts.
+The build is a fully static export, so `out/` can be dropped on any static
+host. Nothing is generated server-side: PDFs are built in the browser, which
+also means the tool keeps working offline once the service worker has cached
+the shell and the fonts.
+
+The two included deploy configs differ on purpose. Netlify publishes `out/`
+directly. Vercel does **not**: its Next.js builder reads `.next/`, recognises
+`output: 'export'` from there, and serves the export itself — so `vercel.json`
+deliberately sets no `outputDirectory`. Pointing it at `out/` makes the build
+fail looking for `out/routes-manifest.json`, which only ever exists in
+`.next/`.
 
 ## Output guarantees
 
