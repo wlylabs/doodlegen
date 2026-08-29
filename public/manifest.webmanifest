@@ -1,0 +1,21 @@
+{
+  "name": "DoodleGen — Halaman Mewarnai Alfabet & Angka",
+  "short_name": "DoodleGen",
+  "description": "Alat internal untuk menyusun halaman mewarnai dan tracing alfabet serta angka, siap cetak dalam A4 dan US Letter.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FAFAF9",
+  "theme_color": "#FFFFFF",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "graphics"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
