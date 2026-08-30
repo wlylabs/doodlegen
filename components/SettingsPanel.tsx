@@ -9,6 +9,8 @@ import { COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers'
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
 import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
+  DECORS,
+  DECOR_ORDER,
   FONTS,
   FONT_ORDER,
   GRIDS,
@@ -27,6 +29,7 @@ import type {
   Config,
   ContentType,
   CoverStyleId,
+  DecorId,
   FontId,
   LanguageId,
   GridId,
@@ -408,18 +411,34 @@ export function SettingsPanel({
             hitam K100 — satu plat cetak, bersih saat difotokopi, hemat tinta.
           </Note>
         </Field>
-        <Toggle
-          label="Hiasan halaman isi"
-          hint="Bingkai doodle mengikuti model sampul, di pinggir halaman latihan."
-          checked={config.pageDecor}
-          onChange={(pageDecor) => update({ pageDecor })}
-        />
-        <Note>
-          Digambar sebagai garis hitam K100, bukan latar berwarna — supaya anak bisa ikut
-          mewarnainya, dan supaya krayon mereka tetap terlihat. Latar berwarna justru menelan
-          warna anak, menurunkan kontras garis tracing, dan menambah biaya cetak. Model
-          Minimalis tidak memakai hiasan ini.
-        </Note>
+        <Field label="Hiasan halaman isi">
+          {/* A width, not a switch: the band is cut out of the work area, so
+              the seller is choosing between a border to colour and letters
+              to trace, and the choice belongs to the age of the child. */}
+          <ChoiceGrid<DecorId>
+            label="Lebar bingkai doodle"
+            columns={3}
+            value={config.pageDecor}
+            onChange={(pageDecor) => update({ pageDecor })}
+            options={DECOR_ORDER.map((id) => ({
+              value: id,
+              label: DECORS[id].label,
+              note: DECORS[id].note,
+            }))}
+          />
+          <Note>
+            Bingkai mengikuti motif model sampul dan digambar sebagai garis hitam K100, bukan
+            latar berwarna — supaya anak bisa ikut mewarnainya, dan supaya krayon mereka tetap
+            terlihat. Latar berwarna justru menelan warna anak, menurunkan kontras garis
+            tracing, dan menambah biaya cetak. Model Minimalis tidak memakai hiasan ini.
+          </Note>
+          <Note>
+            Lebarnya dipotong dari area kerja, jadi bingkai selalu dibayar dengan ukuran huruf.
+            Penuh untuk pak mewarnai usia 4–6, saat anak yang selesai duluan butuh pekerjaan
+            tambahan. Tipis untuk lembar tracing yang barisnya banyak. Polos untuk usia 3–4 dan
+            untuk pak nama atau kata pertama, yang butuh huruf sebesar mungkin.
+          </Note>
+        </Field>
         <Toggle
           label="Halaman lisensi"
           hint="Ketentuan pemakaian dua bahasa di halaman terakhir."
