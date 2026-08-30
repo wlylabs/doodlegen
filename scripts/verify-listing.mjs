@@ -72,6 +72,33 @@ const cases = [
     },
   },
   {
+    name: 'progressive + guides + thick stroke, id',
+    patch: {
+      content: 'letters',
+      letterCase: 'both',
+      style: 'progressive',
+      layout: 'worksheet',
+      stroke: 'thick',
+      guides: true,
+      ink: 'soft',
+      language: 'id',
+      brand: 'Kelas Kecil',
+    },
+  },
+  {
+    name: 'one word, no brand, no svg',
+    patch: {
+      content: 'words',
+      words: 'Bimasakti',
+      style: 'dotted',
+      layout: 'grid',
+      grid: '4x5',
+      svgFiles: false,
+      brand: '',
+      language: 'en',
+    },
+  },
+  {
     name: 'custom title longer than Tokopedia allows',
     patch: {
       content: 'letters',
@@ -144,14 +171,37 @@ for (const testCase of cases) {
       }
     }
     if (listing.market === 'etsy') {
-      const carried = listing.tags.slice(0, 3).filter((tag) => has(listing.title, tag));
-      if (carried.length < 2) problems.push(`only ${carried.length} of the top 3 tags are in the title`);
+      // A top tag belongs in the title — unless putting it there would repeat
+      // a word the title already uses twice, which is the stuffing the
+      // generator is built to refuse. Those two rules cannot both hold for a
+      // pack whose every phrase shares one noun, and the anti-stuffing rule
+      // is the one that wins.
+      const titleWords = flat(listing.title).split(' ');
+      const seen = (word) => titleWords.filter((other) => other === word).length;
+      // A seller's own long title can leave no budget at all; that is their
+      // call, not a defect in the draft.
+      const room = market.titleMax - listing.title.length - 3;
+      const missing = listing.tags.slice(0, 3).filter((tag) => {
+        if (has(listing.title, tag)) return false;
+        if (tag.length > room) return false;
+        return !flat(tag).split(' ').some((word) => word.length >= 3 && seen(word) >= 2);
+      });
+      if (missing.length) {
+        problems.push(`top tags left out of the title with room to spare: ${missing.join(', ')}`);
+      }
     }
     if (listing.market === 'shopee') {
       const target = market.titleTarget ?? market.titleMax;
       if (listing.title.length < target * 0.6) {
         problems.push(`name ${listing.title.length} chars, wasting a field that reaches ${target}`);
       }
+    }
+
+    // The SVGs ride along in the ZIP; a listing that never names them is
+    // handing over the differentiator for free. Pinterest is exempt: 500
+    // characters have no room for a bonus line.
+    if (config.svgFiles && listing.market !== 'pinterest' && !/svg/i.test(listing.body)) {
+      problems.push('editable SVGs ship with the pack but the description never mentions them');
     }
 
     const counts = new Map();

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckIcon, CloseIcon, CopyIcon, DownloadIcon } from './diagrams';
 import { useCopy, useRipple } from './motion';
-import { buildUploadGuides } from '@/lib/upload';
+import { buildUploadGuides, guideToText } from '@/lib/upload';
 import type { FieldKind, UploadField, UploadGuide, UploadStep } from '@/lib/upload';
 import { formatSize } from '@/lib/download';
 import type { GeneratedImage } from '@/lib/cover';
@@ -321,7 +321,20 @@ export function ExportDialog({
             <div className="animate-fade-up space-y-5">
               <div className="space-y-2.5">
                 <div className="rounded-xl border border-line bg-paper px-3 py-2.5">
-                  <p className="text-[12.5px] leading-relaxed text-ink-soft">{guide.entry}</p>
+                  <div className="flex items-start gap-2">
+                    <p className="text-[12.5px] leading-relaxed text-ink-soft">{guide.entry}</p>
+                    {/* Listing happens on the phone that has the Shopee app on
+                        it, not next to the laptop that made the ZIP. */}
+                    <span className="ml-auto shrink-0">
+                      <CopyButton
+                        text={guideToText(guide)}
+                        copiedKey={`${guide.market}-guide`}
+                        active={copied === `${guide.market}-guide`}
+                        onCopy={copy}
+                        label="Salin panduan"
+                      />
+                    </span>
+                  </div>
                   <p className="mt-1 text-[11.5px] text-ink-mute">{guide.copy.limits}</p>
                 </div>
 

@@ -66,7 +66,7 @@ the rest around it:
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
 | Listing images | 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 (Gumroad), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest), drawn from the same page plans. |
-| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
+| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The description says what is genuinely on the pages — stroke weight, handwriting guides, grid size, the words in a word pack, the editable SVGs — so two packs read as two products. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
 | Upload steps | Each channel's own add-product form, walked field by field: photo, product name, category, description, price, stock, SKU — and the weight, package size and courier Shopee and Tokopedia will not let a listing save without. Every blank says whether it is pasted, chosen or uploaded, and the pasted ones carry the copy above. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
@@ -120,12 +120,20 @@ and that is the whole reason the file exists apart from the copy:
 | Tokopedia | The name *and* the description | 70 characters of name carrying the phrase, and the phrase again in the first sentence of the body. |
 | Pinterest | Title, description, board name and alt text, as prose | Sentences, not a pile of hashtags. |
 
+The body is written off the config for the same reason: a pack drawn in
+strokes wide enough for a three-year-old's fist and one ruled for a child
+already writing between lines used to describe themselves identically. And
+the tagline the seller typed for the cover now opens the listings written in
+the language they typed it in — it is the one sentence in the whole pack in
+their own voice, and only the cover was using it.
+
 None of that is asserted, it is checked: `verify:listing` fails the build if
 the focus phrase is missing from a title, if fewer than two of Etsy's top
 tags reach its title, if a tag slot is left empty or two tags carry the same
 search, if a word appears in a title more than twice — that is stuffing, and
-every marketplace here ranks it down — or if Shopee's name wastes the only
-field its search engine reads.
+every marketplace here ranks it down — if Shopee's name wastes the only
+field its search engine reads, or if the pack ships editable SVGs that no
+description mentions.
 
 **Why there is no Canva integration, and what replaces it.** The app is a
 static export with no server, so there is nowhere to keep the client secret an

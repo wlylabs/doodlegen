@@ -1,6 +1,6 @@
 import { subjectOf } from './charset';
 import { brandName, layoutLabel, printedTitle, productTitle, styleLabel } from './naming';
-import { FONTS, MARKETS, PAPERS, papersFor } from './presets';
+import { FONTS, GRIDS, MARKETS, PAPERS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
 import { fitTags, joinWithin, keywordTail, keywordsFor, titleCase } from './seo';
 import type { Config } from './types';
@@ -61,6 +61,79 @@ function paperLine(config: Config): string {
 }
 
 /**
+ * What is on the pages, said out loud.
+ *
+ * Two packs from this studio used to describe themselves identically while
+ * being genuinely different products: one drawn in strokes wide enough for a
+ * three-year-old's fist, the other ruled for a child already writing between
+ * lines. Everything here is read off the config, so a description differs
+ * from the next one for the same reason the file does — and a seller shipping
+ * editable SVGs stops giving them away without mentioning them.
+ */
+function sellingPoints(config: Config, characters: string[]): { id: string[]; en: string[] } {
+  const id: string[] = [];
+  const en: string[] = [];
+
+  if (config.style === 'progressive') {
+    id.push('Empat tahap dalam satu halaman: contoh, titik-titik, samar, lalu mandiri');
+    en.push('Four steps on one page: example, dotted, faded, then write it alone');
+  } else if (config.style === 'combo') {
+    id.push('Contoh utuh di atas, baris latihan titik-titik di bawahnya');
+    en.push('A solid example on top, dotted practice rows underneath');
+  } else if (config.style === 'dotted') {
+    id.push('Garis putus-putus untuk ditebalkan, bukan sekadar kontur');
+    en.push('Dotted guide strokes to trace over, not just an outline');
+  } else {
+    id.push('Kontur tebal dan tertutup, siap langsung diwarnai');
+    en.push('Bold, closed outlines ready to colour straight in');
+  }
+
+  if (config.guides) {
+    id.push('Garis bantu tiga baris, tinggi huruf sama seperti buku tulis sekolah');
+    en.push('Three-line handwriting guides, the way school teaches letter height');
+  }
+
+  if (config.layout === 'grid') {
+    const grid = GRIDS[config.grid];
+    id.push(`Grid ${grid.label}: ${grid.cols * grid.rows} kotak latihan per halaman`);
+    en.push(`A ${grid.label} grid: ${grid.cols * grid.rows} practice boxes per page`);
+  }
+
+  if (config.stroke === 'thick') {
+    id.push('Garis tebal, pas untuk genggaman crayon anak 3–4 tahun');
+    en.push('Thick strokes, sized for a three-year-old holding a fat crayon');
+  } else if (config.stroke === 'thin') {
+    id.push('Garis tipis untuk pensil, cocok untuk anak yang sudah lebih terlatih');
+    en.push('Fine strokes for pencil work, for a child already writing');
+  }
+
+  if (config.content === 'letters' && config.letterCase === 'both') {
+    id.push('Huruf besar dan huruf kecil dilatih berpasangan');
+    en.push('Uppercase and lowercase practised as a pair');
+  }
+
+  if (config.content === 'words') {
+    const shown = characters.slice(0, 6).join(', ');
+    const more = characters.length > 6 ? `, dan ${characters.length - 6} lainnya` : '';
+    const moreEn = characters.length > 6 ? `, and ${characters.length - 6} more` : '';
+    id.push(`Kata yang dilatih: ${shown}${more}`);
+    en.push(`Words in this pack: ${shown}${moreEn}`);
+  }
+
+  if (config.ink === 'soft') {
+    id.push('Titik-titik dicetak lebih ringan dari kontur, jadi hasil tulisan anak yang menonjol');
+    en.push("Dotted strokes print lighter than the outline, so the child's own line stands out");
+  }
+
+  if (config.svgFiles) {
+    id.push('Bonus: satu file SVG per halaman — bisa dibuka di Canva, Cricut, Figma, Illustrator');
+    en.push('Bonus: one editable SVG per page, opens in Canva, Cricut, Figma and Illustrator');
+  }
+
+  return { id, en };
+}
+
+/**
  * Everything a listing needs, derived from the same config that drew the
  * pages: the numbers quoted in the copy are the numbers in the file.
  */
@@ -74,6 +147,8 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   const family = FONTS[config.font].family.replace(/\s*\(.*\)$/, '');
   const worksheets = characters.length;
   const shortPapers = config.paper === 'both' ? 'A4 & US Letter' : PAPERS[config.paper].label;
+  /** English counts a single page differently; Indonesian does not. */
+  const countEn = (noun: string) => `${worksheets} ${worksheets === 1 ? noun : `${noun}s`}`;
   const spec = Object.fromEntries(MARKETS.map((market) => [market.id, market])) as Record<
     MarketSpec['id'],
     MarketSpec
@@ -94,15 +169,30 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     .filter(Boolean)
     .join(' and ');
 
+  const points = sellingPoints(config, characters);
+
+  /*
+   * The tagline is the one line in the whole pack the seller wrote
+   * themselves, and until now only the cover carried it. It goes into the
+   * listings written in the language they wrote it in — a sentence in
+   * Indonesian under an Etsy description would read as a mistake, not as a
+   * voice.
+   */
+  const tagline = config.coverTagline.trim();
+  const taglineFor = (language: MarketSpec['language']): string[] =>
+    tagline && config.language === language ? [tagline, ''] : [];
+
   const included = [
     `${worksheets} halaman latihan${extras.length ? `, plus halaman ${extras.join(' dan ')}` : ''}`,
     `Format PDF, ${papers}`,
+    ...points.id,
     'Vector 300 DPI, garis hitam bersih, tanpa watermark',
   ];
 
   const includedEn = [
-    `${worksheets} practice pages${extrasEn ? `, plus ${extrasEn}` : ''}`,
+    `${countEn('practice page')}${extrasEn ? `, plus ${extrasEn}` : ''}`,
     `PDF format, ${papers}`,
+    ...points.en,
     'Vector artwork at 300 DPI or better, clean black lines, no watermark',
   ];
 
@@ -123,7 +213,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
       title.en,
       titleCase(words.en.focus),
       ...tags.etsy.slice(0, 3).map(titleCase),
-      `${worksheets} Printable Pages`,
+      titleCase(countEn('printable page')),
       'Instant Download PDF',
     ],
     spec.etsy.titleMax,
@@ -132,8 +222,9 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   const etsyBody = [
     // Etsy does not rank on the description, but Google does, and the first
     // ~160 characters are what it quotes: the phrase goes there.
-    `${title.en} — ${worksheets} printable ${words.en.focus} for preschool and kindergarten. Instant download, print at home as many times as you like.`,
+    `${title.en} — ${countEn('printable page')} of ${words.en.focus} for preschool and kindergarten. Instant download, print at home as many times as you like.`,
     '',
+    ...taglineFor('en'),
     'WHAT YOU GET',
     ...includedEn.map((line) => `- ${line}`),
     `- ${layout.en} layout, drawn in ${family}`,
@@ -157,7 +248,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   // parent browsing: the copy leads with how the pages are used in a room
   // full of children, and states the licence a school actually asks about.
   const tptBody = [
-    `${title.en} — ${worksheets} print-and-go ${words.en.focus} for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
+    `${title.en} — ${countEn('print-and-go page')} of ${words.en.focus} for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
     '',
     'WHAT IS INCLUDED',
     ...includedEn.map((line) => `- ${line}`),
@@ -181,7 +272,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   const gumroadBody = [
     `# ${title.en}`,
     '',
-    `${worksheets} print-ready worksheets for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
+    `${countEn('print-ready worksheet')} for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
     '',
     '## What is inside',
     ...includedEn.map((line) => `- ${line}`),
@@ -207,6 +298,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     [
       opening,
       '',
+      ...taglineFor('id'),
       'ISI PAKET',
       ...included.map((line) => `- ${line}`),
       `- Susunan ${layout.id.toLowerCase()}, huruf ${family}`,
@@ -243,11 +335,17 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   // them — and every word of it inside the 500 characters Pinterest allows.
   const pinterestTags = tags.pinterest;
   const pinterestBody = [
-    `${titleCase(words.en.focus)} — ${worksheets} printable pages kids can trace and colour.`,
+    `${titleCase(words.en.focus)} — ${countEn('printable page')} kids can trace and colour.`,
+    points.en[0],
     `Print at home as often as you like: ${shortPapers}, 300 DPI vector lines, 0.5 inch safe margin, no watermark.`,
-    'Perfect for preschool, kindergarten, homeschool and busy books.',
+    `Perfect for ${words.en.audience.slice(0, 4).join(', ')} and busy books.`,
     '',
-    pinterestTags.map((tag) => `#${tag.replace(/\s+/g, '')}`).join(' '),
+    // Pinterest reads the sentences above far more than the tags below, and
+    // a wall of hashtags is spend that buys nothing: four, then stop.
+    pinterestTags
+      .slice(0, 4)
+      .map((tag) => `#${tag.replace(/\s+/g, '')}`)
+      .join(' '),
   ].join('\n');
 
   /*
@@ -298,7 +396,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
       // Discover ranks on category and sales, so the name is kept short and
       // legible rather than loaded: the phrase once, the page count, done.
       title: joinWithin(
-        [title.en, titleCase(words.en.focus), `${worksheets} Printable Pages`],
+        [title.en, titleCase(words.en.focus), titleCase(countEn('printable page'))],
         spec.gumroad.titleMax,
       ),
       body: gumroadBody,
@@ -321,7 +419,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     },
     pinterest: {
       title: joinWithin(
-        [titleCase(words.en.focus), `${worksheets} Printable Pages`, 'Preschool and Homeschool'],
+        [titleCase(words.en.focus), titleCase(countEn('printable page')), 'Preschool and Homeschool'],
         spec.pinterest.titleMax,
       ),
       body: pinterestBody,
