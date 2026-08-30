@@ -210,6 +210,7 @@ export const DEFAULT_CONFIG: Config = {
   pageNumbers: false,
   coverPage: false,
   coverStyle: 'classic',
+  pageDecor: true,
   termsPage: false,
   brand: '',
   productTitle: '',

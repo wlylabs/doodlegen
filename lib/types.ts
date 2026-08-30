@@ -54,6 +54,14 @@ export interface Config {
    * arrange their sheet mockups, so the cover and the shop front match.
    */
   coverStyle: CoverStyleId;
+  /**
+   * A doodle border on every worksheet, in the shape the chosen cover style
+   * uses. Drawn as K-only outlines in a band the work area keeps clear, so
+   * the child can colour them in too — which is the point. A printed tint
+   * would do the opposite: crayon is translucent, so a coloured ground
+   * swallows the child's own colour instead of adding to it.
+   */
+  pageDecor: boolean;
   /** Licence and usage page at the back, standard for a paid download. */
   termsPage: boolean;
   /** Shop or brand name, printed on the cover, footer and licence page. */

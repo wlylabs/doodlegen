@@ -62,6 +62,7 @@ the rest around it:
 | Part | What it is |
 | --- | --- |
 | Cover page | Brand line, product title, page count, real sample characters, print specs — in one of ten compositions the seller picks, six of them colourful. Vector like every other page, and the only page allowed to carry colour. |
+| Page border | An optional K-only doodle border on every worksheet, in the motif the chosen cover uses. Outlines, so the child can colour them too. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
@@ -122,6 +123,21 @@ instead would mean RGB colour in a CMYK file, someone else's licence in the
 repo, and a raster or a foreign coordinate space in a pipeline that has
 neither. Generated, a doodle is print colour from the first line, scales to
 any paper, is identical in the preview and the print, and costs no bytes.
+
+**The inside is the child's to colour, not the printer's.** Worksheets carry
+a doodle border in the motif the chosen cover uses — balloons, stars, a
+rainbow in the corner, a road along the foot — so a sheet pulled from the
+middle of the pack still belongs to its cover. It is drawn as K-only
+outlines in a band the work area keeps clear, which is a deliberate choice
+and not a limitation: crayon is translucent, so a printed tint swallows a
+child's own colour instead of adding to it, and it costs contrast exactly
+where a four-year-old is trying to follow a dotted line. Fisher, Godwin and
+Seltman (2014) found kindergarteners in heavily decorated rooms more often
+off-task and learning less than in sparse ones — decoration belongs where
+the child is not working. An outline the child can fill in is play; a
+printed background is ink they cannot draw on. *Minimalis* declines the
+border, because a style whose whole argument is restraint has to be able to
+say so on every page.
 
 **Colour, where it pays for itself.** Seven palettes — Krayon, Pop, Permen,
 Rimba, Pastel, Senja and Hitam Putih — colour the cover page and the listing

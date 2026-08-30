@@ -125,6 +125,22 @@ const cases = [
   // The loud compositions have to survive every palette, including the one
   // with no colour to give them: a cover that only works in "Krayon" is a
   // cover half the shop cannot use.
+  // The doodle border on a worksheet, in each motif a cover style asks for:
+  // the page a buyer actually spends their time on has to survive it.
+  ...['bubble', 'rainbow', 'banner', 'sticker', 'classic', 'minimal'].map((coverStyle) => ({
+    name: `decor-${coverStyle}`,
+    patch: {
+      layout: 'worksheet',
+      style: 'combo',
+      font: 'rounded',
+      paper: 'a4',
+      coverStyle,
+      pageDecor: true,
+      showTitle: true,
+      pageNumbers: true,
+      brand: 'Studio Cerdas',
+    },
+  })),
   ...['crayon', 'pop', 'permen', 'rimba', 'pastel', 'sunset', 'mono'].map((palette) => ({
     name: `palette-${palette}`,
     patch: {

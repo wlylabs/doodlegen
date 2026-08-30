@@ -409,6 +409,18 @@ export function SettingsPanel({
           </Note>
         </Field>
         <Toggle
+          label="Hiasan halaman isi"
+          hint="Bingkai doodle mengikuti model sampul, di pinggir halaman latihan."
+          checked={config.pageDecor}
+          onChange={(pageDecor) => update({ pageDecor })}
+        />
+        <Note>
+          Digambar sebagai garis hitam K100, bukan latar berwarna — supaya anak bisa ikut
+          mewarnainya, dan supaya krayon mereka tetap terlihat. Latar berwarna justru menelan
+          warna anak, menurunkan kontras garis tracing, dan menambah biaya cetak. Model
+          Minimalis tidak memakai hiasan ini.
+        </Note>
+        <Toggle
           label="Halaman lisensi"
           hint="Ketentuan pemakaian dua bahasa di halaman terakhir."
           checked={config.termsPage}
