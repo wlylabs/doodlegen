@@ -718,12 +718,15 @@ export async function renderListingImages({
   const brand = brandName(config) || 'DoodleGen';
   const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
   const pages = characters.length;
+  // A seller who wrote their own line on the cover gets it here too, so the
+  // shop front and the file open with the same sentence.
+  const tagline = config.coverTagline.trim();
 
   const scenes: Record<LanguageId, Scene> = {
     en: {
       title: title.en,
       brand,
-      subtitle: `${pages} print-ready pages — ${papers}`,
+      subtitle: tagline || `${pages} print-ready pages — ${papers}`,
       pills: [`${pages} pages`, papers, 'PDF 300 DPI'],
       bullets: [
         'Vector 300 DPI - clean lines, no watermark',
@@ -739,7 +742,7 @@ export async function renderListingImages({
     id: {
       title: title.id,
       brand,
-      subtitle: `${pages} halaman siap cetak — ${papers}`,
+      subtitle: tagline || `${pages} halaman siap cetak — ${papers}`,
       pills: [`${pages} halaman`, papers, 'PDF 300 DPI'],
       bullets: [
         'Vector 300 DPI - garis bersih, tanpa watermark',

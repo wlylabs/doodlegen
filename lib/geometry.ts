@@ -12,6 +12,7 @@ import {
   starPath,
   tapePath,
 } from './doodles';
+import { resolveCoverInk, type CoverElement } from './coverDoc';
 import { PALETTES, readableInks, type Palette } from './palette';
 import {
   FADED_INK,
@@ -504,30 +505,11 @@ interface MatterInput {
 }
 
 /**
- * Everything a buyer reads is written twice: a pack sold on Etsy or Gumroad
- * with an Indonesian licence page reads as unfinished, and so does a Shopee
- * pack with an English one. The seller picks; the marketplace canvases pick
- * for themselves.
+ * A cover carries the seller's own words and nothing else. Page counts, DPI
+ * and reprint rights are listing copy — a buyer reads them on the shop page
+ * before they pay, and printing them on the title page of the file they just
+ * bought reads as a spec sheet stapled to the front of a book.
  */
-const COVER_COPY: Record<
-  LanguageId,
-  { subtitle: (pages: number, papers: string) => string; specs: string[] }
-> = {
-  en: {
-    subtitle: (pages, papers) => `${pages} print-ready pages — ${papers}`,
-    specs: [
-      'Vector 300 DPI — 0.5 inch safe margin — single-plate black ink',
-      'Print as many copies as you need for personal and classroom use',
-    ],
-  },
-  id: {
-    subtitle: (pages, papers) => `${pages} halaman siap cetak — ${papers}`,
-    specs: [
-      'Vector 300 DPI — margin aman 0.5 inci — tinta hitam K100',
-      'Cetak ulang sebanyak yang dibutuhkan untuk pemakaian pribadi dan kelas',
-    ],
-  },
-};
 
 interface TermsCopy {
   title: string;
@@ -640,11 +622,13 @@ function coverDecoration(
   inner: Box,
   palette: Palette,
   confetti: boolean,
-  base: Cmyk,
+  base: Cmyk | null,
 ): ShapeDraw[] {
-  const shapes: ShapeDraw[] = [
-    { kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: base },
-  ];
+  // A custom cover may ask for the dots on bare paper — no card under them —
+  // so the ground is one shape this may or may not draw.
+  const shapes: ShapeDraw[] = base
+    ? [{ kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: base }]
+    : [];
   if (!confetti || !palette.confetti.length) return shapes;
 
   const band = inner.y - art.y;
@@ -674,7 +658,6 @@ function coverDecoration(
 
 /** Type sizes the cover compositions share, so they read as one family. */
 const COVER_BRAND_SIZE = 10;
-const COVER_SPEC_SIZE = 10;
 const COVER_SUBTITLE_SIZE = 12;
 const COVER_SAMPLE_RATIO: Ratio = { w: 0.82, h: 0.82 };
 
@@ -735,8 +718,10 @@ interface CoverScene {
   inner: Box;
   title: string;
   brand: string;
+  /** The seller's own line under the title, or empty for none. */
   subtitle: string;
-  specs: string[];
+  /** The characters the cover may show, so a custom layout can pick its own. */
+  characters: string[];
   samples: string[];
   texts: TextDraw[];
   rules: RuleDraw[];
@@ -779,30 +764,14 @@ function coverTitle(
   return { lines, size };
 }
 
-/** The height a title-plus-subtitle block will claim once drawn. */
-function coverCopyHeight(lines: string[], size: number, hasSubtitle: boolean): number {
-  return lines.length * size * 1.28 + (hasSubtitle ? COVER_SUBTITLE_SIZE * 2.2 : 0);
-}
-
-/** The specs at the foot of every cover, above their hairline. */
-function coverSpecs(scene: CoverScene, align: 'center' | 'left'): void {
-  const { font, inner } = scene;
-  let bottom = inner.y + COVER_SPEC_SIZE * 0.4;
-  for (let index = scene.specs.length - 1; index >= 0; index -= 1) {
-    const line = scene.specs[index];
-    scene.texts.push(
-      align === 'center'
-        ? { ...centred(font, line, COVER_SPEC_SIZE, inner, bottom, 0.45), color: scene.bodyInk }
-        : leftText(line, COVER_SPEC_SIZE, inner.x, bottom, 0.45, scene.bodyInk),
-    );
-    bottom += COVER_SPEC_SIZE * 1.9;
-  }
-  scene.rules.push(coverRule(scene, bottom - COVER_SPEC_SIZE * 0.6));
-}
-
-/** How tall the spec block at the foot of a cover is, hairline included. */
-function coverSpecHeight(scene: CoverScene): number {
-  return scene.specs.length * COVER_SPEC_SIZE * 1.9 + COVER_SPEC_SIZE * 2;
+/**
+ * The quiet band every composition leaves at the foot. It used to be a block
+ * of print specs; with those gone it is kept as white space rather than
+ * reclaimed, because a cover whose art runs to the bottom rule reads as a
+ * poster that was cropped.
+ */
+function coverFootHeight(scene: CoverScene): number {
+  return scene.inner.h * 0.05;
 }
 
 /**
@@ -841,7 +810,7 @@ function classicCover(scene: CoverScene): void {
   }
 
   const stripTop = cursor - inner.h * 0.04;
-  const stripBottom = inner.y + coverSpecHeight(scene) + inner.h * 0.04;
+  const stripBottom = inner.y + coverFootHeight(scene) + inner.h * 0.04;
   const free = stripTop - stripBottom;
   // The samples sit in the middle of whatever the copy left, capped so three
   // letters never grow into a second cover of their own.
@@ -859,7 +828,6 @@ function classicCover(scene: CoverScene): void {
     );
   }
 
-  coverSpecs(scene, 'center');
 }
 
 /**
@@ -883,7 +851,7 @@ function posterCover(scene: CoverScene): void {
   // The copy is laid from the foot upward, so whatever is left over between
   // it and the brand line is the character's — however long the title runs.
   const title = coverTitle(font, scene.title, 34, inner.w * 0.94);
-  let y = inner.y + coverSpecHeight(scene) + inner.h * 0.02;
+  let y = inner.y + coverFootHeight(scene) + inner.h * 0.02;
 
   if (scene.subtitle) {
     scene.texts.push({
@@ -911,7 +879,6 @@ function posterCover(scene: CoverScene): void {
     );
   }
 
-  coverSpecs(scene, 'center');
 }
 
 /**
@@ -930,7 +897,7 @@ function showcaseCover(scene: CoverScene): void {
   }
 
   const title = coverTitle(font, scene.title, 28, inner.w * 0.9);
-  let y = inner.y + coverSpecHeight(scene) + inner.h * 0.02;
+  let y = inner.y + coverFootHeight(scene) + inner.h * 0.02;
 
   if (scene.subtitle) {
     scene.texts.push(
@@ -959,7 +926,6 @@ function showcaseCover(scene: CoverScene): void {
     );
   }
 
-  coverSpecs(scene, 'left');
 }
 
 /**
@@ -1019,7 +985,6 @@ function minimalCover(scene: CoverScene): void {
   cursor -= gap;
   scene.rules.push(hairline(cursor));
 
-  coverSpecs(scene, 'center');
 }
 
 
@@ -1204,7 +1169,7 @@ function centredTitle(
 function freeBand(scene: CoverScene, topGap: number, bottomExtra = 0): Box {
   const { inner } = scene;
   const top = inner.y + inner.h - topGap;
-  const bottom = inner.y + coverSpecHeight(scene) + bottomExtra;
+  const bottom = inner.y + coverFootHeight(scene) + bottomExtra;
   return { x: inner.x, y: bottom, w: inner.w, h: Math.max(0, top - bottom) };
 }
 
@@ -1301,7 +1266,6 @@ function bubbleCover(scene: CoverScene): void {
     h: Math.max(0, subtitleY - COVER_SUBTITLE_SIZE - band.y),
   });
 
-  coverSpecs(scene, 'center');
 }
 
 /**
@@ -1347,7 +1311,6 @@ function burstCover(scene: CoverScene): void {
     h: Math.max(0, subtitleY - COVER_SUBTITLE_SIZE * 1.4 - band.y),
   });
 
-  coverSpecs(scene, 'center');
 }
 
 /**
@@ -1375,7 +1338,7 @@ function bannerCover(scene: CoverScene): void {
   }
 
   const bandTop = cursor - inner.h * 0.02;
-  const bandBottom = inner.y + coverSpecHeight(scene) + inner.h * 0.02;
+  const bandBottom = inner.y + coverFootHeight(scene) + inner.h * 0.02;
   const free = Math.max(60, bandTop - bandBottom);
   // The road keeps to the lower four fifths of the band and the samples ride
   // the crest into the fifth above it, so a letter on the highest bend still
@@ -1425,7 +1388,6 @@ function bannerCover(scene: CoverScene): void {
   mark(scene, 'star', { x: inner.x + inner.w * 0.08, y: road.y + bandH * 0.22 }, unit, 0);
   mark(scene, 'sparkle', { x: inner.x + inner.w * 0.93, y: road.y + bandH * 0.78 }, unit, 2);
 
-  coverSpecs(scene, 'center');
 }
 
 /**
@@ -1524,7 +1486,6 @@ function frameCover(scene: CoverScene): void {
   groundSubtitle(scene, lastBaseline - COVER_SUBTITLE_SIZE * 1.8);
 
   sampleStrip(scene, stripBox);
-  coverSpecs(scene, 'center');
 }
 
 /**
@@ -1583,7 +1544,6 @@ function stickerCover(scene: CoverScene): void {
     );
   }
 
-  coverSpecs(scene, 'center');
 }
 
 /**
@@ -1661,7 +1621,191 @@ function rainbowCover(scene: CoverScene): void {
     h: Math.max(0, subtitleY - COVER_SUBTITLE_SIZE * 1.4 - band.y),
   });
 
-  coverSpecs(scene, 'center');
+}
+
+/**
+ * Custom: the cover the seller laid out themselves in the studio.
+ *
+ * Every other composition here decides where things go; this one is told.
+ * The document stores boxes as fractions of the safe area with the origin at
+ * the top-left — the way the editor on screen counts — so the only work is
+ * flipping y and multiplying up into points. Nothing is scaled to fit
+ * afterwards: what was dragged is what prints.
+ */
+function customCover(scene: CoverScene): void {
+  const doc = scene.config.coverCustom;
+  if (!doc) return;
+  doc.elements.forEach((element, index) => {
+    const box = customBox(scene.inner, element);
+    if (element.kind === 'shape') customShape(scene, element, box);
+    else if (element.kind === 'sample') customSample(scene, element, box, index);
+    else customText(scene, element, box);
+  });
+}
+
+/** One stored element's box, from fractions of the safe area into points. */
+function customBox(inner: Box, element: CoverElement): Box {
+  return {
+    x: inner.x + element.x * inner.w,
+    // The document counts down from the top; a page counts up from the foot.
+    y: inner.y + (1 - element.y - element.h) * inner.h,
+    w: element.w * inner.w,
+    h: element.h * inner.h,
+  };
+}
+
+/** The doodle library, each shape drawn to fill the box it was given. */
+function customShape(scene: CoverScene, element: CoverElement, box: Box): void {
+  const { palette } = scene;
+  const fill = resolveCoverInk(palette, element.color, palette.headline);
+  // An outline is what makes a pale panel survive a photocopier, and what
+  // makes any of these read as a sticker rather than as a colour field.
+  const stroke = element.outline ? { color: palette.headline, width: 1.2 } : undefined;
+  const centre = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+  const rx = box.w / 2;
+  const ry = box.h / 2;
+  const radius = Math.min(rx, ry);
+
+  switch (element.shape) {
+    case 'ellipse':
+      scene.shapes.push({ kind: 'ellipse', ...box, color: fill, stroke });
+      return;
+    case 'blob':
+      scene.shapes.push(
+        pathShape(blobPath(centre, rx, ry, { lobes: 8, wobble: 0.2, seed: 19 }), fill, stroke),
+      );
+      return;
+    case 'cloud':
+      scene.shapes.push(pathShape(cloudPath(box), fill, stroke));
+      return;
+    case 'star':
+      scene.shapes.push(pathShape(starPath(centre, radius), fill, stroke));
+      return;
+    case 'sparkle':
+      scene.shapes.push(pathShape(sparklePath(centre, radius), fill, stroke));
+      return;
+    case 'burst':
+      scene.shapes.push(
+        pathShape(burstPath(centre, Math.max(rx, ry), Math.min(rx, ry) * 0.62, 16), fill, stroke),
+      );
+      return;
+    case 'arch':
+      // A rainbow stands on the foot of its box, so the half-annulus is drawn
+      // from the bottom edge rather than from the centre.
+      scene.shapes.push(
+        pathShape(
+          archPath({ x: centre.x, y: box.y }, Math.min(rx, box.h), Math.min(rx, box.h) * 0.45),
+          fill,
+          stroke,
+        ),
+      );
+      return;
+    case 'ribbon':
+      scene.shapes.push(pathShape(ribbonPath(box), fill, stroke));
+      return;
+    case 'tape':
+      scene.shapes.push(pathShape(tapePath(box), fill, stroke));
+      return;
+    default:
+      scene.shapes.push({
+        kind: 'rect',
+        ...box,
+        r: Math.min(box.w, box.h) * 0.09,
+        color: fill,
+        stroke,
+      });
+  }
+}
+
+/** A character from the set, drawn exactly as the worksheets draw it. */
+function customSample(scene: CoverScene, element: CoverElement, box: Box, index: number): void {
+  const { font, palette, characters } = scene;
+  if (!characters.length) return;
+  const text = characters[(element.sample ?? 0) % characters.length];
+  if (!text) return;
+  const strokeBase = STROKES[scene.config.stroke].base;
+  const size = fitWithStroke(
+    font,
+    text,
+    box,
+    COVER_SAMPLE_RATIO,
+    strokeBase,
+    'fill',
+    bandFor(font, [text]),
+  );
+  const place = placeFill(font, text, box, size, element.trace ? 'dotted' : 'solid', strokeBase);
+  // A traced letter is the empty one a child is about to fill in, so it is
+  // never poured full of colour — that is the whole point of the pair.
+  if (element.trace) {
+    scene.placements.push(place);
+    return;
+  }
+  const ramp = palette.letters;
+  const fill = element.color
+    ? resolveCoverInk(palette, element.color, palette.headline)
+    : ramp.length
+      ? ramp[index % ramp.length]
+      : undefined;
+  scene.placements.push(fill ? { ...place, fill } : place);
+}
+
+/** Words — the title, the brand, the tagline, or the seller's own line. */
+function customText(scene: CoverScene, element: CoverElement, box: Box): void {
+  const { font } = scene;
+  const source = element.source ?? 'custom';
+  const raw =
+    source === 'title'
+      ? scene.title
+      : source === 'brand'
+        ? scene.brand
+        : source === 'tagline'
+          ? scene.subtitle
+          : element.text ?? '';
+  const line = safeLine(font, raw.trim());
+  // An empty brand or tagline leaves a hole in the page rather than an empty
+  // box: nothing is drawn, and the elements around it do not move.
+  if (!line) return;
+
+  // Type is fitted to the box it was dragged out, so resizing an element is
+  // how the seller sets its size — there is no separate size to keep in sync.
+  const block = coverTitleIn(font, line, box, box.h, 6);
+  const rainbow = element.rainbow === true;
+  const colour = element.color
+    ? resolveCoverInk(scene.palette, element.color, scene.palette.headline)
+    : scene.palette.headline;
+  const backdrop = customBackdrop(scene);
+  const ramp = rainbow ? readableInks(scene.palette.letters, backdrop) : [];
+  const step = block.size * 1.28;
+  const height = block.lines.length * step;
+  let cursor = box.y + (box.h + height) / 2 - block.size;
+
+  for (const text of block.lines) {
+    const width = rainbow
+      ? rainbowWidth(font, text, block.size)
+      : textWidth(font, text, block.size);
+    const align = element.align ?? 'center';
+    const left =
+      align === 'left'
+        ? box.x
+        : align === 'right'
+          ? box.x + box.w - width
+          : box.x + (box.w - width) / 2;
+    if (rainbow && ramp.length) {
+      scene.texts.push(...rainbowLine(scene, text, block.size, left, cursor, backdrop));
+    } else {
+      scene.texts.push({ text, size: block.size, x: left, y: cursor, ink: 1, color: colour });
+    }
+    cursor -= step;
+  }
+}
+
+/** What a custom cover's type is sitting on, so a rainbow stays readable. */
+function customBackdrop(scene: CoverScene): Cmyk {
+  const doc = scene.config.coverCustom;
+  const palette = scene.palette;
+  if (doc?.ground === 'ground' && palette.ground) return palette.ground;
+  if (doc?.ground === 'card' && palette.card) return palette.card;
+  return [0, 0, 0, 0];
 }
 
 const COVER_COMPOSERS: Record<CoverStyle['page'], (scene: CoverScene) => void> = {
@@ -1675,13 +1819,15 @@ const COVER_COMPOSERS: Record<CoverStyle['page'], (scene: CoverScene) => void> =
   frame: frameCover,
   sticker: stickerCover,
   rainbow: rainbowCover,
+  custom: customCover,
 };
 
 /**
- * The title page a paid download is expected to open with: who made it, what
- * is inside, and what it prints as. Which of those the page leads with is the
- * seller's call — `coverStyle` picks the composition. Built from the same
- * glyph outlines as the worksheets either way, so the cover is vector too.
+ * The title page a paid download is expected to open with: what the pack is
+ * called, who made it, and a taste of what is inside. `coverStyle` picks the
+ * composition — one of the ten stock ones, or the seller's own from the
+ * studio. Built from the same glyph outlines as the worksheets either way,
+ * so the cover is vector too.
  */
 function planCover({
   font,
@@ -1690,7 +1836,6 @@ function planCover({
   characters,
   title,
   brand,
-  worksheetCount,
 }: MatterInput): PagePlan {
   const style = COVER_STYLES[config.coverStyle] ?? COVER_STYLES.classic;
   const margin = Math.max(config.marginIn, MIN_MARGIN_IN) * PT_PER_INCH;
@@ -1701,15 +1846,32 @@ function planCover({
     h: paper.heightPt - margin * 2,
   };
   const palette = PALETTES[config.palette];
+  // A custom cover answers all three of these for itself: the seller chose
+  // the ground and the dots in the studio, so the style's own defaults —
+  // which are only there for the listing images — stay out of it.
+  const custom = style.page === 'custom' ? config.coverCustom : null;
   // A style may turn the palette's card down; the type still takes its
   // colours, so "Minimalis" reads as restraint rather than as monochrome.
-  const carded = style.decoration !== 'none' && Boolean(palette.card);
+  const carded = custom
+    ? custom.ground === 'card' && Boolean(palette.card)
+    : style.decoration !== 'none' && Boolean(palette.card);
   // A grounded style floods the page rather than tinting it. "Hitam Putih"
   // has no ground to give, so its colourful covers come out as line art —
   // the same compositions, one plate of black, which is the honest answer
   // rather than a style the palette silently refuses.
-  const grounded = style.ground && Boolean(palette.ground);
-  const base = grounded ? palette.ground : palette.card;
+  const grounded = custom
+    ? custom.ground === 'ground' && Boolean(palette.ground)
+    : style.ground && Boolean(palette.ground);
+  const base = custom
+    ? grounded
+      ? palette.ground
+      : carded
+        ? palette.card
+        : null
+    : grounded
+      ? palette.ground
+      : palette.card;
+  const confetti = custom ? custom.confetti : style.decoration === 'full';
   // Inside the tinted card, type keeps clear of the rounded corners — and
   // that same band is where the confetti lives.
   const filled = carded || grounded;
@@ -1718,13 +1880,11 @@ function planCover({
   // given the quiet band whether or not the palette paid for a card. Without
   // it those overhangs would land inside the 0.5 inch safe margin.
   const banded = filled || COLOURFUL_STYLES.includes(style.id);
-  const inner = banded ? inset(art, Math.min(art.w, art.h) * 0.06) : art;
-  const shapes = base
-    ? coverDecoration(art, inner, palette, style.decoration === 'full', base)
-    : [];
+  // A custom cover measures its elements against the very box the studio drew
+  // them in, so the two can never drift apart.
+  const inner = custom ? coverElementArea(paper, config) : banded ? coverBand(art) : art;
+  const shapes = base || confetti ? coverDecoration(art, inner, palette, confetti, base) : [];
 
-  const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
-  const copy = COVER_COPY[config.language];
   const scene: CoverScene = {
     font,
     config,
@@ -1733,8 +1893,10 @@ function planCover({
     inner,
     title: safeLine(font, title) || 'Worksheets',
     brand: safeLine(font, (brand || 'DoodleGen').toUpperCase()),
-    subtitle: safeLine(font, copy.subtitle(worksheetCount, papers)),
-    specs: copy.specs.map((line) => safeLine(font, line)).filter(Boolean),
+    // The one line of copy left on a cover is the seller's own. Empty is the
+    // default, and empty prints nothing at all.
+    subtitle: safeLine(font, config.coverTagline.trim()),
+    characters,
     samples: coverSamples(characters, style.samples),
     texts: [],
     rules: [],
@@ -1946,9 +2108,49 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
   ];
 }
 
+/**
+ * The cover page on its own, so the studio can redraw it on every drag from
+ * the very engine that writes the PDF. Nothing about it is a mock-up: what
+ * the editor shows is the page.
+ */
+export function planCoverPage({ font, config, paper, characters }: PlanInput): PagePlan | null {
+  if (!characters.length) return null;
+  return planCover({
+    font,
+    config,
+    paper,
+    characters,
+    title: printedTitle(config, characters),
+    brand: brandName(config),
+    worksheetCount: characters.length,
+  });
+}
+
 /** Pages in one generated file, front and back matter included. */
 export function pageCountOf(config: Config, characters: string[]): number {
   return characters.length + (config.coverPage ? 1 : 0) + (config.termsPage ? 1 : 0);
+}
+
+/**
+ * The quiet band inside the card: where type and art belong, and where the
+ * confetti is scattered around them.
+ */
+function coverBand(art: Box): Box {
+  return inset(art, Math.min(art.w, art.h) * 0.06);
+}
+
+/**
+ * The box a custom cover's elements are measured against. Exported because
+ * the studio has to place its drag handles over exactly this rectangle — the
+ * page and the editor share one answer rather than each computing their own.
+ */
+export function coverElementArea(paper: PaperSpec, config: Config): Box {
+  const art = safeArea(paper, config);
+  const palette = PALETTES[config.palette];
+  const doc = config.coverCustom;
+  const carded = doc.ground === 'card' && Boolean(palette.card);
+  const grounded = doc.ground === 'ground' && Boolean(palette.ground);
+  return carded || grounded || doc.confetti ? coverBand(art) : art;
 }
 
 /** Safe-area rectangle, exposed so the preview can show the margin guard. */

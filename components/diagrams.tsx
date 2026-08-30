@@ -186,6 +186,25 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
           {line('rule-bottom', 9, 31, 14, 1)}
         </>
       ) : null}
+      {kind === 'custom' ? (
+        <>
+          {/* Handles on a loose box: the one mark that says "you move this". */}
+          <rect x="5" y="6" width="14" height="9" rx="1.6" {...stroke} strokeWidth="1.2" strokeDasharray="2.4 2" />
+          {[
+            [5, 6],
+            [19, 6],
+            [5, 15],
+            [19, 15],
+          ].map(([x, y]) => (
+            <rect key={`${x}-${y}`} x={x - 1.3} y={y - 1.3} width="2.6" height="2.6" rx="0.6" {...stroke} strokeWidth="1" />
+          ))}
+          <circle cx="24" cy="11" r="4.2" {...stroke} strokeWidth="1.2" />
+          {line('title', 6, 24, 20, 2.2)}
+          {line('sub', 9, 29, 14, 1)}
+          <rect x="6" y="33" width="8" height="7" rx="1.4" {...stroke} strokeWidth="1.2" />
+          <path d="M19 40 L23 33 L27 40 Z" {...stroke} strokeWidth="1.2" />
+        </>
+      ) : null}
       {kind === 'bubble' ? (
         <>
           {line('brand', 11, 6, 10, 1)}

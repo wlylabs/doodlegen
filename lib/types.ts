@@ -1,3 +1,5 @@
+import type { CoverDoc } from './coverDoc';
+
 export type ContentType = 'letters' | 'numbers' | 'words';
 export type LetterCase = 'upper' | 'lower' | 'both';
 export type StyleId = 'outline' | 'dotted' | 'combo' | 'progressive';
@@ -22,7 +24,8 @@ export type CoverStyleId =
   | 'banner'
   | 'frame'
   | 'sticker'
-  | 'rainbow';
+  | 'rainbow'
+  | 'custom';
 
 /** Ink, as the press mixes it: cyan, magenta, yellow, key, each 0 to 1. */
 export type Cmyk = readonly [number, number, number, number];
@@ -54,6 +57,18 @@ export interface Config {
    * arrange their sheet mockups, so the cover and the shop front match.
    */
   coverStyle: CoverStyleId;
+  /**
+   * The seller's own cover, laid out element by element in the cover studio.
+   * Only drawn when `coverStyle` is `custom`; kept whatever the style is, so
+   * switching away to a stock composition and back does not lose the work.
+   */
+  coverCustom: CoverDoc;
+  /**
+   * One line of the seller's own words under the cover title — a tagline, not
+   * a spec sheet. Empty prints nothing: a cover says what the pack is called
+   * and who made it, and leaves page counts and DPI to the listing.
+   */
+  coverTagline: string;
   /** Licence and usage page at the back, standard for a paid download. */
   termsPage: boolean;
   /** Shop or brand name, printed on the cover, footer and licence page. */
