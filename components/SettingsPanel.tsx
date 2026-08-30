@@ -389,9 +389,13 @@ export function SettingsPanel({
             }))}
           />
           <Note>
-            Model standar buku mengikuti susunan sampul buku terbitan: judul di panel kepala,
-            gambar di satu jendela, nama toko sendirian di kaki halaman di bawah garis — bukan di
-            atas seperti model lain.
+            Model standar buku mengikuti susunan sampul buku terbitan: judul di panel kepala dan
+            gambar di satu jendela di bawahnya.
+          </Note>
+          <Note>
+            Nama toko dicetak sama di semua model: di kaki halaman, di bawah garis tipis, dengan
+            huruf direnggangkan seperti nama penerbit di sampul buku — bukan label kecil yang
+            ditempel di atas gambar.
           </Note>
           <Note>
             Sampul tidak lagi mencetak jumlah halaman, DPI, atau syarat cetak ulang — itu urusan

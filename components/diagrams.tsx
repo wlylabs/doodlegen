@@ -128,34 +128,40 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
   const line = (key: string, x: number, y: number, w: number, weight = 1.2) => (
     <line key={key} x1={x} x2={x + w} y1={y} y2={y} {...stroke} strokeWidth={weight} />
   );
+  // Every composition closes the same way: a hairline across the foot with
+  // the shop's name tracked out under it. The mark shows that, because it is
+  // the one thing all twelve now have in common.
+  const imprint = (ruleX = 5, ruleW = 22, nameX = 10, nameW = 12) => [
+    line('imprint-rule', ruleX, 38, ruleW, 0.9),
+    line('imprint-name', nameX, 41, nameW, 1.4),
+  ];
   return (
     <svg viewBox="0 0 32 44" className="h-9 w-[26px]" aria-hidden="true">
       <rect x="0.7" y="0.7" width="30.6" height="42.6" rx="2.5" {...stroke} strokeWidth="1.2" />
       {kind === 'classic' ? (
         <>
-          {line('brand', 11, 7, 10, 1)}
-          {line('title', 7, 13, 18, 2.2)}
+          {line('title', 7, 10, 18, 2.2)}
+          {line('sub', 10, 15, 12, 1)}
           {[0, 1, 2].map((index) => (
             <rect
               key={index}
               x={5.5 + index * 7.4}
-              y="20"
+              y="21"
               width="5.6"
-              height="9"
+              height="10"
               rx="1.4"
               {...stroke}
               strokeWidth="1.2"
             />
           ))}
-          {line('foot', 8, 36, 16, 1)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'poster' ? (
         <>
-          {line('brand', 11, 6, 10, 1)}
           <rect x="6" y="10" width="20" height="19" rx="3" {...stroke} strokeWidth="1.6" />
           {line('title', 6, 34, 20, 2.4)}
-          {line('foot', 9, 39, 14, 1)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'showcase' ? (
@@ -175,7 +181,7 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
             )),
           )}
           {line('title', 6, 34, 17, 2.2)}
-          {line('foot', 6, 39, 11, 1)}
+          {imprint(4, 24, 4, 11)}
         </>
       ) : null}
       {kind === 'minimal' ? (
@@ -184,6 +190,7 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
           {line('title', 7, 21, 18, 2.2)}
           {line('sub', 10, 26, 12, 1)}
           {line('rule-bottom', 9, 31, 14, 1)}
+          {imprint(9, 14, 11, 10)}
         </>
       ) : null}
       {kind === 'book' ? (
@@ -195,8 +202,7 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
           <rect x="3" y="18" width="26" height="16" rx="1.8" {...stroke} strokeWidth="1.2" />
           <rect x="6.5" y="21" width="8" height="10" rx="1.4" {...stroke} strokeWidth="1.2" />
           <rect x="17.5" y="21" width="8" height="10" rx="1.4" {...stroke} strokeDasharray="1.6 1.6" strokeWidth="1.2" />
-          {line('rule', 5, 38, 22, 0.9)}
-          {line('imprint', 10, 41, 12, 1.4)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'workbook' ? (
@@ -221,12 +227,11 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
               />
             )),
           )}
-          {line('imprint', 11, 38.5, 10, 1.3)}
+          {imprint(6, 20, 11, 10)}
         </>
       ) : null}
       {kind === 'bubble' ? (
         <>
-          {line('brand', 11, 6, 10, 1)}
           <ellipse cx="16" cy="17" rx="12.5" ry="7.5" {...stroke} strokeWidth="1.4" />
           {line('title', 9, 17, 14, 2.2)}
           {[0, 1, 2].map((index) => (
@@ -241,12 +246,11 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
               strokeWidth="1.2"
             />
           ))}
-          {line('foot', 8, 40, 16, 1)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'burst' ? (
         <>
-          {line('brand', 11, 6, 10, 1)}
           <path
             d="M16 8 L18.6 11 L22.4 9.9 L22 13.8 L25.6 15.4 L22.6 17.9 L24.6 21.3 L20.7 21.6 L19.9 25.4 L16 23.6 L12.1 25.4 L11.3 21.6 L7.4 21.3 L9.4 17.9 L6.4 15.4 L10 13.8 L9.6 9.9 L13.4 11 Z"
             {...stroke}
@@ -265,12 +269,11 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
               strokeWidth="1.1"
             />
           ))}
-          {line('foot', 8, 40, 16, 1)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'banner' ? (
         <>
-          {line('brand', 11, 6, 10, 1)}
           {line('title', 7, 12, 18, 2.2)}
           <path
             d="M1 27 C 7 18, 12 32, 16 26 C 20 20, 25 30, 31 23"
@@ -278,7 +281,7 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
             strokeWidth="4"
             strokeLinecap="round"
           />
-          {line('foot', 8, 40, 16, 1)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'frame' ? (
@@ -290,7 +293,7 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
           )}
           <rect x="4" y="15" width="24" height="8" rx="3" {...stroke} fill="#fff" strokeWidth="1.3" />
           {line('title', 8, 19, 16, 2)}
-          {line('foot', 8, 40, 16, 1)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'sticker' ? (
@@ -310,7 +313,7 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
               />
             )),
           )}
-          {line('foot', 8, 40, 16, 1)}
+          {imprint()}
         </>
       ) : null}
       {kind === 'rainbow' ? (
@@ -330,7 +333,7 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
               strokeWidth="1.2"
             />
           ))}
-          {line('foot', 8, 40, 16, 1)}
+          {imprint()}
         </>
       ) : null}
     </svg>

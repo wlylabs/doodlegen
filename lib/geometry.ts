@@ -656,7 +656,6 @@ function coverDecoration(
 }
 
 /** Type sizes the cover compositions share, so they read as one family. */
-const COVER_BRAND_SIZE = 10;
 const COVER_SUBTITLE_SIZE = 12;
 const COVER_SAMPLE_RATIO: Ratio = { w: 0.82, h: 0.82 };
 
@@ -733,11 +732,13 @@ interface CoverScene {
   bodyInk: Cmyk;
   brandInk: Cmyk;
   ruleInk: Cmyk;
-}
-
-function coverRule(scene: CoverScene, y: number): RuleDraw {
-  const { inner } = scene;
-  return { x1: inner.x, x2: inner.x + inner.w, y, width: 0.6, ink: 0.22, color: scene.ruleInk };
+  /**
+   * The y a composition has to stop at: the top of the imprint's rule, or
+   * the quiet band at the foot where a cover carries no shop name. Booked
+   * before the composition runs, so every style measures its floor off the
+   * same mark instead of each one guessing at a foot of its own.
+   */
+  floor: number;
 }
 
 /** The horizontal centre of the block a composition is laying type into. */
@@ -762,34 +763,13 @@ function coverTitle(
 }
 
 /**
- * The quiet band every composition leaves at the foot. It used to be a block
- * of print specs; with those gone it is kept as white space rather than
- * reclaimed, because a cover whose art runs to the bottom rule reads as a
- * poster that was cropped.
- */
-function coverFootHeight(scene: CoverScene): number {
-  return scene.inner.h * 0.05;
-}
-
-/**
- * Klasik: brand line, centred title, a strip of three samples, specs. The
- * shape a printable pack has been sold in since long before this tool.
+ * Klasik: a centred title at the head, a strip of three samples under it,
+ * the imprint at the foot. The shape a printable pack has been sold in
+ * since long before this tool.
  */
 function classicCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  let cursor = inner.y + inner.h;
-
-  if (scene.brand) {
-    cursor -= COVER_BRAND_SIZE;
-    scene.texts.push({
-      ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
-      color: scene.brandInk,
-    });
-    cursor -= COVER_BRAND_SIZE * 0.9;
-    scene.rules.push(coverRule(scene, cursor));
-  }
-
-  cursor -= inner.h * 0.06;
+  let cursor = inner.y + inner.h - inner.h * 0.04;
 
   const title = coverTitle(font, scene.title, 30, inner.w * 0.94);
   for (const line of title.lines) {
@@ -807,7 +787,7 @@ function classicCover(scene: CoverScene): void {
   }
 
   const stripTop = cursor - inner.h * 0.04;
-  const stripBottom = inner.y + coverFootHeight(scene) + inner.h * 0.04;
+  const stripBottom = scene.floor + inner.h * 0.04;
   const free = stripTop - stripBottom;
   // The samples sit in the middle of whatever the copy left, capped so three
   // letters never grow into a second cover of their own.
@@ -834,21 +814,12 @@ function classicCover(scene: CoverScene): void {
  */
 function posterCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  let cursor = inner.y + inner.h;
+  const cursor = inner.y + inner.h - inner.h * 0.02;
 
-  if (scene.brand) {
-    cursor -= COVER_BRAND_SIZE;
-    scene.texts.push({
-      ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
-      color: scene.brandInk,
-    });
-    cursor -= COVER_BRAND_SIZE * 1.4;
-  }
-
-  // The copy is laid from the foot upward, so whatever is left over between
-  // it and the brand line is the character's — however long the title runs.
+  // The copy is laid from the foot upward, so whatever is left over above it
+  // is the character's — however long the title runs.
   const title = coverTitle(font, scene.title, 34, inner.w * 0.94);
-  let y = inner.y + coverFootHeight(scene) + inner.h * 0.02;
+  let y = scene.floor + inner.h * 0.02;
 
   if (scene.subtitle) {
     scene.texts.push({
@@ -884,17 +855,10 @@ function posterCover(scene: CoverScene): void {
  */
 function showcaseCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  let cursor = inner.y + inner.h;
-
-  if (scene.brand) {
-    cursor -= COVER_BRAND_SIZE;
-    scene.texts.push(leftText(scene.brand, COVER_BRAND_SIZE, inner.x, cursor, 0.45, scene.brandInk));
-    cursor -= COVER_BRAND_SIZE * 0.9;
-    scene.rules.push(coverRule(scene, cursor));
-  }
+  const cursor = inner.y + inner.h - inner.h * 0.02;
 
   const title = coverTitle(font, scene.title, 28, inner.w * 0.9);
-  let y = inner.y + coverFootHeight(scene) + inner.h * 0.02;
+  let y = scene.floor + inner.h * 0.02;
 
   if (scene.subtitle) {
     scene.texts.push(
@@ -932,10 +896,10 @@ function showcaseCover(scene: CoverScene): void {
  */
 function minimalCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  const ruleInset = inner.w * 0.26;
+  const measure = minimalMeasure(inner);
   const hairline = (y: number): RuleDraw => ({
-    x1: inner.x + ruleInset,
-    x2: inner.x + inner.w - ruleInset,
+    x1: measure.x,
+    x2: measure.x + measure.w,
     y,
     width: 0.8,
     ink: 0.22,
@@ -946,7 +910,6 @@ function minimalCover(scene: CoverScene): void {
   const gap = inner.h * 0.05;
   const blockH =
     gap * 2 +
-    (scene.brand ? COVER_BRAND_SIZE * 2.8 : 0) +
     title.lines.length * title.size * 1.3 +
     (scene.subtitle ? COVER_SUBTITLE_SIZE * 1.6 : 0);
 
@@ -955,15 +918,6 @@ function minimalCover(scene: CoverScene): void {
   let cursor = inner.y + inner.h * 0.56 + blockH / 2;
   scene.rules.push(hairline(cursor));
   cursor -= gap;
-
-  if (scene.brand) {
-    cursor -= COVER_BRAND_SIZE;
-    scene.texts.push({
-      ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
-      color: scene.brandInk,
-    });
-    cursor -= COVER_BRAND_SIZE * 1.8;
-  }
 
   for (const line of title.lines) {
     cursor -= title.size;
@@ -1162,25 +1116,12 @@ function centredTitle(
   return cursor + step;
 }
 
-/** The band a composition has left once brand, specs and subtitle are booked. */
+/** The band a composition has left once the imprint and subtitle are booked. */
 function freeBand(scene: CoverScene, topGap: number, bottomExtra = 0): Box {
   const { inner } = scene;
   const top = inner.y + inner.h - topGap;
-  const bottom = inner.y + coverFootHeight(scene) + bottomExtra;
+  const bottom = scene.floor + bottomExtra;
   return { x: inner.x, y: bottom, w: inner.w, h: Math.max(0, top - bottom) };
-}
-
-/** The brand line every colourful composition opens with, centred on the ground. */
-function groundBrand(scene: CoverScene): number {
-  const { font, inner } = scene;
-  let cursor = inner.y + inner.h;
-  if (!scene.brand) return cursor;
-  cursor -= COVER_BRAND_SIZE;
-  scene.texts.push({
-    ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
-    color: scene.brandInk,
-  });
-  return cursor - COVER_BRAND_SIZE * 0.8;
 }
 
 /** A subtitle centred on a baseline, in whatever ink survives the ground. */
@@ -1217,8 +1158,7 @@ function sampleStrip(scene: CoverScene, band: Box, ratio?: Ratio): void {
  */
 function bubbleCover(scene: CoverScene): void {
   const { inner } = scene;
-  const top = groundBrand(scene);
-  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.03);
+  const band = freeBand(scene, inner.h * 0.02, inner.h * 0.03);
 
   // The balloon takes the upper half of what is free; the samples and the
   // subtitle share the rest, so nothing is ever laid over anything. It is
@@ -1272,8 +1212,7 @@ function bubbleCover(scene: CoverScene): void {
  */
 function burstCover(scene: CoverScene): void {
   const { inner, palette } = scene;
-  const top = groundBrand(scene);
-  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.03);
+  const band = freeBand(scene, inner.h * 0.02, inner.h * 0.03);
 
   // The rays, not the cloud, are what the rest of the page has to clear:
   // everything below is placed off `reach` so no line of copy ever lands on
@@ -1317,7 +1256,7 @@ function burstCover(scene: CoverScene): void {
  */
 function bannerCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  let cursor = groundBrand(scene);
+  let cursor = inner.y + inner.h - inner.h * 0.02;
 
   const titleBox: Box = {
     x: inner.x,
@@ -1335,7 +1274,7 @@ function bannerCover(scene: CoverScene): void {
   }
 
   const bandTop = cursor - inner.h * 0.02;
-  const bandBottom = inner.y + coverFootHeight(scene) + inner.h * 0.02;
+  const bandBottom = scene.floor + inner.h * 0.02;
   const free = Math.max(60, bandTop - bandBottom);
   // The road keeps to the lower four fifths of the band and the samples ride
   // the crest into the fifth above it, so a letter on the highest bend still
@@ -1394,8 +1333,7 @@ function bannerCover(scene: CoverScene): void {
  */
 function frameCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  const top = groundBrand(scene);
-  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.02);
+  const band = freeBand(scene, inner.h * 0.02, inner.h * 0.02);
 
   // Panel and samples sit in the middle of the band, which leaves the
   // pattern a run of clear page above and below. Give the samples the whole
@@ -1492,8 +1430,7 @@ function frameCover(scene: CoverScene): void {
  */
 function stickerCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  const top = groundBrand(scene);
-  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.03);
+  const band = freeBand(scene, inner.h * 0.02, inner.h * 0.03);
 
   const tapeW = inner.w * 0.86;
   const tapeBox: Box = {
@@ -1550,8 +1487,7 @@ function stickerCover(scene: CoverScene): void {
  */
 function rainbowCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
-  const top = groundBrand(scene);
-  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.02);
+  const band = freeBand(scene, inner.h * 0.02, inner.h * 0.02);
 
   // Five bands where the palette has colours to spend, three drawn as
   // outlines where it has none: a solid black half-annulus is a slab, not a
@@ -1660,17 +1596,56 @@ function trackedLine(
 }
 
 /**
- * The colophon a book closes with: a hairline, and the imprint tracked out
- * under it, centred. Answers the height it claimed, so the composition above
- * knows where its floor is.
+ * The size and tracking an imprint is set at in a block of a given width.
+ *
+ * Both are answers to the shop name, not constants: "Rumah Belajar Anak
+ * Ceria" tracked out at the size "Krayon" takes would run off the page. The
+ * size is given up first and the tracking last, because the tracking is what
+ * makes the line read as an imprint rather than as a caption.
  */
-function bookImprint(scene: CoverScene, box: Box): number {
+function fitImprint(font: LoadedFont, text: string, box: Box): { size: number; track: number } {
+  const limit = box.w * 0.9;
+  const letters = Math.max(1, [...text].length);
+  // Off the block's width rather than a fixed point size, so the mark holds
+  // its proportion on A4, on Letter, and inside a workbook's ruled border.
+  let size = Math.min(13, Math.max(9, box.w * 0.023));
+  while (size > 7 && trackedWidth(font, text, size, IMPRINT_TRACK) > limit) size -= 0.25;
+  if (trackedWidth(font, text, size, IMPRINT_TRACK) <= limit) return { size, track: IMPRINT_TRACK };
+
+  // A name long enough to fill the foot at 7pt gives its tracking back rather
+  // than running off the page; below 5pt nothing is legible either way.
+  while (size > 5 && trackedWidth(font, text, size, 0) > limit) size -= 0.25;
+  const solid = trackedWidth(font, text, size, 0);
+  return { size, track: letters > 1 ? Math.max(0, (limit - solid) / (size * (letters - 1))) : 0 };
+}
+
+/**
+ * The imprint every cover closes with: a hairline across the foot of the
+ * block, and the shop's name tracked out beneath it.
+ *
+ * It is one mark, set one way, on all twelve compositions. A name printed
+ * small at the head of the page has nothing holding it there — it reads as a
+ * label stuck on top of somebody else's artwork, which is exactly what it
+ * looked like. Under a rule at the foot it is doing the job a publisher's
+ * mark has always done, and the head of the page is left to the art, which
+ * is the half of the cover a buyer scrolling a marketplace grid stops on.
+ *
+ * Answers the y the composition above has to stop at.
+ */
+function imprintFloor(scene: CoverScene, box: Box, align: 'centre' | 'left' = 'centre'): number {
   const { font } = scene;
-  if (!scene.brand) return coverFootHeight(scene);
-  const size = COVER_BRAND_SIZE * 1.05;
+  // The quiet band a cover keeps at its foot whether or not it is named. It
+  // used to be a block of print specs; with those gone it is kept as white
+  // space rather than reclaimed, because a cover whose art runs to the bottom
+  // rule reads as a poster that was cropped.
+  const quiet = box.y + box.h * 0.05;
+  if (!scene.brand) return quiet;
+
+  const { size, track } = fitImprint(font, scene.brand, box);
   const baseline = box.y + size * 0.5;
-  const width = trackedWidth(font, scene.brand, size, IMPRINT_TRACK);
-  trackedLine(scene, scene.brand, size, midX(box) - width / 2, baseline, scene.brandInk, IMPRINT_TRACK);
+  const width = trackedWidth(font, scene.brand, size, track);
+  const left = align === 'left' ? box.x : midX(box) - width / 2;
+  trackedLine(scene, scene.brand, size, left, baseline, scene.brandInk, track);
   const rule = baseline + size * 1.6;
   scene.rules.push({
     x1: box.x,
@@ -1680,7 +1655,37 @@ function bookImprint(scene: CoverScene, box: Box): number {
     ink: 0.22,
     color: scene.ruleInk,
   });
-  return rule - box.y;
+  return Math.max(quiet, rule + box.h * 0.025);
+}
+
+/**
+ * The ruled border a workbook sets its type inside. Shared with the imprint,
+ * which has to land within the border rather than across it.
+ */
+function workbookFrame(inner: Box): Box {
+  return inset(inner, Math.min(inner.w, inner.h) * 0.055);
+}
+
+/**
+ * How far in from the page block Minimalis pulls its hairlines. A short rule
+ * is the whole of that composition's structure, and its imprint measures to
+ * the same column so the three rules line up as one system.
+ */
+const MINIMAL_RULE_INSET = 0.26;
+
+function minimalMeasure(inner: Box): Box {
+  const side = inner.w * MINIMAL_RULE_INSET;
+  return { x: inner.x + side, y: inner.y, w: inner.w - side * 2, h: inner.h };
+}
+
+/**
+ * The block a composition hangs its imprint in. Usually the page block, but
+ * not always: a rule is only right where the composition's own marks are.
+ */
+function imprintBox(inner: Box, page: CoverStyle['page']): Box {
+  if (page === 'workbook') return workbookFrame(inner);
+  if (page === 'minimal') return minimalMeasure(inner);
+  return inner;
 }
 
 /** A panel: the light plate a book lays its title and its art on. */
@@ -1707,9 +1712,9 @@ function bookCover(scene: CoverScene): void {
   const { font, inner, palette } = scene;
   const gap = inner.h * 0.028;
 
-  // A book names its publisher at the foot, not at the head, so the colophon
-  // is placed first and everything above is measured off it.
-  const floor = inner.y + bookImprint(scene, inner) + gap;
+  // A book names its publisher at the foot, not at the head. The colophon is
+  // already down; everything above is measured off it.
+  const { floor } = scene;
 
   const hasSubtitle = Boolean(scene.subtitle);
   const mastheadH = inner.h * (hasSubtitle ? 0.25 : 0.21);
@@ -1770,8 +1775,8 @@ function workbookCover(scene: CoverScene): void {
     stroke: { color: palette.headline, width: 1.1 },
   });
 
-  const frame = inset(inner, Math.min(inner.w, inner.h) * 0.055);
-  const floor = frame.y + bookImprint(scene, frame) + gap;
+  const frame = workbookFrame(inner);
+  const { floor } = scene;
 
   const titleH = frame.h * 0.19;
   const titleBox: Box = { x: frame.x, y: frame.y + frame.h - titleH, w: frame.w, h: titleH };
@@ -1899,7 +1904,19 @@ function planCover({
     bodyInk: grounded ? palette.onGround : palette.body,
     brandInk: grounded ? palette.onGround : palette.brand,
     ruleInk: grounded ? palette.onGround : palette.rule,
+    floor: 0,
   };
+
+  // The imprint goes down before the composition, so no composer has to
+  // remember to draw it and every one of them measures its floor off the
+  // same mark. "Etalase" is the one that ranges its type left, and its
+  // imprint ranges with it: a centred mark under a left-aligned cover is
+  // the mismatch this is here to avoid.
+  scene.floor = imprintFloor(
+    scene,
+    imprintBox(inner, style.page),
+    style.page === 'showcase' ? 'left' : 'centre',
+  );
 
   COVER_COMPOSERS[style.page](scene);
 
