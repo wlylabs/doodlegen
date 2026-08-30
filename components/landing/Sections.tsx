@@ -86,15 +86,15 @@ const FEATURES = [
   },
   {
     title: 'Bahasa mengikuti pasarnya',
-    body: 'Satu klik memindahkan sampul, lisensi, dan panduan cetak ke bahasa Inggris untuk Etsy dan Gumroad, atau bahasa Indonesia untuk Shopee. Gambar listing selalu ikut pasarnya sendiri.',
+    body: 'Satu klik memindahkan sampul, lisensi, dan panduan cetak ke bahasa Inggris untuk Etsy, TPT, dan Gumroad, atau bahasa Indonesia untuk Shopee dan Tokopedia. Gambar listing selalu ikut pasarnya sendiri.',
   },
   {
     title: 'Gambar listing siap unggah',
-    body: 'Empat kanvas untuk Etsy, Gumroad, Shopee, dan Pinterest digambar dari halaman aslinya — ukuran dan bahasanya sudah sesuai aturan tiap marketplace.',
+    body: 'Lima kanvas untuk Etsy, TPT, Gumroad, Shopee/Tokopedia, dan Pinterest digambar dari halaman aslinya — ukuran dan bahasanya sudah sesuai aturan tiap marketplace.',
   },
   {
     title: 'Draf judul, deskripsi, dan tag',
-    body: 'Teks listing tiga marketplace langsung terisi dari setelan yang dipakai — dengan batas karakter dan jumlah tag yang sudah dipatuhi.',
+    body: 'Teks listing enam kanal — Etsy, TPT, Gumroad, Shopee, Tokopedia, Pinterest — langsung terisi dari setelan yang dipakai, dengan batas karakter dan jumlah tag yang sudah dipatuhi.',
   },
   {
     title: 'SVG untuk Canva & Cricut',
@@ -193,7 +193,7 @@ const STEPS = [
   },
   {
     title: 'Ambil kit marketplace',
-    body: 'PDF A4 dan US Letter, gambar listing empat ukuran, draf deskripsi tiga marketplace, plus lisensi font — satu ZIP.',
+    body: 'PDF A4 dan US Letter, gambar listing lima ukuran, draf deskripsi enam kanal, plus lisensi font — satu ZIP.',
   },
 ];
 
@@ -376,12 +376,12 @@ const FAQ = [
   {
     question: 'Kalau saya jual ke pembeli luar negeri?',
     answer:
-      'Pilih bahasa berkas "English" di langkah 05. Halaman sampul, halaman ketentuan, kaki halaman, dan panduan cetak untuk pembeli ikut berbahasa Inggris, dan nama folder di dalam ZIP juga. Gambar listing tidak perlu diatur: kanvas Etsy, Gumroad, dan Pinterest selalu berbahasa Inggris, kanvas Shopee selalu berbahasa Indonesia.',
+      'Pilih bahasa berkas "English" di langkah 05. Halaman sampul, halaman ketentuan, kaki halaman, dan panduan cetak untuk pembeli ikut berbahasa Inggris, dan nama folder di dalam ZIP juga. Gambar listing tidak perlu diatur: kanvas Etsy, TPT, Gumroad, dan Pinterest selalu berbahasa Inggris, kanvas Shopee/Tokopedia selalu berbahasa Indonesia.',
   },
   {
     question: 'Bisa pakai nama anak atau kata pesanan pelanggan?',
     answer:
-      'Bisa. Pilih jenis konten "Kata & Nama", lalu tulis satu kata per baris. Cocok untuk pesanan custom di Shopee maupun paket sight words di Etsy.',
+      'Bisa. Pilih jenis konten "Kata & Nama", lalu tulis satu kata per baris. Cocok untuk pesanan custom di Shopee dan Tokopedia maupun paket sight words di Etsy atau TPT.',
   },
 ];
 

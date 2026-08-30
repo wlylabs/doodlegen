@@ -94,7 +94,7 @@ export function Hero() {
             <p className="mt-5 max-w-xl text-[15.5px] leading-relaxed text-ink-soft">
               Susun set alfabet, angka, atau nama sendiri; ambil PDF A4 dan US Letter yang benar-benar
               vektor, lengkap dengan sampul, lembar lisensi, gambar listing, dan draf deskripsi untuk
-              Etsy, Gumroad, dan Shopee.
+              Etsy, TPT, Gumroad, Shopee, Tokopedia, dan Pinterest.
             </p>
           </Reveal>
 

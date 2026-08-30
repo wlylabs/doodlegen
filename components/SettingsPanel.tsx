@@ -304,8 +304,8 @@ export function SettingsPanel({
           <Note>
             Sampul, halaman lisensi, kaki halaman, dan panduan cetak untuk pembeli —{' '}
             {LANGUAGES.find((item) => item.id === config.language)?.note}. Gambar listing selalu
-            mengikuti pasarnya: Etsy, Gumroad, dan Pinterest dalam bahasa Inggris, Shopee dalam
-            bahasa Indonesia.
+            mengikuti pasarnya: Etsy, TPT, Gumroad, dan Pinterest dalam bahasa Inggris,
+            Shopee/Tokopedia dalam bahasa Indonesia.
           </Note>
         </Field>
         <TextField

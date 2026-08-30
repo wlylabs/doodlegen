@@ -300,12 +300,14 @@ export const STARTER_PRESETS: StarterPreset[] = [
 
 /** Marketplaces the export kit is shaped for, with their listing rules. */
 export interface MarketSpec {
-  id: 'etsy' | 'gumroad' | 'shopee';
+  id: 'etsy' | 'tpt' | 'gumroad' | 'shopee' | 'tokopedia' | 'pinterest';
   label: string;
   /** Hard limits the copy generator has to respect. */
   titleMax: number;
   tagMax: number;
   tagCount: number;
+  /** Only where the marketplace actually caps the description field. */
+  bodyMax?: number;
   language: 'en' | 'id';
   note: string;
 }
@@ -321,13 +323,22 @@ export const MARKETS: MarketSpec[] = [
     note: 'Judul 140 karakter, 13 tag maksimal 20 karakter',
   },
   {
+    id: 'tpt',
+    label: 'Teachers Pay Teachers',
+    titleMax: 100,
+    tagMax: 30,
+    tagCount: 8,
+    language: 'en',
+    note: 'Judul 100 karakter, deskripsi ditujukan ke guru, tag jadi kata kunci',
+  },
+  {
     id: 'gumroad',
     label: 'Gumroad',
     titleMax: 100,
     tagMax: 30,
     tagCount: 6,
     language: 'en',
-    note: 'Deskripsi markdown, sampul 16:9',
+    note: 'Deskripsi markdown, sampul 16:9 — dipakai juga di Payhip & Lemon Squeezy',
   },
   {
     id: 'shopee',
@@ -335,8 +346,29 @@ export const MARKETS: MarketSpec[] = [
     titleMax: 120,
     tagMax: 25,
     tagCount: 10,
+    bodyMax: 3000,
     language: 'id',
     note: 'Judul bahasa Indonesia, gambar 1:1',
+  },
+  {
+    id: 'tokopedia',
+    label: 'Tokopedia',
+    titleMax: 70,
+    tagMax: 25,
+    tagCount: 8,
+    bodyMax: 2000,
+    language: 'id',
+    note: 'Nama produk 70 karakter, deskripsi maksimal 2000 karakter',
+  },
+  {
+    id: 'pinterest',
+    label: 'Pinterest',
+    titleMax: 100,
+    tagMax: 24,
+    tagCount: 6,
+    bodyMax: 500,
+    language: 'en',
+    note: 'Bukan lapak, tapi sumber trafik: judul pin 100 karakter, deskripsi 500, pin 2:3',
   },
 ];
 

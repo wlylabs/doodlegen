@@ -12,6 +12,7 @@
     "icons": "node scripts/gen-icons.mjs",
     "samples": "node scripts/sample.mjs",
     "verify": "node scripts/verify-pdfs.mjs",
+    "verify:listing": "node scripts/verify-listing.mjs",
     "fonts": "python3 scripts/build-fonts.py"
   },
   "dependencies": {
