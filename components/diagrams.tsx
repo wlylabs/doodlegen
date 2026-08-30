@@ -428,3 +428,24 @@ export function SparkIcon({ className = 'h-4 w-4' }: { className?: string }) {
     </svg>
   );
 }
+
+/** Install: the app tile itself, dropping onto a home screen. */
+export function InstallIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <rect x="5.5" y="2.5" width="13" height="10.5" rx="2.5" {...stroke} strokeWidth="1.8" />
+      <path d="M12 6.2v4.4m0 0 2-2m-2 2-2-2" {...stroke} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M4 17.5h16M7 21h10" {...stroke} strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+/** The iOS share glyph, because on iPhone that is the button to name. */
+export function IosShareIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path d="M12 3.5v11m0-11L9 6.7M12 3.5l3 3.2" {...stroke} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M7.5 10.5H6.2A1.7 1.7 0 0 0 4.5 12.2v6.6A1.7 1.7 0 0 0 6.2 20.5h11.6a1.7 1.7 0 0 0 1.7-1.7v-6.6a1.7 1.7 0 0 0-1.7-1.7H16.5" {...stroke} strokeWidth="1.8" />
+    </svg>
+  );
+}

@@ -346,6 +346,23 @@
   scroll-snap-stop: always;
 }
 
+/*
+ * Installed, the app owns the whole screen: in landscape a notch eats into
+ * one edge, and at the bottom sits the home indicator. The viewport is set to
+ * `cover` so the ground reaches under both, which means the chrome has to pad
+ * itself back out of them. They go on the frame — a header or a bar that has
+ * no padding of its own — so they add to the inner padding rather than
+ * replacing it, and in a browser tab every inset is zero and nothing moves.
+ */
+.px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

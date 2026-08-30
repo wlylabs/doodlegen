@@ -3,9 +3,13 @@
   "short_name": "DoodleGen",
   "description": "Alat internal untuk menyusun halaman mewarnai dan tracing alfabet serta angka, siap cetak dalam A4 dan US Letter.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/studio/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "launch_handler": { "client_mode": "navigate-existing" },
+  "handle_links": "preferred",
+  "prefer_related_applications": false,
   "orientation": "any",
   "background_color": "#FAFAF9",
   "theme_color": "#FFFFFF",
@@ -15,7 +19,68 @@
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Studio kosong",
+      "short_name": "Studio",
+      "description": "Buka studio dengan setelan terakhir",
+      "url": "/studio/",
+      "icons": [{ "src": "/shortcut-studio.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Alfabet A–Z mewarnai",
+      "short_name": "Alfabet",
+      "description": "26 halaman outline, satu huruf per halaman",
+      "url": "/studio/#p=etsy-alphabet",
+      "icons": [{ "src": "/shortcut-letters.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Lembar kerja tracing",
+      "short_name": "Tracing",
+      "description": "Contoh besar plus baris latihan bergaris",
+      "url": "/studio/#p=tracing-worksheet",
+      "icons": [{ "src": "/shortcut-tracing.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Angka 1–20",
+      "short_name": "Angka",
+      "description": "Angka besar untuk diwarnai dan ditelusuri",
+      "url": "/studio/#p=numbers-1-20",
+      "icons": [{ "src": "/shortcut-numbers.png", "sizes": "96x96", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/studio-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Studio: pilih karakter, gaya garis dan layout, dengan pratinjau halaman"
+    },
+    {
+      "src": "/screenshots/landing-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "PDF vektor A4 dan US Letter, plus kit listing marketplace"
+    },
+    {
+      "src": "/screenshots/studio-narrow.png",
+      "sizes": "412x915",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Studio di layar ponsel"
+    },
+    {
+      "src": "/screenshots/landing-narrow.png",
+      "sizes": "412x915",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Beranda DoodleGen di layar ponsel"
+    }
   ]
 }
