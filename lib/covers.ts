@@ -26,8 +26,7 @@ export interface CoverStyle {
     | 'sticker'
     | 'rainbow'
     | 'book'
-    | 'workbook'
-    | 'custom';
+    | 'workbook';
   /** How many real characters from the set the cover puts on show. */
   samples: number;
   /**
@@ -181,20 +180,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     ground: false,
     rainbowTitle: false,
   },
-  custom: {
-    id: 'custom',
-    label: 'Custom',
-    note: 'Susun sendiri: seret judul, huruf, dan bentuk di kanvas sampul',
-    page: 'custom',
-    // A custom cover places its own samples; these two numbers are what the
-    // listing images fall back on, and they are the arrangement that suits an
-    // unknown layout best — a fan of three sheets, no assumptions.
-    samples: 3,
-    decoration: 'full',
-    sheets: 'fan',
-    ground: true,
-    rainbowTitle: true,
-  },
   rainbow: {
     id: 'rainbow',
     label: 'Pelangi',
@@ -209,7 +194,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
 };
 
 export const COVER_STYLE_ORDER: CoverStyleId[] = [
-  'custom',
   'book',
   'workbook',
   'bubble',

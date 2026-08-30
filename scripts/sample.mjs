@@ -125,39 +125,6 @@ const cases = [
       productTitle: 'Alfabet A-Z Trace and Color',
     },
   })),
-  // Every starting layout the cover studio offers, drawn the same way: a
-  // custom cover is written by the same planner as a stock one, so a broken
-  // element shows up here rather than in a seller's file.
-  ...lib.COVER_TEMPLATES.map((template) => ({
-    name: `cover-custom-${template.id}`,
-    patch: {
-      layout: 'single',
-      style: 'outline',
-      font: 'rounded',
-      paper: 'a4',
-      coverPage: true,
-      coverStyle: 'custom',
-      coverCustom: template.doc,
-      coverTagline: 'Latihan menulis untuk usia 4-6 tahun',
-      brand: 'Studio Cerdas',
-      productTitle: 'Alfabet A-Z Trace and Color',
-    },
-  })),
-  // The state a custom cover actually starts in: a blank page. It has to come
-  // out as a clean sheet rather than as a broken one.
-  {
-    name: 'cover-custom-blank',
-    patch: {
-      layout: 'single',
-      style: 'outline',
-      font: 'rounded',
-      paper: 'a4',
-      coverPage: true,
-      coverStyle: 'custom',
-      brand: 'Studio Cerdas',
-      productTitle: 'Alfabet A-Z Trace and Color',
-    },
-  },
   // The book family has to survive a palette with nothing to give it, a
   // two-character set, and a shop with no name — the three things that empty
   // out a cover built on panels.

@@ -1,4 +1,3 @@
-import { defaultCoverDoc } from './coverDoc';
 import type {
   FontId,
   GridId,
@@ -211,7 +210,6 @@ export const DEFAULT_CONFIG: Config = {
   pageNumbers: false,
   coverPage: false,
   coverStyle: 'classic',
-  coverCustom: defaultCoverDoc(),
   coverTagline: '',
   termsPage: false,
   brand: '',

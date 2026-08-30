@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CoverStudio } from './CoverStudio';
 import { ExportDialog } from './ExportDialog';
 import { GenerateBar, type Progress } from './GenerateBar';
 import { InstallButton } from './InstallPrompt';
@@ -75,7 +74,6 @@ export function App() {
   const [files, setFiles] = useState<GeneratedFile[]>([]);
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [kitOpen, setKitOpen] = useState(false);
-  const [studioOpen, setStudioOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const runId = useRef(0);
   const abort = useRef<AbortController | null>(null);
@@ -337,12 +335,7 @@ export function App() {
               if (preset) update(preset.patch);
             }}
           />
-          <SettingsPanel
-            config={config}
-            font={font}
-            update={update}
-            onOpenCoverStudio={() => setStudioOpen(true)}
-          />
+          <SettingsPanel config={config} font={font} update={update} />
           {issues.length ? (
             <div className="mx-5 mb-6 animate-fade-up rounded-xl border border-accent/30 bg-accent-soft px-3 py-2.5">
               {issues.map((issue) => (
@@ -401,18 +394,6 @@ export function App() {
         onDownloadAll={onDownloadAll}
         onOpenKit={() => setKitOpen(true)}
       />
-
-      {previewPaper ? (
-        <CoverStudio
-          open={studioOpen}
-          config={config}
-          font={font}
-          paper={previewPaper}
-          characters={characters}
-          update={update}
-          onClose={() => setStudioOpen(false)}
-        />
-      ) : null}
 
       <ExportDialog
         open={kitOpen && files.length > 0}
