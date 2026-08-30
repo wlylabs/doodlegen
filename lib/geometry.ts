@@ -1,5 +1,17 @@
 import { renderTitle, subjectOf } from './charset';
-import { COVER_STYLES, coverSamples, type CoverStyle } from './covers';
+import { COLOURFUL_STYLES, COVER_STYLES, coverSamples, type CoverStyle } from './covers';
+import {
+  archPath,
+  blobPath,
+  burstPath,
+  cloudPath,
+  pathShape,
+  ribbonPath,
+  seeded,
+  sparklePath,
+  starPath,
+  tapePath,
+} from './doodles';
 import { PALETTES, type Palette } from './palette';
 import { FADED_INK, FONTS, GRIDS, INKS, MIN_FADED_INK, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
 import { brandName, printedTitle } from './naming';
@@ -13,6 +25,7 @@ import type {
   Mode,
   PagePlan,
   Placement,
+  PathCmd,
   RuleDraw,
   ShapeDraw,
   TextDraw,
@@ -605,14 +618,18 @@ const CONFETTI: { side: 'top' | 'bottom' | 'left' | 'right'; t: number; r: numbe
 ];
 
 /**
- * The cover's tinted card and, unless the style declines them, the dots
- * around its border, in points.
+ * The cover's ground — a tinted card or a flooded colour — and, unless the
+ * style declines them, the dots around its border, in points.
  */
-function coverDecoration(art: Box, inner: Box, palette: Palette, confetti: boolean): ShapeDraw[] {
-  if (!palette.card) return [];
-
+function coverDecoration(
+  art: Box,
+  inner: Box,
+  palette: Palette,
+  confetti: boolean,
+  base: Cmyk,
+): ShapeDraw[] {
   const shapes: ShapeDraw[] = [
-    { kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: palette.card },
+    { kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: base },
   ];
   if (!confetti || !palette.confetti.length) return shapes;
 
@@ -698,6 +715,9 @@ interface CoverScene {
   font: LoadedFont;
   config: Config;
   palette: Palette;
+  /** The card: everything a cover draws has to stay inside this. */
+  art: Box;
+  /** The quiet rectangle inside the card, where type and art belong. */
   inner: Box;
   title: string;
   brand: string;
@@ -707,10 +727,26 @@ interface CoverScene {
   texts: TextDraw[];
   rules: RuleDraw[];
   placements: Placement[];
+  /** Background art: the card or ground first, then whatever the style draws. */
+  shapes: ShapeDraw[];
+  /**
+   * Type and rules resolved against what they will actually sit on. On a
+   * flooded page the palette's quiet greys would disappear, so a grounded
+   * cover swaps them for the one colour chosen to survive the ground.
+   */
+  bodyInk: Cmyk;
+  brandInk: Cmyk;
+  ruleInk: Cmyk;
 }
 
-function coverRule(inner: Box, y: number, palette: Palette): RuleDraw {
-  return { x1: inner.x, x2: inner.x + inner.w, y, width: 0.6, ink: 0.22, color: palette.rule };
+function coverRule(scene: CoverScene, y: number): RuleDraw {
+  const { inner } = scene;
+  return { x1: inner.x, x2: inner.x + inner.w, y, width: 0.6, ink: 0.22, color: scene.ruleInk };
+}
+
+/** The horizontal centre of the block a composition is laying type into. */
+function midX(box: Box): number {
+  return box.x + box.w / 2;
 }
 
 function leftText(text: string, size: number, x: number, y: number, ink: number, color: Cmyk): TextDraw {
@@ -736,18 +772,18 @@ function coverCopyHeight(lines: string[], size: number, hasSubtitle: boolean): n
 
 /** The specs at the foot of every cover, above their hairline. */
 function coverSpecs(scene: CoverScene, align: 'center' | 'left'): void {
-  const { font, inner, palette } = scene;
+  const { font, inner } = scene;
   let bottom = inner.y + COVER_SPEC_SIZE * 0.4;
   for (let index = scene.specs.length - 1; index >= 0; index -= 1) {
     const line = scene.specs[index];
     scene.texts.push(
       align === 'center'
-        ? { ...centred(font, line, COVER_SPEC_SIZE, inner, bottom, 0.45), color: palette.body }
-        : leftText(line, COVER_SPEC_SIZE, inner.x, bottom, 0.45, palette.body),
+        ? { ...centred(font, line, COVER_SPEC_SIZE, inner, bottom, 0.45), color: scene.bodyInk }
+        : leftText(line, COVER_SPEC_SIZE, inner.x, bottom, 0.45, scene.bodyInk),
     );
     bottom += COVER_SPEC_SIZE * 1.9;
   }
-  scene.rules.push(coverRule(inner, bottom - COVER_SPEC_SIZE * 0.6, palette));
+  scene.rules.push(coverRule(scene, bottom - COVER_SPEC_SIZE * 0.6));
 }
 
 /** How tall the spec block at the foot of a cover is, hairline included. */
@@ -767,10 +803,10 @@ function classicCover(scene: CoverScene): void {
     cursor -= COVER_BRAND_SIZE;
     scene.texts.push({
       ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
-      color: palette.brand,
+      color: scene.brandInk,
     });
     cursor -= COVER_BRAND_SIZE * 0.9;
-    scene.rules.push(coverRule(inner, cursor, palette));
+    scene.rules.push(coverRule(scene, cursor));
   }
 
   cursor -= inner.h * 0.06;
@@ -786,7 +822,7 @@ function classicCover(scene: CoverScene): void {
     cursor -= COVER_SUBTITLE_SIZE * 1.4;
     scene.texts.push({
       ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, inner, cursor, 0.5),
-      color: palette.body,
+      color: scene.bodyInk,
     });
   }
 
@@ -825,7 +861,7 @@ function posterCover(scene: CoverScene): void {
     cursor -= COVER_BRAND_SIZE;
     scene.texts.push({
       ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
-      color: palette.brand,
+      color: scene.brandInk,
     });
     cursor -= COVER_BRAND_SIZE * 1.4;
   }
@@ -838,7 +874,7 @@ function posterCover(scene: CoverScene): void {
   if (scene.subtitle) {
     scene.texts.push({
       ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, inner, y, 0.5),
-      color: palette.body,
+      color: scene.bodyInk,
     });
     y += COVER_SUBTITLE_SIZE * 2.2;
   }
@@ -874,9 +910,9 @@ function showcaseCover(scene: CoverScene): void {
 
   if (scene.brand) {
     cursor -= COVER_BRAND_SIZE;
-    scene.texts.push(leftText(scene.brand, COVER_BRAND_SIZE, inner.x, cursor, 0.45, palette.brand));
+    scene.texts.push(leftText(scene.brand, COVER_BRAND_SIZE, inner.x, cursor, 0.45, scene.brandInk));
     cursor -= COVER_BRAND_SIZE * 0.9;
-    scene.rules.push(coverRule(inner, cursor, palette));
+    scene.rules.push(coverRule(scene, cursor));
   }
 
   const title = coverTitle(font, scene.title, 28, inner.w * 0.9);
@@ -884,7 +920,7 @@ function showcaseCover(scene: CoverScene): void {
 
   if (scene.subtitle) {
     scene.texts.push(
-      leftText(scene.subtitle, COVER_SUBTITLE_SIZE, inner.x, y, 0.5, palette.body),
+      leftText(scene.subtitle, COVER_SUBTITLE_SIZE, inner.x, y, 0.5, scene.bodyInk),
     );
     y += COVER_SUBTITLE_SIZE * 2.2;
   }
@@ -926,7 +962,7 @@ function minimalCover(scene: CoverScene): void {
     y,
     width: 0.8,
     ink: 0.22,
-    color: palette.rule,
+    color: scene.ruleInk,
   });
 
   const title = coverTitle(font, scene.title, 32, inner.w * 0.8);
@@ -947,7 +983,7 @@ function minimalCover(scene: CoverScene): void {
     cursor -= COVER_BRAND_SIZE;
     scene.texts.push({
       ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
-      color: palette.brand,
+      color: scene.brandInk,
     });
     cursor -= COVER_BRAND_SIZE * 1.8;
   }
@@ -962,7 +998,7 @@ function minimalCover(scene: CoverScene): void {
     cursor -= COVER_SUBTITLE_SIZE * 1.6;
     scene.texts.push({
       ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, inner, cursor, 0.5),
-      color: palette.body,
+      color: scene.bodyInk,
     });
   }
 
@@ -972,11 +1008,629 @@ function minimalCover(scene: CoverScene): void {
   coverSpecs(scene, 'center');
 }
 
+
+/**
+ * A panel is any shape whose job is to carry type: a speech balloon, a cloud,
+ * a strip of tape, a sticker card. Where the palette has colour, it is a pale
+ * fill the ramp can read against. Where it has none — "Hitam Putih" — it is
+ * drawn as an outline instead, so the composition still reads as itself on a
+ * page that will only ever see one plate of black.
+ */
+function panelPaint(palette: Palette): {
+  fill?: Cmyk;
+  stroke?: { color: Cmyk; width: number };
+} {
+  return palette.card
+    ? { fill: palette.panel }
+    : { stroke: { color: palette.headline, width: 1.2 } };
+}
+
+function panelShape(scene: CoverScene, path: PathCmd[]): void {
+  const paint = panelPaint(scene.palette);
+  scene.shapes.push(pathShape(path, paint.fill, paint.stroke));
+}
+
+/** A sparkle or a star in the next confetti colour; mono keeps its page bare. */
+function mark(
+  scene: CoverScene,
+  kind: 'star' | 'sparkle',
+  centre: { x: number; y: number },
+  radius: number,
+  index: number,
+): void {
+  const colours = scene.palette.confetti;
+  if (!colours.length) return;
+  const path = kind === 'star' ? starPath(centre, radius) : sparklePath(centre, radius);
+  scene.shapes.push(pathShape(path, colours[index % colours.length]));
+}
+
+/**
+ * The width a rainbow title will actually claim. Letters drawn one at a time
+ * cannot kern, so the line comes out a hair wider than the same string set as
+ * a run — and centring has to be told which of the two it is measuring.
+ */
+function rainbowWidth(font: LoadedFont, text: string, size: number): number {
+  return [...text].reduce((total, letter) => total + textWidth(font, letter, size), 0);
+}
+
+/**
+ * A title spelled out one letter at a time, each in the next colour of the
+ * palette's ramp and each nudged a little off the baseline. It gives up
+ * kerning, which is the price of the effect: a hand-lettered cover has never
+ * kerned either, and every coloring book on the shelf is lettered this way.
+ */
+function rainbowLine(
+  scene: CoverScene,
+  text: string,
+  size: number,
+  left: number,
+  baseline: number,
+): TextDraw[] {
+  const ramp = scene.palette.letters;
+  const out: TextDraw[] = [];
+  let cursor = left;
+  [...text].forEach((letter, index) => {
+    if (letter.trim()) {
+      out.push({
+        text: letter,
+        size,
+        x: cursor,
+        // Alternating letters ride a shade high, which is the whole
+        // difference between lettering and typesetting.
+        y: baseline + (index % 2 === 0 ? size * 0.04 : -size * 0.04),
+        ink: 1,
+        color: ramp.length ? ramp[index % ramp.length] : scene.palette.headline,
+      });
+    }
+    cursor += textWidth(scene.font, letter, size);
+  });
+  return out;
+}
+
+/** A title wrapped to a box's width *and* shrunk until it fits its height. */
+function coverTitleIn(font: LoadedFont, title: string, box: Box, start: number, min = 11): {
+  lines: string[];
+  size: number;
+} {
+  let ceiling = start;
+  for (;;) {
+    const block = coverTitle(font, title, ceiling, box.w);
+    if (block.lines.length * block.size * 1.28 <= box.h || block.size <= min) return block;
+    ceiling = Math.min(ceiling, block.size) - 2;
+  }
+}
+
+/** The width of the widest line in a title block, as it will be drawn. */
+function blockWidth(
+  scene: CoverScene,
+  block: { lines: string[]; size: number },
+  rainbow: boolean,
+): number {
+  return block.lines.reduce(
+    (widest, line) =>
+      Math.max(
+        widest,
+        rainbow
+          ? rainbowWidth(scene.font, line, block.size)
+          : textWidth(scene.font, line, block.size),
+      ),
+    0,
+  );
+}
+
+/**
+ * Lays a title into a box, centred both ways, in whichever colour the style
+ * asked for. Answers the baseline of the last line, so a caller can hang a
+ * subtitle off it.
+ */
+function centredTitle(
+  scene: CoverScene,
+  fitted: { lines: string[]; size: number },
+  box: Box,
+  rainbow: boolean,
+): number {
+  const { font } = scene;
+  // A title was wrapped by a measurement that includes kerning, and a rainbow
+  // title is then drawn a letter at a time, which has none — so it comes out
+  // wider than the box it was fitted to. Width scales exactly with size, so
+  // the correction is one multiplication rather than another search.
+  const widest = rainbow ? blockWidth(scene, fitted, true) : 0;
+  const block =
+    widest > box.w ? { lines: fitted.lines, size: fitted.size * (box.w / widest) } : fitted;
+  const step = block.size * 1.28;
+  const height = block.lines.length * step;
+  // Type is centred on its own body, not on the box, so the block sits a
+  // little high — which is where an optical centre has always been.
+  let cursor = box.y + (box.h + height) / 2 - block.size;
+  for (const line of block.lines) {
+    if (rainbow) {
+      const left = midX(box) - rainbowWidth(font, line, block.size) / 2;
+      scene.texts.push(...rainbowLine(scene, line, block.size, left, cursor));
+    } else {
+      scene.texts.push({
+        ...centred(font, line, block.size, box, cursor, 1),
+        color: scene.palette.headline,
+      });
+    }
+    cursor -= step;
+  }
+  return cursor + step;
+}
+
+/** The band a composition has left once brand, specs and subtitle are booked. */
+function freeBand(scene: CoverScene, topGap: number, bottomExtra = 0): Box {
+  const { inner } = scene;
+  const top = inner.y + inner.h - topGap;
+  const bottom = inner.y + coverSpecHeight(scene) + bottomExtra;
+  return { x: inner.x, y: bottom, w: inner.w, h: Math.max(0, top - bottom) };
+}
+
+/** The brand line every colourful composition opens with, centred on the ground. */
+function groundBrand(scene: CoverScene): number {
+  const { font, inner } = scene;
+  let cursor = inner.y + inner.h;
+  if (!scene.brand) return cursor;
+  cursor -= COVER_BRAND_SIZE;
+  scene.texts.push({
+    ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
+    color: scene.brandInk,
+  });
+  return cursor - COVER_BRAND_SIZE * 0.8;
+}
+
+/** A subtitle centred on a baseline, in whatever ink survives the ground. */
+function groundSubtitle(scene: CoverScene, baseline: number): void {
+  if (!scene.subtitle) return;
+  scene.texts.push({
+    ...centred(scene.font, scene.subtitle, COVER_SUBTITLE_SIZE, scene.inner, baseline, 0.5),
+    color: scene.bodyInk,
+  });
+}
+
+/** Samples laid in a strip across a band, coloured in, last one left as dots. */
+function sampleStrip(scene: CoverScene, band: Box, ratio?: Ratio): void {
+  if (!scene.samples.length || band.h < 20) return;
+  const boxes = strip(band, scene.samples.length, 0.04);
+  scene.placements.push(
+    ...coverSampleArt(
+      scene.font,
+      scene.config,
+      scene.palette,
+      boxes,
+      scene.samples,
+      true,
+      ratio,
+    ),
+  );
+}
+
+/**
+ * Balon Kata: the title inside a big speech balloon, the way every coloring
+ * book on a supermarket shelf announces itself. The balloon is the whole
+ * composition — it survives being shrunk to a marketplace thumbnail because
+ * at 200 px there is one bright shape and one word on it.
+ */
+function bubbleCover(scene: CoverScene): void {
+  const { inner } = scene;
+  const top = groundBrand(scene);
+  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.03);
+
+  // The balloon takes the upper half of what is free; the samples and the
+  // subtitle share the rest, so nothing is ever laid over anything. It is
+  // held wider than it is tall on purpose — a balloon that comes out round
+  // reads as a plate, and gives a three-word title nowhere to go.
+  const blobH = Math.min(band.h * 0.5, inner.w * 0.56);
+  const rx = inner.w * 0.48;
+  const ry = blobH / 2;
+  // The wobble pushes a lobe out past the nominal radius, so the balloon is
+  // seated far enough down that its highest lump still clears the brand.
+  const wobble = 0.26;
+  const centre = { x: midX(inner), y: band.y + band.h - ry * (1 + wobble / 2) };
+  panelShape(scene, blobPath(centre, rx, ry, { lobes: 8, wobble, seed: 19 }));
+
+  // A balloon narrows as it curves away from its waist, so the title box is
+  // the rectangle that fits *inside* the ellipse, not the one around it.
+  const titleBox: Box = {
+    x: centre.x - rx * 0.72,
+    y: centre.y - ry * 0.55,
+    w: rx * 1.44,
+    h: ry * 1.1,
+  };
+  const block = coverTitleIn(scene.font, scene.title, titleBox, 34);
+  centredTitle(scene, block, titleBox, true);
+
+  // Sparkles ride the balloon's shoulders, never its middle: a dot over a
+  // letter is the one decoration a cover cannot afford.
+  const unit = Math.min(inner.w, inner.h) * 0.045;
+  mark(scene, 'sparkle', { x: centre.x - rx * 0.92, y: centre.y + ry * 0.72 }, unit, 0);
+  mark(scene, 'star', { x: centre.x + rx * 0.95, y: centre.y + ry * 0.55 }, unit * 0.8, 1);
+  mark(scene, 'sparkle', { x: centre.x + rx * 0.86, y: centre.y - ry * 0.82 }, unit * 0.7, 2);
+  mark(scene, 'star', { x: centre.x - rx * 0.88, y: centre.y - ry * 0.7 }, unit * 0.6, 3);
+
+  const blobBottom = centre.y - ry * (1 + wobble / 2);
+  const subtitleY = blobBottom - COVER_SUBTITLE_SIZE * 1.6;
+  groundSubtitle(scene, subtitleY);
+
+  sampleStrip(scene, {
+    x: inner.x,
+    y: band.y,
+    w: inner.w,
+    h: Math.max(0, subtitleY - COVER_SUBTITLE_SIZE - band.y),
+  });
+
+  coverSpecs(scene, 'center');
+}
+
+/**
+ * Kilau: a starburst behind a scalloped cloud. Where the balloon sells one
+ * word, this one sells the promise of a whole set — four samples in a row
+ * under a panel that reads like a sticker on a toy box.
+ */
+function burstCover(scene: CoverScene): void {
+  const { inner, palette } = scene;
+  const top = groundBrand(scene);
+  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.03);
+
+  // The rays, not the cloud, are what the rest of the page has to clear:
+  // everything below is placed off `reach` so no line of copy ever lands on
+  // a spike.
+  const reach = Math.min(inner.w * 0.5, band.h * 0.32);
+  const cloudW = Math.min(inner.w * 0.7, reach * 1.45);
+  const cloudH = reach * 0.62;
+  const centre = { x: midX(inner), y: band.y + band.h - reach };
+  if (palette.confetti.length) {
+    scene.shapes.push(
+      pathShape(burstPath(centre, reach, reach * 0.66, 16), palette.confetti[1 % palette.confetti.length]),
+      pathShape(
+        burstPath(centre, reach * 0.82, reach * 0.5, 12, Math.PI / 12),
+        palette.confetti[0],
+      ),
+    );
+  }
+
+  const cloudBox: Box = {
+    x: centre.x - cloudW / 2,
+    y: centre.y - cloudH / 2,
+    w: cloudW,
+    h: cloudH,
+  };
+  panelShape(scene, cloudPath(cloudBox, 5, 2));
+
+  const block = coverTitleIn(scene.font, scene.title, inset(cloudBox, cloudH * 0.14), 30);
+  centredTitle(scene, block, cloudBox, true);
+
+  const subtitleY = centre.y - reach - COVER_SUBTITLE_SIZE * 1.2;
+  groundSubtitle(scene, subtitleY);
+
+  sampleStrip(scene, {
+    x: inner.x,
+    y: band.y,
+    w: inner.w,
+    h: Math.max(0, subtitleY - COVER_SUBTITLE_SIZE * 1.4 - band.y),
+  });
+
+  coverSpecs(scene, 'center');
+}
+
+/**
+ * Jalan Warna: a road winding across the page with the samples riding it.
+ * This is the shape a themed pack wants — vehicles, animals, anything that
+ * goes somewhere — because the band gives the eye a route through the cover.
+ */
+function bannerCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  let cursor = groundBrand(scene);
+
+  const titleBox: Box = {
+    x: inner.x,
+    y: cursor - inner.h * 0.2,
+    w: inner.w,
+    h: inner.h * 0.2,
+  };
+  const block = coverTitleIn(font, scene.title, titleBox, 34);
+  cursor = centredTitle(scene, block, titleBox, true) - block.size * 0.6;
+
+  if (scene.subtitle) {
+    cursor -= COVER_SUBTITLE_SIZE * 1.2;
+    groundSubtitle(scene, cursor);
+    cursor -= COVER_SUBTITLE_SIZE * 0.8;
+  }
+
+  const bandTop = cursor - inner.h * 0.02;
+  const bandBottom = inner.y + coverSpecHeight(scene) + inner.h * 0.02;
+  const free = Math.max(60, bandTop - bandBottom);
+  // The road keeps to the lower four fifths of the band and the samples ride
+  // the crest into the fifth above it, so a letter on the highest bend still
+  // has somewhere to stand.
+  const bandH = free * 0.78;
+  // The road runs off both edges rather than stopping in two rounded stubs,
+  // but only part way into the band: the spline that closes the ribbon bulges
+  // past its last sampled point, and that bulge has to land on the card too.
+  const bleed = Math.min(inner.w * 0.08, (inner.x - scene.art.x) * 0.55);
+  const road: Box = { x: inner.x - bleed, y: bandBottom, w: inner.w + bleed * 2, h: bandH };
+
+  const thickness = 0.26;
+  const waves = 1.5;
+  const half = (bandH * thickness) / 2;
+  const amplitude = bandH / 2 - half;
+  const roadPaint = palette.ground
+    ? { fill: palette.ground, stroke: undefined }
+    : { fill: undefined, stroke: { color: palette.headline, width: 1.2 } };
+  scene.shapes.push(
+    pathShape(ribbonPath(road, waves, thickness), roadPaint.fill, roadPaint.stroke),
+  );
+
+  // The samples ride on the road's own surface: the crest is computed from
+  // the same sine the ribbon was drawn from, so they never float off it.
+  const picks = scene.samples;
+  if (picks.length) {
+    const size = Math.min(inner.w / (picks.length + 1), bandH * 0.34);
+    const boxes: Box[] = picks.map((_, index) => {
+      const t = (index + 0.5) / picks.length;
+      // The sample stands on the road's own surface, at the point the
+      // ribbon was drawn from: same sine, same phase, so it cannot float.
+      const along = (inner.x + inner.w * t - road.x) / road.w;
+      const crest =
+        road.y + bandH / 2 + Math.sin(along * Math.PI * 2 * waves) * amplitude + half;
+      return { x: inner.x + inner.w * t - size / 2, y: crest, w: size, h: size };
+    });
+    scene.placements.push(
+      ...coverSampleArt(font, scene.config, palette, boxes, picks, true, { w: 0.92, h: 0.92 }),
+    );
+  }
+
+  const unit = Math.min(inner.w, inner.h) * 0.03;
+  mark(scene, 'star', { x: inner.x + inner.w * 0.08, y: road.y + bandH * 0.22 }, unit, 0);
+  mark(scene, 'sparkle', { x: inner.x + inner.w * 0.93, y: road.y + bandH * 0.78 }, unit, 2);
+
+  coverSpecs(scene, 'center');
+}
+
+/**
+ * Bingkai Ceria: wallpaper. Stars, sparkles and dots tile the whole page and
+ * the title sits on a panel cut out of them. The pattern is what a browsing
+ * parent registers before they have read a single word.
+ */
+function frameCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  const top = groundBrand(scene);
+  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.02);
+
+  // Panel and samples sit in the middle of the band, which leaves the
+  // pattern a run of clear page above and below. Give the samples the whole
+  // lower half instead and the wallpaper has nowhere left to be wallpaper.
+  const panelH = Math.min(band.h * 0.26, inner.h * 0.2);
+  const stripH = Math.min(band.h * 0.28, inner.h * 0.21);
+  const panelTitle = coverTitleIn(
+    font,
+    scene.title,
+    { x: inner.x, y: 0, w: inner.w * 0.82, h: panelH * 0.68 },
+    30,
+  );
+  // The panel is cut to the title it carries. A short title in a full-width
+  // bar reads as a gap in the wallpaper rather than as a label on it.
+  const panelW = Math.min(
+    inner.w * 0.9,
+    Math.max(inner.w * 0.5, blockWidth(scene, panelTitle, true) + panelH * 0.8),
+  );
+  const panelBox: Box = {
+    x: midX(inner) - panelW / 2,
+    y: band.y + (band.h - panelH - stripH) * 0.62 + stripH,
+    w: panelW,
+    h: panelH,
+  };
+  const stripBox: Box = {
+    x: inner.x + inner.w * 0.04,
+    y: panelBox.y - stripH - inner.h * 0.03,
+    w: inner.w * 0.92,
+    h: stripH,
+  };
+
+  // The pattern covers the page but yields to the two blocks that carry
+  // meaning: a doodle whose centre lands on the panel or on a sample is
+  // simply not drawn, which is cheaper and cleaner than masking it.
+  const clear = (point: { x: number; y: number }, box: Box, pad: number) =>
+    point.x < box.x - pad ||
+    point.x > box.x + box.w + pad ||
+    point.y < box.y - pad ||
+    point.y > box.y + box.h + pad;
+
+  const field: Box = { x: inner.x, y: band.y, w: inner.w, h: inner.y + inner.h - band.y };
+  const cols = 6;
+  const rows = Math.max(4, Math.round((cols * field.h) / field.w));
+  const random = seeded(31);
+  const unit = Math.min(field.w / cols, field.h / rows) * 0.34;
+  let index = 0;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const point = {
+        x: field.x + ((col + 0.5) / cols) * field.w + (random() - 0.5) * unit,
+        y: field.y + ((row + 0.5) / rows) * field.h + (random() - 0.5) * unit,
+      };
+      index += 1;
+      const pad = unit * 0.8;
+      if (!clear(point, panelBox, pad) || !clear(point, stripBox, pad)) continue;
+      const radius = unit * (0.55 + random() * 0.5);
+      if (index % 3 === 0) mark(scene, 'star', point, radius, index);
+      else if (index % 3 === 1) mark(scene, 'sparkle', point, radius * 0.9, index);
+      else if (palette.confetti.length) {
+        const dot = radius * 0.42;
+        scene.shapes.push({
+          kind: 'ellipse',
+          x: point.x - dot,
+          y: point.y - dot,
+          w: dot * 2,
+          h: dot * 2,
+          color: palette.confetti[index % palette.confetti.length],
+        });
+      }
+    }
+  }
+
+  const paint = panelPaint(palette);
+  scene.shapes.push({
+    kind: 'rect',
+    ...panelBox,
+    r: Math.min(panelH / 2, inner.w * 0.06),
+    color: paint.fill,
+    stroke: paint.stroke,
+  });
+
+  const lastBaseline = centredTitle(scene, panelTitle, panelBox, true);
+  groundSubtitle(scene, lastBaseline - COVER_SUBTITLE_SIZE * 1.8);
+
+  sampleStrip(scene, stripBox);
+  coverSpecs(scene, 'center');
+}
+
+/**
+ * Stiker: every sample gets its own outlined card, the way a sticker sheet
+ * lays them out, and the title goes on a strip of tape above. The outline is
+ * doing the work here — it is what makes a flat panel read as an object.
+ */
+function stickerCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  const top = groundBrand(scene);
+  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.03);
+
+  const tapeW = inner.w * 0.86;
+  const tapeBox: Box = {
+    x: midX(inner) - tapeW / 2,
+    y: band.y + band.h - inner.h * 0.17,
+    w: tapeW,
+    h: inner.h * 0.17,
+  };
+  const paint = panelPaint(palette);
+  scene.shapes.push(pathShape(tapePath(tapeBox, 0.03), paint.fill, paint.stroke));
+
+  const block = coverTitleIn(font, scene.title, inset(tapeBox, tapeBox.h * 0.16), 30);
+  centredTitle(scene, block, tapeBox, true);
+
+  const subtitleY = tapeBox.y - COVER_SUBTITLE_SIZE * 1.6;
+  groundSubtitle(scene, subtitleY);
+
+  const cardsTop = subtitleY - COVER_SUBTITLE_SIZE * 1.2;
+  const cardsBottom = band.y;
+  const picks = scene.samples;
+  if (picks.length && cardsTop - cardsBottom > 60) {
+    const rows = picks.length > 2 ? 2 : 1;
+    const cols = Math.ceil(picks.length / rows);
+    const boxes = tile(
+      { x: inner.x, y: cardsBottom, w: inner.w, h: cardsTop - cardsBottom },
+      cols,
+      rows,
+      0.06,
+    );
+    boxes.slice(0, picks.length).forEach((box, index) => {
+      const colours = palette.confetti;
+      scene.shapes.push({
+        kind: 'rect',
+        ...box,
+        r: Math.min(box.w, box.h) * 0.16,
+        color: paint.fill,
+        stroke: {
+          color: colours.length ? colours[index % colours.length] : palette.headline,
+          width: 2,
+        },
+      });
+    });
+    scene.placements.push(
+      ...coverSampleArt(font, scene.config, palette, boxes, picks, true, { w: 0.66, h: 0.66 }),
+    );
+  }
+
+  coverSpecs(scene, 'center');
+}
+
+/**
+ * Pelangi: a rainbow arch over the title, with a cloud sitting on each foot.
+ * The arch is drawn band by band out of the palette's own confetti colours,
+ * so a shop's rainbow is its rainbow rather than the same six every time.
+ */
+function rainbowCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  const top = groundBrand(scene);
+  const band = freeBand(scene, inner.y + inner.h - top, inner.h * 0.02);
+
+  // Five bands where the palette has colours to spend, three drawn as
+  // outlines where it has none: a solid black half-annulus is a slab, not a
+  // rainbow, and it would be the heaviest mark in the whole catalogue.
+  const colours = palette.confetti;
+  const bands = colours.length || 3;
+  // Narrow enough that the feet, and the clouds sitting on them, stay on
+  // the page rather than running into the margin.
+  const outer = Math.min(inner.w * 0.38, band.h * 0.34);
+  const archBase = band.y + band.h - outer;
+  const centre = { x: midX(inner), y: archBase };
+  const thickness = outer * 0.13;
+
+  for (let index = 0; index < bands; index += 1) {
+    const bandOuter = outer - index * thickness;
+    const bandInner = bandOuter - thickness * 0.82;
+    if (bandInner <= outer * 0.25) break;
+    scene.shapes.push(
+      colours.length
+        ? pathShape(archPath(centre, bandOuter, bandInner), colours[index])
+        : pathShape(archPath(centre, bandOuter, bandInner), undefined, {
+            color: palette.headline,
+            width: 1,
+          }),
+    );
+  }
+
+  // A cloud at each foot: it grounds the arch, and it hides the raw ends of
+  // the bands, which is the only place a half-annulus looks unfinished.
+  const cloudW = outer * 0.56;
+  const cloudH = outer * 0.22;
+  const cloudPaint = panelPaint(palette);
+  for (const side of [-1, 1]) {
+    const box: Box = {
+      x: centre.x + side * outer - cloudW / 2,
+      y: archBase - cloudH * 0.35,
+      w: cloudW,
+      h: cloudH,
+    };
+    scene.shapes.push(pathShape(cloudPath(box, 3, 1), cloudPaint.fill, cloudPaint.stroke));
+  }
+
+  const unit = Math.min(inner.w, inner.h) * 0.028;
+  mark(scene, 'sparkle', { x: centre.x - outer * 1.05, y: archBase + outer * 0.85 }, unit, 1);
+  mark(scene, 'star', { x: centre.x + outer * 1.02, y: archBase + outer * 0.72 }, unit, 3);
+
+  const titleTop = archBase - cloudH * 0.6 - inner.h * 0.015;
+  const titleBox: Box = {
+    x: inner.x,
+    y: titleTop - inner.h * 0.18,
+    w: inner.w,
+    h: inner.h * 0.18,
+  };
+  const block = coverTitleIn(font, scene.title, titleBox, 34);
+  const lastBaseline = centredTitle(scene, block, titleBox, true);
+
+  const subtitleY = lastBaseline - COVER_SUBTITLE_SIZE * 2;
+  groundSubtitle(scene, subtitleY);
+
+  sampleStrip(scene, {
+    x: inner.x,
+    y: band.y,
+    w: inner.w,
+    h: Math.max(0, subtitleY - COVER_SUBTITLE_SIZE * 1.4 - band.y),
+  });
+
+  coverSpecs(scene, 'center');
+}
+
 const COVER_COMPOSERS: Record<CoverStyle['page'], (scene: CoverScene) => void> = {
   classic: classicCover,
   poster: posterCover,
   showcase: showcaseCover,
   minimal: minimalCover,
+  bubble: bubbleCover,
+  burst: burstCover,
+  banner: bannerCover,
+  frame: frameCover,
+  sticker: stickerCover,
+  rainbow: rainbowCover,
 };
 
 /**
@@ -1006,11 +1660,23 @@ function planCover({
   // A style may turn the palette's card down; the type still takes its
   // colours, so "Minimalis" reads as restraint rather than as monochrome.
   const carded = style.decoration !== 'none' && Boolean(palette.card);
+  // A grounded style floods the page rather than tinting it. "Hitam Putih"
+  // has no ground to give, so its colourful covers come out as line art —
+  // the same compositions, one plate of black, which is the honest answer
+  // rather than a style the palette silently refuses.
+  const grounded = style.ground && Boolean(palette.ground);
+  const base = grounded ? palette.ground : palette.card;
   // Inside the tinted card, type keeps clear of the rounded corners — and
   // that same band is where the confetti lives.
-  const inner = carded ? inset(art, Math.min(art.w, art.h) * 0.06) : art;
-  const shapes = carded
-    ? coverDecoration(art, inner, palette, style.decoration === 'full')
+  const filled = carded || grounded;
+  // The colourful compositions run their art to the card's edge — a balloon
+  // bulges, a road leaves the page, a rainbow's feet spread — so they are
+  // given the quiet band whether or not the palette paid for a card. Without
+  // it those overhangs would land inside the 0.5 inch safe margin.
+  const banded = filled || COLOURFUL_STYLES.includes(style.id);
+  const inner = banded ? inset(art, Math.min(art.w, art.h) * 0.06) : art;
+  const shapes = base
+    ? coverDecoration(art, inner, palette, style.decoration === 'full', base)
     : [];
 
   const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
@@ -1019,6 +1685,7 @@ function planCover({
     font,
     config,
     palette,
+    art,
     inner,
     title: safeLine(font, title) || 'Worksheets',
     brand: safeLine(font, (brand || 'DoodleGen').toUpperCase()),
@@ -1028,6 +1695,10 @@ function planCover({
     texts: [],
     rules: [],
     placements: [],
+    shapes,
+    bodyInk: grounded ? palette.onGround : palette.body,
+    brandInk: grounded ? palette.onGround : palette.brand,
+    ruleInk: grounded ? palette.onGround : palette.rule,
   };
 
   COVER_COMPOSERS[style.page](scene);
@@ -1037,7 +1708,7 @@ function planCover({
     label: 'Sampul',
     widthPt: paper.widthPt,
     heightPt: paper.heightPt,
-    shapes,
+    shapes: scene.shapes,
     placements: scene.placements,
     guides: [],
     texts: scene.texts,

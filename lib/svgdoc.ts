@@ -19,14 +19,19 @@ export function pageToSvg(font: LoadedFont, plan: PagePlan, config: Config): str
   parts.push(`<rect width="${round(plan.widthPt)}" height="${round(plan.heightPt)}" fill="#FFFFFF"/>`);
 
   for (const area of shapes.areas) {
+    const paint =
+      `${area.color ? `fill="${area.color}"` : 'fill="none"'}` +
+      (area.stroke ? ` stroke="${area.stroke.color}" stroke-width="${round(area.stroke.width)}"` : '');
     parts.push(
-      area.kind === 'ellipse'
-        ? `<ellipse cx="${round(area.x + area.w / 2)}" cy="${round(area.y + area.h / 2)}" rx="${round(
-            area.w / 2,
-          )}" ry="${round(area.h / 2)}" fill="${area.color}"/>`
-        : `<rect x="${round(area.x)}" y="${round(area.y)}" width="${round(area.w)}" height="${round(
-            area.h,
-          )}"${area.r ? ` rx="${round(area.r)}"` : ''} fill="${area.color}"/>`,
+      area.kind === 'path'
+        ? `<path d="${area.d ?? ''}" ${paint}/>`
+        : area.kind === 'ellipse'
+          ? `<ellipse cx="${round(area.x + area.w / 2)}" cy="${round(area.y + area.h / 2)}" rx="${round(
+              area.w / 2,
+            )}" ry="${round(area.h / 2)}" ${paint}/>`
+          : `<rect x="${round(area.x)}" y="${round(area.y)}" width="${round(area.w)}" height="${round(
+              area.h,
+            )}"${area.r ? ` rx="${round(area.r)}"` : ''} ${paint}/>`,
     );
   }
 

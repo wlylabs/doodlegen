@@ -4,7 +4,7 @@ import { brandName, packSlug, productTitle } from './naming';
 import { PALETTES, cmykToHex, type Palette } from './palette';
 import { PAPERS, papersFor } from './presets';
 import { sheetShapes } from './svg';
-import type { Config, LanguageId, LoadedFont, PagePlan } from './types';
+import type { Cmyk, Config, LanguageId, LoadedFont, PagePlan } from './types';
 
 /**
  * Listing images are the half of a digital product the marketplaces judge
@@ -100,18 +100,68 @@ interface Skin {
   headline: string;
   brand: string;
   body: string;
+  /** For marks that sit on their own white chip rather than on the ground. */
+  accent: string;
   confetti: string[];
+  /** The ramp a rainbow headline is spelled out in; empty means one colour. */
+  letters: string[];
+  /** True when the canvas is flooded rather than tinted. */
+  grounded: boolean;
+}
+
+/** Relative luminance of a #rrggbb colour, per WCAG. */
+function luminance(hex: string): number {
+  const channel = (at: number) => {
+    const value = parseInt(hex.slice(at, at + 2), 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+function contrast(a: string, b: string): number {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * The letters of a rainbow title, minus any that would disappear.
+ *
+ * On the cover page the ramp always lands on a pale panel, so every colour in
+ * it reads. A listing image has no panel — the headline sits straight on the
+ * ground — and a yellow letter on a yellow ground is not a design choice, it
+ * is a missing letter. Anything without real separation from the background
+ * is dropped, and if too little survives the title goes back to one colour.
+ */
+function readableRamp(ramp: string[], background: string): string[] {
+  const kept = ramp.filter((colour) => contrast(colour, background) >= 2);
+  return kept.length >= 2 ? kept : [];
 }
 
 function skinOf(palette: Palette, style: CoverStyle): Skin {
+  // A listing image that stayed pale while the cover shouted would be the
+  // one place the two disagree, and it is the half a buyer sees first. So
+  // the ground, and the rainbow, come across.
+  const grounded = style.ground && Boolean(palette.ground);
+  const onGround = grounded ? cmykToHex(palette.onGround) : null;
+  // A style that prints on bare paper is shown on bare paper here too.
+  const background = grounded
+    ? cmykToHex(palette.ground as Cmyk)
+    : palette.card && style.decoration !== 'none'
+      ? cmykToHex(palette.card)
+      : PAPER;
   return {
-    // A style that prints on bare paper is shown on bare paper here too.
-    background:
-      palette.card && style.decoration !== 'none' ? cmykToHex(palette.card) : PAPER,
-    headline: palette.card ? cmykToHex(palette.headline) : INK,
-    brand: palette.card ? cmykToHex(palette.brand) : ACCENT,
-    body: palette.card ? cmykToHex(palette.body) : MUTED,
+    background,
+    headline: onGround ?? (palette.card ? cmykToHex(palette.headline) : INK),
+    brand: onGround ?? (palette.card ? cmykToHex(palette.brand) : ACCENT),
+    body: onGround ?? (palette.card ? cmykToHex(palette.body) : MUTED),
+    // Badges are drawn on their own white pill, so their accent is measured
+    // against white — never against the ground the rest of the copy sits on.
+    accent: palette.card ? cmykToHex(palette.brand) : ACCENT,
     confetti: palette.confetti.map(cmykToHex),
+    letters: style.rainbowTitle
+      ? readableRamp(palette.letters.map(cmykToHex), background)
+      : [],
+    grounded,
   };
 }
 
@@ -254,14 +304,33 @@ function drawSheetCard(
   ctx.scale(scale, scale);
 
   for (const area of shapes.areas) {
-    ctx.fillStyle = area.color;
+    if (area.kind === 'path') {
+      const outline = new Path2D(area.d ?? '');
+      if (area.color) {
+        ctx.fillStyle = area.color;
+        ctx.fill(outline);
+      }
+      if (area.stroke) {
+        ctx.strokeStyle = area.stroke.color;
+        ctx.lineWidth = area.stroke.width;
+        ctx.stroke(outline);
+      }
+      continue;
+    }
+    ctx.beginPath();
     if (area.kind === 'ellipse') {
-      ctx.beginPath();
       ctx.ellipse(area.x + area.w / 2, area.y + area.h / 2, area.w / 2, area.h / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
     } else {
       roundRect(ctx, area.x, area.y, area.w, area.h, area.r);
+    }
+    if (area.color) {
+      ctx.fillStyle = area.color;
       ctx.fill();
+    }
+    if (area.stroke) {
+      ctx.strokeStyle = area.stroke.color;
+      ctx.lineWidth = area.stroke.width;
+      ctx.stroke();
     }
   }
 
@@ -300,6 +369,40 @@ function drawSheetCard(
 
   ctx.restore();
   return height;
+}
+
+/**
+ * One line of the headline, in the cover's own voice: a single colour, or
+ * the palette's ramp one letter at a time with every second letter riding a
+ * shade high. The caller has already set the face and the alignment.
+ */
+function drawHeadlineLine(
+  ctx: CanvasRenderingContext2D,
+  skin: Skin,
+  line: string,
+  x: number,
+  y: number,
+  size: number,
+) {
+  if (!skin.letters.length) {
+    ctx.fillStyle = skin.headline;
+    ctx.fillText(line, x, y);
+    return;
+  }
+
+  const letters = [...line];
+  const widths = letters.map((letter) => ctx.measureText(letter).width);
+  const total = widths.reduce((sum, width) => sum + width, 0);
+  const align = ctx.textAlign;
+  let cursor = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x;
+
+  ctx.textAlign = 'left';
+  letters.forEach((letter, index) => {
+    ctx.fillStyle = skin.letters[index % skin.letters.length];
+    ctx.fillText(letter, cursor, y + (index % 2 === 0 ? size * 0.04 : -size * 0.04));
+    cursor += widths[index];
+  });
+  ctx.textAlign = align;
 }
 
 function drawPills(
@@ -506,7 +609,7 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
 
   // A soft wash in the palette's own colours keeps the sheets from floating
   // on a flat ground — unless the style asked for a plain one.
-  if (style.decoration !== 'none') {
+  if (style.decoration !== 'none' && !skin.grounded) {
     const wash = ctx.createLinearGradient(0, 0, W, H);
     const [first = ACCENT, second = ACCENT] = skin.confetti;
     wash.addColorStop(0, `${first}22`);
@@ -528,10 +631,9 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
 
     const headline = fitHeadline(ctx, scene.title, columnWidth, 3, unit * 0.105, unit * 0.055);
     let y = H * 0.32;
-    ctx.fillStyle = skin.headline;
     ctx.textAlign = 'left';
     for (const line of headline.lines) {
-      ctx.fillText(line, pad, y);
+      drawHeadlineLine(ctx, skin, line, pad, y, headline.size);
       y += headline.size * 1.14;
     }
 
@@ -544,7 +646,7 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
       y += bulletSize * 1.7;
     }
 
-    drawPills(ctx, scene.pills, null, pad, y - unit * 0.02, unit * 0.026, skin.brand);
+    drawPills(ctx, scene.pills, null, pad, y - unit * 0.02, unit * 0.026, skin.accent);
 
     // The sheets are measured, not guessed: they have to end up inside the
     // right column, whatever the canvas and whatever the arrangement.
@@ -565,9 +667,8 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
   const headline = fitHeadline(ctx, scene.title, W - pad * 2, 3, unit * 0.098, unit * 0.05);
   let y = tall ? H * 0.16 : H * 0.19;
   ctx.textAlign = 'center';
-  ctx.fillStyle = skin.headline;
   for (const line of headline.lines) {
-    ctx.fillText(line, W / 2, y);
+    drawHeadlineLine(ctx, skin, line, W / 2, y, headline.size);
     y += headline.size * 1.14;
   }
 
@@ -589,7 +690,7 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
 
   drawSheets(ctx, scene, { x: pad, y: bandTop, w: W - pad * 2, h: bandHeight });
 
-  drawPills(ctx, scene.pills, W / 2, 0, pillTop, pillSize, skin.brand);
+  drawPills(ctx, scene.pills, W / 2, 0, pillTop, pillSize, skin.accent);
 
   ctx.font = `500 ${footSize}px ${TEXT_STACK}`;
   ctx.fillStyle = skin.body;

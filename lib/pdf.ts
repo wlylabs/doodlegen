@@ -9,6 +9,7 @@ import {
   closePath,
   cmyk,
   fill,
+  fillAndStroke,
   lineTo,
   moveTo,
   popGraphicsState,
@@ -20,6 +21,7 @@ import {
   setLineWidth,
   setStrokingColor,
   setTextRenderingMode,
+  stroke as strokePath,
 } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { FONT_FEATURES } from './fontStore';
@@ -34,6 +36,7 @@ import type {
   GuideLine,
   LoadedFont,
   PagePlan,
+  PathCmd,
   Placement,
   RuleDraw,
   ShapeDraw,
@@ -66,14 +69,31 @@ const KAPPA = 0.5523;
 function drawRoundRect(page: PDFPage, shape: ShapeDraw) {
   const r = Math.min(shape.r ?? 0, shape.w / 2, shape.h / 2);
   const { x, y, w, h } = shape;
+  const outline = shape.stroke;
+  if (!shape.color && !outline) return;
   if (r <= 0) {
-    page.drawRectangle({ x, y, width: w, height: h, color: paint(shape.color, 0) });
+    page.drawRectangle({
+      x,
+      y,
+      width: w,
+      height: h,
+      color: shape.color ? paint(shape.color, 0) : undefined,
+      borderColor: outline ? paint(outline.color, 1) : undefined,
+      borderWidth: outline?.width,
+    });
     return;
   }
   const c = r * KAPPA;
   page.pushOperators(
     pushGraphicsState(),
-    setFillingColor(paint(shape.color, 0)),
+    ...(shape.color ? [setFillingColor(paint(shape.color, 0))] : []),
+    ...(outline
+      ? [
+          setStrokingColor(paint(outline.color, 1)),
+          setLineWidth(outline.width),
+          setLineJoin(LineJoinStyle.Round),
+        ]
+      : []),
     moveTo(x + r, y),
     lineTo(x + w - r, y),
     appendBezierCurve(x + w - r + c, y, x + w, y + r - c, x + w, y + r),
@@ -84,20 +104,62 @@ function drawRoundRect(page: PDFPage, shape: ShapeDraw) {
     lineTo(x, y + r),
     appendBezierCurve(x, y + r - c, x + r - c, y, x + r, y),
     closePath(),
-    fill(),
+    shape.color && outline ? fillAndStroke() : shape.color ? fill() : strokePath(),
+    popGraphicsState(),
+  );
+}
+
+/**
+ * The cover's doodle art, written straight out as path operators. The plan
+ * hands over the same numbers in the same space the rest of the page uses,
+ * so nothing here has to transform anything — it just has to spell the
+ * outline out in the operators a PDF understands.
+ */
+function drawPath(page: PDFPage, shape: ShapeDraw) {
+  const path = shape.path;
+  if (!path?.length) return;
+  const outline = shape.stroke;
+  if (!shape.color && !outline) return;
+
+  const steps = path.map((step: PathCmd) => {
+    if (step.c === 'M') return moveTo(step.x, step.y);
+    if (step.c === 'L') return lineTo(step.x, step.y);
+    if (step.c === 'C') {
+      return appendBezierCurve(step.x1, step.y1, step.x2, step.y2, step.x, step.y);
+    }
+    return closePath();
+  });
+
+  page.pushOperators(
+    pushGraphicsState(),
+    ...(shape.color ? [setFillingColor(paint(shape.color, 0))] : []),
+    ...(outline
+      ? [
+          setStrokingColor(paint(outline.color, 1)),
+          setLineWidth(outline.width),
+          setLineJoin(LineJoinStyle.Round),
+          setLineCap(LineCapStyle.Round),
+        ]
+      : []),
+    ...steps,
+    shape.color && outline ? fillAndStroke() : shape.color ? fill() : strokePath(),
     popGraphicsState(),
   );
 }
 
 function drawShapes(page: PDFPage, shapes: ShapeDraw[]) {
   for (const shape of shapes) {
-    if (shape.kind === 'ellipse') {
+    if (shape.kind === 'path') {
+      drawPath(page, shape);
+    } else if (shape.kind === 'ellipse') {
       page.drawEllipse({
         x: shape.x + shape.w / 2,
         y: shape.y + shape.h / 2,
         xScale: shape.w / 2,
         yScale: shape.h / 2,
-        color: paint(shape.color, 0),
+        color: shape.color ? paint(shape.color, 0) : undefined,
+        borderColor: shape.stroke ? paint(shape.stroke.color, 1) : undefined,
+        borderWidth: shape.stroke?.width,
       });
     } else {
       drawRoundRect(page, shape);

@@ -14,7 +14,17 @@ export interface CoverStyle {
   label: string;
   note: string;
   /** How the cover page itself is composed. */
-  page: 'classic' | 'poster' | 'showcase' | 'minimal';
+  page:
+    | 'classic'
+    | 'poster'
+    | 'showcase'
+    | 'minimal'
+    | 'bubble'
+    | 'burst'
+    | 'banner'
+    | 'frame'
+    | 'sticker'
+    | 'rainbow';
   /** How many real characters from the set the cover puts on show. */
   samples: number;
   /**
@@ -25,6 +35,19 @@ export interface CoverStyle {
   decoration: 'full' | 'card' | 'none';
   /** How the listing images stack the sheet mockups. */
   sheets: 'fan' | 'hero' | 'grid' | 'row';
+  /**
+   * Floods the whole page with the palette's saturated ground instead of
+   * tinting it. This is the difference between a cover that whispers its
+   * colour and one that reads across a marketplace grid at thumbnail size.
+   * A palette with no ground — "Hitam Putih" — ignores it.
+   */
+  ground: boolean;
+  /**
+   * Spells the title out one letter at a time, cycling the palette's letter
+   * ramp. It is the single loudest thing a children's cover can do, so it is
+   * a per-style choice rather than a palette-wide one.
+   */
+  rainbowTitle: boolean;
 }
 
 export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
@@ -36,6 +59,8 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     samples: 3,
     decoration: 'full',
     sheets: 'fan',
+    ground: false,
+    rainbowTitle: false,
   },
   poster: {
     id: 'poster',
@@ -45,6 +70,8 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     samples: 1,
     decoration: 'full',
     sheets: 'hero',
+    ground: false,
+    rainbowTitle: false,
   },
   showcase: {
     id: 'showcase',
@@ -54,6 +81,8 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     samples: 4,
     decoration: 'card',
     sheets: 'grid',
+    ground: false,
+    rainbowTitle: false,
   },
   minimal: {
     id: 'minimal',
@@ -63,10 +92,102 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     samples: 0,
     decoration: 'none',
     sheets: 'row',
+    ground: false,
+    rainbowTitle: false,
+  },
+  bubble: {
+    id: 'bubble',
+    label: 'Balon Kata',
+    note: 'Judul pelangi di dalam balon besar, contoh berjajar di bawahnya',
+    page: 'bubble',
+    samples: 3,
+    decoration: 'full',
+    sheets: 'fan',
+    ground: true,
+    rainbowTitle: true,
+  },
+  burst: {
+    id: 'burst',
+    label: 'Kilau',
+    note: 'Sinar bintang di belakang panel awan, empat contoh di bawah',
+    page: 'burst',
+    samples: 4,
+    decoration: 'full',
+    sheets: 'grid',
+    ground: true,
+    rainbowTitle: true,
+  },
+  banner: {
+    id: 'banner',
+    label: 'Jalan Warna',
+    note: 'Pita berkelok melintasi halaman, contoh menumpang di atasnya',
+    page: 'banner',
+    samples: 3,
+    decoration: 'full',
+    sheets: 'row',
+    ground: false,
+    rainbowTitle: true,
+  },
+  frame: {
+    id: 'frame',
+    label: 'Bingkai Ceria',
+    note: 'Motif bintang dan titik memenuhi halaman, judul di panel tengah',
+    page: 'frame',
+    samples: 3,
+    decoration: 'full',
+    sheets: 'grid',
+    ground: false,
+    rainbowTitle: true,
+  },
+  sticker: {
+    id: 'sticker',
+    label: 'Stiker',
+    note: 'Empat contoh sebagai kartu stiker, judul di atas pita selotip',
+    page: 'sticker',
+    samples: 4,
+    decoration: 'full',
+    sheets: 'grid',
+    ground: true,
+    rainbowTitle: true,
+  },
+  rainbow: {
+    id: 'rainbow',
+    label: 'Pelangi',
+    note: 'Busur pelangi dan awan di kepala halaman, judul tepat di bawahnya',
+    page: 'rainbow',
+    samples: 3,
+    decoration: 'full',
+    sheets: 'fan',
+    ground: false,
+    rainbowTitle: true,
   },
 };
 
-export const COVER_STYLE_ORDER: CoverStyleId[] = ['classic', 'poster', 'showcase', 'minimal'];
+export const COVER_STYLE_ORDER: CoverStyleId[] = [
+  'bubble',
+  'burst',
+  'rainbow',
+  'banner',
+  'sticker',
+  'frame',
+  'classic',
+  'poster',
+  'showcase',
+  'minimal',
+];
+
+/**
+ * The loud half of the catalogue. Kept as a list rather than derived from a
+ * flag so the UI can group them under a heading a seller understands.
+ */
+export const COLOURFUL_STYLES: CoverStyleId[] = [
+  'bubble',
+  'burst',
+  'rainbow',
+  'banner',
+  'sticker',
+  'frame',
+];
 
 /** Evenly spaced, distinct characters: an honest sample of the whole set. */
 export function coverSamples(characters: string[], count: number): string[] {

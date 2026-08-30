@@ -10,9 +10,19 @@ export type StrokeId = 'thin' | 'medium' | 'thick';
 export type InkId = 'black' | 'soft';
 /** Language of everything the buyer reads: cover, licence, footer, read-me. */
 export type LanguageId = 'en' | 'id';
-export type PaletteId = 'mono' | 'crayon' | 'pastel' | 'sunset';
+export type PaletteId = 'mono' | 'crayon' | 'pastel' | 'sunset' | 'pop' | 'permen' | 'rimba';
 /** Which composition the title page — and the listing mockups — are built on. */
-export type CoverStyleId = 'classic' | 'poster' | 'showcase' | 'minimal';
+export type CoverStyleId =
+  | 'classic'
+  | 'poster'
+  | 'showcase'
+  | 'minimal'
+  | 'bubble'
+  | 'burst'
+  | 'banner'
+  | 'frame'
+  | 'sticker'
+  | 'rainbow';
 
 /** Ink, as the press mixes it: cyan, magenta, yellow, key, each 0 to 1. */
 export type Cmyk = readonly [number, number, number, number];
@@ -125,16 +135,34 @@ export interface RuleDraw {
   color?: Cmyk;
 }
 
-/** A flat area of colour: the cover's card and its confetti. */
+/**
+ * One step of a vector outline, in the same page space as everything else:
+ * points, origin bottom-left. Structured rather than an SVG `d` string
+ * because every renderer needs the numbers — the PDF writes path operators,
+ * the preview has to flip y, and the listing canvas builds a Path2D.
+ */
+export type PathCmd =
+  | { c: 'M'; x: number; y: number }
+  | { c: 'L'; x: number; y: number }
+  | { c: 'C'; x1: number; y1: number; x2: number; y2: number; x: number; y: number }
+  | { c: 'Z' };
+
+/** A flat area of colour: the cover's card, its confetti, and its doodle art. */
 export interface ShapeDraw {
-  kind: 'rect' | 'ellipse';
+  kind: 'rect' | 'ellipse' | 'path';
+  /** Bounding box. A path carries its own points; this is measured from them. */
   x: number;
   y: number;
   w: number;
   h: number;
   /** Corner radius in points; rects only. */
   r?: number;
-  color: Cmyk;
+  /** Fill colour; a shape drawn as outline only leaves it off. */
+  color?: Cmyk;
+  /** Outline laid over the fill, which is what makes a shape read as a sticker. */
+  stroke?: { color: Cmyk; width: number };
+  /** The outline itself; `kind === 'path'` only. */
+  path?: PathCmd[];
 }
 
 /** Worksheets carry characters; the front and back matter carry type. */

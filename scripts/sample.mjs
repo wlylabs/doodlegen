@@ -98,7 +98,18 @@ const cases = [
   },
   // One case per cover style: the cover is the only page a buyer sees before
   // paying, so every composition gets dumped as its own SVG to look at.
-  ...['classic', 'poster', 'showcase', 'minimal'].map((coverStyle) => ({
+  ...[
+    'classic',
+    'poster',
+    'showcase',
+    'minimal',
+    'bubble',
+    'burst',
+    'banner',
+    'frame',
+    'sticker',
+    'rainbow',
+  ].map((coverStyle) => ({
     name: `cover-${coverStyle}`,
     patch: {
       layout: 'single',
@@ -107,6 +118,23 @@ const cases = [
       paper: 'a4',
       coverPage: true,
       coverStyle,
+      brand: 'Studio Cerdas',
+      productTitle: 'Alfabet A-Z Trace and Color',
+    },
+  })),
+  // The loud compositions have to survive every palette, including the one
+  // with no colour to give them: a cover that only works in "Krayon" is a
+  // cover half the shop cannot use.
+  ...['crayon', 'pop', 'permen', 'rimba', 'pastel', 'sunset', 'mono'].map((palette) => ({
+    name: `palette-${palette}`,
+    patch: {
+      layout: 'single',
+      style: 'outline',
+      font: 'rounded',
+      paper: 'a4',
+      coverPage: true,
+      coverStyle: 'bubble',
+      palette,
       brand: 'Studio Cerdas',
       productTitle: 'Alfabet A-Z Trace and Color',
     },

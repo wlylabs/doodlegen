@@ -1,3 +1,5 @@
+import type { CoverStyle } from '@/lib/covers';
+
 /**
  * Small abstract marks for the option tiles. They describe the treatment
  * (solid contour, dotted contour, one of each) and the page structure,
@@ -117,10 +119,12 @@ export function LayoutMark({ kind }: { kind: 'single' | 'grid' | 'worksheet' }) 
 }
 
 /**
- * The four cover compositions, as page furniture: where the type sits, and
- * how many characters are on show.
+ * Every cover composition, as page furniture: where the type sits, and how
+ * many characters are on show. The colourful ones are drawn with their own
+ * silhouette — a balloon, a burst, an arch — because that shape is the whole
+ * reason a seller picks one over another.
  */
-export function CoverMark({ kind }: { kind: 'classic' | 'poster' | 'showcase' | 'minimal' }) {
+export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
   const line = (key: string, x: number, y: number, w: number, weight = 1.2) => (
     <line key={key} x1={x} x2={x + w} y1={y} y2={y} {...stroke} strokeWidth={weight} />
   );
@@ -180,6 +184,115 @@ export function CoverMark({ kind }: { kind: 'classic' | 'poster' | 'showcase' | 
           {line('title', 7, 21, 18, 2.2)}
           {line('sub', 10, 26, 12, 1)}
           {line('rule-bottom', 9, 31, 14, 1)}
+        </>
+      ) : null}
+      {kind === 'bubble' ? (
+        <>
+          {line('brand', 11, 6, 10, 1)}
+          <ellipse cx="16" cy="17" rx="12.5" ry="7.5" {...stroke} strokeWidth="1.4" />
+          {line('title', 9, 17, 14, 2.2)}
+          {[0, 1, 2].map((index) => (
+            <rect
+              key={index}
+              x={5.5 + index * 7.4}
+              y="28"
+              width="5.6"
+              height="8"
+              rx="1.4"
+              {...stroke}
+              strokeWidth="1.2"
+            />
+          ))}
+          {line('foot', 8, 40, 16, 1)}
+        </>
+      ) : null}
+      {kind === 'burst' ? (
+        <>
+          {line('brand', 11, 6, 10, 1)}
+          <path
+            d="M16 8 L18.6 11 L22.4 9.9 L22 13.8 L25.6 15.4 L22.6 17.9 L24.6 21.3 L20.7 21.6 L19.9 25.4 L16 23.6 L12.1 25.4 L11.3 21.6 L7.4 21.3 L9.4 17.9 L6.4 15.4 L10 13.8 L9.6 9.9 L13.4 11 Z"
+            {...stroke}
+            strokeWidth="1.1"
+          />
+          {line('title', 10, 17, 12, 2)}
+          {[0, 1, 2, 3].map((index) => (
+            <rect
+              key={index}
+              x={4.5 + index * 6}
+              y="29"
+              width="4.4"
+              height="7"
+              rx="1.2"
+              {...stroke}
+              strokeWidth="1.1"
+            />
+          ))}
+          {line('foot', 8, 40, 16, 1)}
+        </>
+      ) : null}
+      {kind === 'banner' ? (
+        <>
+          {line('brand', 11, 6, 10, 1)}
+          {line('title', 7, 12, 18, 2.2)}
+          <path
+            d="M1 27 C 7 18, 12 32, 16 26 C 20 20, 25 30, 31 23"
+            {...stroke}
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          {line('foot', 8, 40, 16, 1)}
+        </>
+      ) : null}
+      {kind === 'frame' ? (
+        <>
+          {[6, 12, 18, 24, 30].flatMap((y) =>
+            [6, 16, 26].map((x) => (
+              <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" {...stroke} strokeWidth="1" />
+            )),
+          )}
+          <rect x="4" y="15" width="24" height="8" rx="3" {...stroke} fill="#fff" strokeWidth="1.3" />
+          {line('title', 8, 19, 16, 2)}
+          {line('foot', 8, 40, 16, 1)}
+        </>
+      ) : null}
+      {kind === 'sticker' ? (
+        <>
+          <path d="M4 6 L28 8 L28 14 L4 12 Z" {...stroke} strokeWidth="1.3" />
+          {[0, 1].flatMap((row) =>
+            [0, 1].map((col) => (
+              <rect
+                key={`${row}-${col}`}
+                x={5 + col * 11.5}
+                y={18 + row * 10}
+                width="10"
+                height="8.5"
+                rx="2"
+                {...stroke}
+                strokeWidth="1.2"
+              />
+            )),
+          )}
+          {line('foot', 8, 40, 16, 1)}
+        </>
+      ) : null}
+      {kind === 'rainbow' ? (
+        <>
+          <path d="M6 16 A 10 10 0 0 1 26 16" {...stroke} strokeWidth="1.3" />
+          <path d="M9.5 16 A 6.5 6.5 0 0 1 22.5 16" {...stroke} strokeWidth="1.3" />
+          {line('title', 7, 22, 18, 2.2)}
+          {[0, 1, 2].map((index) => (
+            <rect
+              key={index}
+              x={5.5 + index * 7.4}
+              y="27"
+              width="5.6"
+              height="8"
+              rx="1.4"
+              {...stroke}
+              strokeWidth="1.2"
+            />
+          ))}
+          {line('foot', 8, 40, 16, 1)}
         </>
       ) : null}
     </svg>
