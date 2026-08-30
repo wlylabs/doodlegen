@@ -61,7 +61,7 @@ the rest around it:
 
 | Part | What it is |
 | --- | --- |
-| Cover page | Brand line, product title, an optional tagline in the seller's own words, and real sample characters — in one of twelve compositions the seller picks, two of them built to the convention a published book follows, or one they lay out themselves in the cover studio. Vector like every other page, and the only page allowed to carry colour. No page counts, DPI or reprint terms: that is listing copy, not a title page. |
+| Cover page | Brand line, product title, an optional tagline in the seller's own words, and real sample characters — in one of twelve compositions the seller picks, two of them built to the convention a published book follows. Vector like every other page, and the only page allowed to carry colour. No page counts, DPI or reprint terms: that is listing copy, not a title page. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
@@ -94,7 +94,7 @@ OFL faces, and word lists that are public domain or plain vocabulary.
 
 **The cover is a choice, not a fixture.** It is the one page a buyer sees
 before they pay, so it is the one page that gets options — twelve of them, in
-three groups, plus one the seller draws themselves.
+three groups.
 
 Two follow the grammar of a *published* book rather than of a coloring book,
 because that is what a shelf, and a marketplace grid, have trained a buyer to
@@ -127,22 +127,6 @@ bare paper, and the cheapest of the twelve to print. The choice carries into
 the listing images too — the sheet mockups fan, stand alone, tile or line up to
 match, and the ground and the rainbow title come across with them — so the
 shop front and the file agree.
-
-**And a cover the seller lays out themselves.** `Custom` opens the cover
-studio: elements are dragged, resized and recoloured on the page, with the
-page under the handles drawn by `planCoverPage` — the very call the PDF makes,
-so there is no mock-up to drift out of sync. It stays a *print* editor in two
-ways. Geometry is stored as a fraction of the safe box rather than in pixels,
-so one document prints identically on A4 and US Letter and survives a change
-of margin; and colour is stored as a role in the palette — `headline`, `ink3`
-— rather than as a value, so swapping the palette recolours a custom cover the
-way it recolours a stock one. A seller who wants one exact colour can still
-give a hex, and it is converted to CMYK on the way to the page. Text is fitted
-to the box it was dragged out, shapes come from the same `lib/doodles.ts`
-constructions the stock covers use, and sample characters are drawn by the
-worksheet code — so nothing on a custom cover can be anything the engine could
-not already print. Four starting layouts are offered, and `samples` renders
-every one of them through the same pipeline the stock compositions go through.
 
 **What a cover does not say.** No page count, no "300 DPI", no reprint
 licence. Those are true, and they belong in the listing where a buyer reads
@@ -383,7 +367,6 @@ components/
   ServiceWorkerRegistrar.tsx  Worker registration and the update bar
   motion.tsx        Ripple, reveal, count-up, copy-to-clipboard
   landing/          Hero, live demo, sections
-  CoverStudio.tsx   The cover studio: drag, resize and recolour a cover
 lib/
   geometry.ts       Page layout engine (pure), including cover and terms
   svg.ts            Plan to SVG shapes, for the preview
@@ -401,7 +384,6 @@ lib/
   svgdoc.ts         Plan to a standalone SVG file, for Canva and Cricut
   palette.ts        The seven CMYK palettes
   covers.ts         The twelve cover compositions, page and listing image
-  coverDoc.ts       The custom cover document: elements, templates, inks
   doodles.ts        Generated cover art: blobs, bursts, clouds, arches
 scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts

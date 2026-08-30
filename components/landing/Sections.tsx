@@ -81,8 +81,8 @@ const FEATURES = [
     body: 'Pratinjau dan PDF menggambar kontur glyph yang sama persis dari file font yang sama. Tidak ada perkiraan, tidak ada kejutan waktu dicetak.',
   },
   {
-    title: 'Sampul: pilih model atau susun sendiri',
-    body: 'Sepuluh model sampul bermerek dengan palet warna pilihan — atau buka studio sampul dan seret sendiri judul, huruf, dan bentuknya seperti di Canva, tetap vektor dan tetap di dalam margin aman. Halaman ketentuan di belakang, nomor halaman di setiap lembar.',
+    title: 'Dua belas model sampul & lisensi otomatis',
+    body: 'Dua belas model sampul bermerek dengan palet warna pilihan — termasuk dua yang mengikuti susunan sampul buku terbitan: judul di panel kepala, gambar di satu jendela, penerbit di kaki. Halaman ketentuan di belakang, nomor halaman di setiap lembar.',
   },
   {
     title: 'Bahasa mengikuti pasarnya',

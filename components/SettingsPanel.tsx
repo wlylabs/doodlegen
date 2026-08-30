@@ -89,13 +89,10 @@ export function SettingsPanel({
   config,
   font,
   update,
-  onOpenCoverStudio,
 }: {
   config: Config;
   font: LoadedFont | null;
   update: (patch: Partial<Config>) => void;
-  /** Opens the cover studio; the panel only picks the style, it does not edit. */
-  onOpenCoverStudio: () => void;
 }) {
   const [tuningOpen, setTuningOpen] = useState(false);
   const ripple = useRipple<HTMLButtonElement>();
@@ -341,38 +338,10 @@ export function SettingsPanel({
           onChange={(coverTagline) => update({ coverTagline })}
         />
         <Field label="Model sampul">
-          {/* The seller's own layout comes first: it is the only model that
-              can look like their shop rather than like this tool. */}
-          <button
-            type="button"
-            data-active={config.coverStyle === 'custom'}
-            className="choice !flex-row !items-center !gap-3"
-            onClick={(event) => {
-              ripple(event);
-              // A custom cover with no cover page is a page nobody would ever
-              // see, so opening the studio turns the cover page on.
-              update({ coverStyle: 'custom', coverPage: true });
-              onOpenCoverStudio();
-            }}
-          >
-            <CoverMark kind="custom" />
-            <span className="min-w-0 text-left">
-              <span className="block text-[13.5px] font-semibold leading-tight">
-                Custom — studio sampul
-              </span>
-              <span className="block text-[11.5px] leading-snug text-ink-mute">
-                {COVER_STYLES.custom.note}
-              </span>
-              <span className="mt-1 inline-block text-[11.5px] font-semibold text-accent">
-                {config.coverStyle === 'custom' ? 'Buka studio →' : 'Susun sendiri →'}
-              </span>
-            </span>
-          </button>
-
           {/* A dozen compositions in one list is a wall. Split at the lines a
               seller actually shops along: does it look like a book, like a
               coloring book, or like neither. */}
-          <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
+          <p className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
             Standar buku
           </p>
           <ChoiceGrid<CoverStyleId>
@@ -411,7 +380,7 @@ export function SettingsPanel({
             value={config.coverStyle}
             onChange={(coverStyle) => update({ coverStyle })}
             options={COVER_STYLE_ORDER.filter(
-              (id) => id !== 'custom' && !COLOURFUL_STYLES.includes(id) && !BOOK_STYLES.includes(id),
+              (id) => !COLOURFUL_STYLES.includes(id) && !BOOK_STYLES.includes(id),
             ).map((id) => ({
               value: id,
               label: COVER_STYLES[id].label,
