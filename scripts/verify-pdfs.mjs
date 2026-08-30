@@ -4,7 +4,8 @@
  *   - exact A4 / US Letter trim size
  *   - the font program is embedded, not just outlined
  *   - characters are stroked text (render mode 1), so they stay vector
- *   - ink is K-only CMYK, which prints as a single clean plate
+ *   - worksheet ink is K-only CMYK, which prints as a single clean plate
+ *   - colour, if any, is confined to the one optional cover page
  *   - no raster image is present anywhere in the file
  *   - nothing is drawn inside the 0.5 inch safe margin
  *
@@ -61,6 +62,20 @@ function flatten(buffer) {
   return { all: parts.join('\n'), streams: parts.slice(1) };
 }
 
+/**
+ * True when a page stream sets any ink that is not K-only. The cover page is
+ * allowed one; a worksheet that grew a colour would cost a second plate on
+ * press and muddy every photocopy, so it must not.
+ */
+function hasColour(chunk) {
+  const colour = /([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) [kK]\b/g;
+  let match;
+  while ((match = colour.exec(chunk)) !== null) {
+    if (Number(match[1]) > 0 || Number(match[2]) > 0 || Number(match[3]) > 0) return true;
+  }
+  return false;
+}
+
 function structure(file) {
   const buffer = fs.readFileSync(file);
   const { all, streams } = flatten(buffer);
@@ -68,6 +83,7 @@ function structure(file) {
     embeddedFont: /\/FontFile2\b/.test(all) && /\/CIDFontType2\b/.test(all),
     strokedText: streams.some((chunk) => /\b1 Tr\b/.test(chunk)),
     cmykInk: streams.some((chunk) => /0 0 0 [\d.]+ K/.test(chunk)),
+    colouredPages: streams.filter(hasColour).length,
     rasterImage: /\/Subtype\s*\/Image\b/.test(all),
     kilobytes: (buffer.length / 1024).toFixed(1),
   };
@@ -159,6 +175,7 @@ for (const file of files) {
     checks.embeddedFont &&
     checks.strokedText &&
     checks.cmykInk &&
+    checks.colouredPages <= 1 &&
     !checks.rasterImage &&
     !bleeding.length;
   if (!pass) failed += 1;
@@ -167,6 +184,7 @@ for (const file of files) {
     `${pass ? 'PASS' : 'FAIL'}  ${path.basename(file)}\n` +
       `      ${meta.pages} pages · ${size} · ${checks.kilobytes} KB · font=${checks.embeddedFont}` +
       ` · vector text=${checks.strokedText} · CMYK K=${checks.cmykInk} · raster=${checks.rasterImage}` +
+      ` · colour pages=${checks.colouredPages}` +
       ` · margin=${bleeding.length ? `INK IN BAND (${bleeding.join(', ')})` : 'clear'}`,
   );
 }

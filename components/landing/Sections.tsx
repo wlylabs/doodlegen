@@ -81,8 +81,8 @@ const FEATURES = [
     body: 'Pratinjau dan PDF menggambar kontur glyph yang sama persis dari file font yang sama. Tidak ada perkiraan, tidak ada kejutan waktu dicetak.',
   },
   {
-    title: 'Sampul & lisensi otomatis',
-    body: 'Halaman sampul bermerek di depan, halaman ketentuan pemakaian di belakang, nomor halaman di setiap lembar — persis seperti paket digital berbayar.',
+    title: 'Sampul berwarna & lisensi otomatis',
+    body: 'Sampul bermerek dengan palet warna pilihan, halaman ketentuan di belakang, nomor halaman di setiap lembar — persis seperti paket digital berbayar.',
   },
   {
     title: 'Bahasa mengikuti pasarnya',
@@ -135,7 +135,7 @@ const STANDARDS = [
   { label: '300 DPI atau lebih', body: 'Tidak ada satu piksel pun. Huruf adalah kontur glyph, garis bantu adalah garis vektor.' },
   { label: 'Font tersemat penuh', body: 'Seluruh face ditanam sebagai CIDFontType2, yang dicari preflight percetakan.' },
   { label: 'Margin aman 0.5 inci', body: 'Batas keras, lalu diukur ulang: halaman dirender dan gagal bila ada satu piksel masuk pita tepi.' },
-  { label: 'Tinta hitam K-only', body: 'Satu plat di mesin cetak, tidak ada geser registrasi, fotokopi tetap bersih.' },
+  { label: 'Tinta hitam K-only', body: 'Setiap lembar latihan satu plat cetak, fotokopi tetap bersih. Warna hanya boleh ada di halaman sampul.' },
   { label: 'Latar putih bersih', body: 'Kotak 0% tinta: putih di layar, tanpa tinta di kertas.' },
   { label: 'Tanpa watermark', body: 'Tidak ada, di mana pun, termasuk pada berkas gratis.' },
 ];
@@ -358,6 +358,11 @@ const FAQ = [
     question: 'Berapa halaman maksimal dalam satu berkas?',
     answer:
       'Dua ratus halaman per berkas, cukup untuk rentang angka 1–200 atau daftar kata yang panjang. Satu set A–Z 26 halaman biasanya berukuran sekitar 20 KB karena tidak ada gambar raster di dalamnya.',
+  },
+  {
+    question: 'Kenapa lembar latihannya tidak berwarna?',
+    answer:
+      'Karena warnanya datang dari anak yang mewarnai. Di luar itu, warna pada lembar latihan berarti plat cetak tambahan di percetakan, hasil fotokopi yang kotor, dan tinta printer rumahan yang habis lebih cepat. Warna dipakai di tempat yang memang menjual: halaman sampul dan gambar listing — dengan empat palet, dan sampul yang menampilkan huruf sudah diwarnai di sebelah huruf yang masih kosong.',
   },
   {
     question: 'Kalau saya jual ke pembeli luar negeri?',

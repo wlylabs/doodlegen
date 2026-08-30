@@ -61,7 +61,7 @@ the rest around it:
 
 | Part | What it is |
 | --- | --- |
-| Cover page | Brand line, product title, page count, three real sample characters, print specs. Vector, like every other page. |
+| Cover page | Brand line, product title, page count, three real sample characters, print specs. Vector like every other page — and the only page allowed to carry colour. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Listing images | 2000×2000 (Etsy), 1280×720 (Gumroad), 1200×1200 (Shopee), 1000×1500 (Pinterest), drawn from the same page plans. |
@@ -78,6 +78,15 @@ doodlegen-<subject>-<style>-<layout>/
   READ-ME-FIRST.txt
   FONT-LICENSE.txt
 ```
+
+**Colour, where it pays for itself.** Four palettes — Krayon, Pastel, Senja
+and Hitam Putih — tint the cover page and the listing images: a tinted card,
+confetti in the border band a dot can never land on a word in, a coloured
+headline, and sample characters shown already coloured in, next to one still
+empty. That last pair is the whole product in one picture: what the child
+starts with, and what they end up with. Worksheets stay K-only whatever is
+picked, because colour there would cost a second plate on press, muddy every
+photocopy and drain a home printer for nothing.
 
 **Language follows the market.** Everything a buyer reads — cover, licence
 page, page footer, read-me, and the folder names above — is written in the
@@ -100,7 +109,7 @@ one mechanically:
 | Vector characters | Text is drawn in PDF render mode 1 (stroke), which strokes the real glyph outlines. |
 | Embedded font | The complete face is embedded as a `CIDFontType2` program. Because the shipped faces are pre-trimmed to ASCII (17–37 KB), there is no need to subset at generation time. |
 | 0.5 inch safe margin | Enforced as a hard floor, and measured: `verify` rasterises pages and fails if a single non-white pixel lands in the border band. |
-| Print-safe colour | K-only CMYK (`0 0 0 K`). One plate on press, no registration drift, clean photocopies. |
+| Print-safe colour | Every worksheet is K-only CMYK (`0 0 0 K`): one plate on press, no registration drift, clean photocopies. Colour is confined to the one optional cover page, and `verify` fails if it reaches a second. |
 | Clean white background | An explicit 0 % ink rectangle: white on screen, no ink on paper. |
 | No watermark | There is none, anywhere. |
 | Small files | A 26-page A–Z set lands around 20 KB. |

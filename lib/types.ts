@@ -10,6 +10,10 @@ export type StrokeId = 'thin' | 'medium' | 'thick';
 export type InkId = 'black' | 'soft';
 /** Language of everything the buyer reads: cover, licence, footer, read-me. */
 export type LanguageId = 'en' | 'id';
+export type PaletteId = 'mono' | 'crayon' | 'pastel' | 'sunset';
+
+/** Ink, as the press mixes it: cyan, magenta, yellow, key, each 0 to 1. */
+export type Cmyk = readonly [number, number, number, number];
 
 export interface Config {
   content: ContentType;
@@ -44,6 +48,11 @@ export interface Config {
    * each canvas follows the marketplace it is cut for.
    */
   language: LanguageId;
+  /**
+   * Colour for the cover page and the listing images. Worksheets are K-only
+   * whatever this says.
+   */
+  palette: PaletteId;
 }
 
 /** A stroke mode for one drawn character group. */
@@ -69,6 +78,8 @@ export interface Placement {
   strokeWidth: number;
   /** Dot pitch in points; only meaningful when mode === 'dotted'. */
   dotGap: number;
+  /** Colour poured inside the contour before it is stroked, cover pages only. */
+  fill?: Cmyk;
 }
 
 export interface GuideLine {
@@ -86,6 +97,8 @@ export interface TextDraw {
   y: number;
   /** K-only ink level, 0 = white, 1 = solid black. */
   ink: number;
+  /** Overrides `ink` where a palette is in play. */
+  color?: Cmyk;
 }
 
 /** A hairline rule, used to structure the cover and licence pages. */
@@ -95,6 +108,19 @@ export interface RuleDraw {
   y: number;
   width: number;
   ink: number;
+  color?: Cmyk;
+}
+
+/** A flat area of colour: the cover's card and its confetti. */
+export interface ShapeDraw {
+  kind: 'rect' | 'ellipse';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Corner radius in points; rects only. */
+  r?: number;
+  color: Cmyk;
 }
 
 /** Worksheets carry characters; the front and back matter carry type. */
@@ -106,6 +132,8 @@ export interface PagePlan {
   label: string;
   widthPt: number;
   heightPt: number;
+  /** Drawn first, behind everything else. */
+  shapes: ShapeDraw[];
   placements: Placement[];
   guides: GuideLine[];
   texts: TextDraw[];

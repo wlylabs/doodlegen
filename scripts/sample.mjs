@@ -102,6 +102,7 @@ const cases = [
       termsPage: true,
       brand: 'Rumah Belajar',
       language: 'id',
+      palette: 'mono',
     },
   },
 ];

@@ -5,6 +5,7 @@ import { LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diagrams';
 import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
+import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
 import {
   FONTS,
   FONT_ORDER,
@@ -30,6 +31,7 @@ import type {
   LayoutId,
   LetterCase,
   LoadedFont,
+  PaletteId,
   PaperChoice,
   StrokeId,
   StyleId,
@@ -318,6 +320,44 @@ export function SettingsPanel({
           checked={config.coverPage}
           onChange={(coverPage) => update({ coverPage })}
         />
+        <Field label="Palet warna">
+          <div role="radiogroup" aria-label="Palet warna" className="grid grid-cols-2 gap-2">
+            {PALETTE_ORDER.map((id) => {
+              const palette = PALETTES[id];
+              const active = id === config.palette;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  data-active={active}
+                  className="choice !py-2.5"
+                  onClick={(event) => {
+                    ripple(event);
+                    update({ palette: id as PaletteId });
+                  }}
+                >
+                  <span className="flex gap-1" aria-hidden="true">
+                    {swatches(id).map((color, index) => (
+                      <span
+                        key={index}
+                        className="h-4 w-4 rounded-full border border-black/5 transition-transform duration-200"
+                        style={{ background: color, transitionDelay: `${index * 40}ms` }}
+                      />
+                    ))}
+                  </span>
+                  <span className="mt-1 text-[13.5px] font-semibold leading-tight">{palette.label}</span>
+                  <span className="text-[11.5px] leading-snug text-ink-mute">{palette.note}</span>
+                </button>
+              );
+            })}
+          </div>
+          <Note>
+            Warna hanya dipakai pada halaman sampul dan gambar listing. Semua lembar latihan tetap
+            hitam K100 — satu plat cetak, bersih saat difotokopi, hemat tinta.
+          </Note>
+        </Field>
         <Toggle
           label="Halaman lisensi"
           hint="Ketentuan pemakaian dua bahasa di halaman terakhir."

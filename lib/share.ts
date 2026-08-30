@@ -1,4 +1,5 @@
 import { clampNumber } from './charset';
+import { PALETTE_ORDER } from './palette';
 import { DEFAULT_CONFIG, FONTS, GRIDS, INKS, LAYOUTS, MARGIN_OPTIONS, STROKES, STYLES } from './presets';
 import type { Config } from './types';
 
@@ -16,6 +17,7 @@ const ONE_OF = {
   stroke: Object.keys(STROKES),
   ink: Object.keys(INKS),
   language: ['en', 'id'],
+  palette: PALETTE_ORDER,
 } as const;
 
 const BOOLEANS = ['guides', 'showTitle', 'pageNumbers', 'coverPage', 'termsPage'] as const;
