@@ -27,6 +27,7 @@ const BOOLEANS = [
   'showTitle',
   'pageNumbers',
   'coverPage',
+  'pageDecor',
   'termsPage',
   'svgFiles',
 ] as const;

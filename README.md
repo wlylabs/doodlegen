@@ -61,7 +61,8 @@ the rest around it:
 
 | Part | What it is |
 | --- | --- |
-| Cover page | Brand line, product title, page count, real sample characters, print specs — in one of four compositions the seller picks. Vector like every other page, and the only page allowed to carry colour. |
+| Cover page | Brand line, product title, page count, real sample characters, print specs — in one of ten compositions the seller picks, six of them colourful. Vector like every other page, and the only page allowed to carry colour. |
+| Page border | An optional K-only doodle border on every worksheet, in the motif the chosen cover uses. Outlines, so the child can colour them too. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
@@ -93,20 +94,59 @@ correct. Material that ships in the repo is material whose licence is settled:
 OFL faces, and word lists that are public domain or plain vocabulary.
 
 **The cover is a choice, not a fixture.** It is the one page a buyer sees
-before they pay, so it is the one page that gets options. Four compositions:
-*Klasik* centres the title over a strip of three samples; *Poster* blows one
-character up to the height of the page, which is what survives being shrunk to
-a marketplace thumbnail; *Etalase* grids four samples over a left-aligned title
-block, selling the fact that there are many; *Minimalis* is type between two
-hairlines on bare paper, no card and no dots, and the cheapest of the four to
-print. The choice carries into the listing images too — the sheet mockups fan,
-stand alone, tile or line up to match — so the shop front and the file agree.
+before they pay, so it is the one page that gets options — ten of them, in two
+groups.
 
-**Colour, where it pays for itself.** Four palettes — Krayon, Pastel, Senja
-and Hitam Putih — tint the cover page and the listing images: a tinted card,
-confetti in the border band a dot can never land on a word in, a coloured
-headline, and sample characters shown already coloured in, next to one still
-empty. That last pair is the whole product in one picture: what the child
+Six are built to be loud, because that is what a children's coloring book
+looks like on a shelf: *Balon Kata* puts a rainbow title inside a big speech
+balloon; *Kilau* fires a starburst behind a scalloped cloud panel; *Pelangi*
+arches a rainbow over the title with a cloud on each foot; *Jalan Warna* runs
+a winding road across the page with the samples riding it; *Stiker* gives each
+sample its own outlined card under a strip of tape; *Bingkai Ceria* tiles
+stars, sparkles and dots into wallpaper and cuts a title panel out of it.
+
+Four are quiet: *Klasik* centres the title over a strip of three samples;
+*Poster* blows one character up to the height of the page, which is what
+survives being shrunk to a marketplace thumbnail; *Etalase* grids four samples
+over a left-aligned title block; *Minimalis* is type between two hairlines on
+bare paper, and the cheapest of the ten to print. The choice carries into the
+listing images too — the sheet mockups fan, stand alone, tile or line up to
+match, and the ground and the rainbow title come across with them — so the
+shop front and the file agree.
+
+**The art is generated, not imported.** Balloons, bursts, sparkles, clouds,
+ribbons and arches are built from parametric outlines in `lib/doodles.ts`,
+using the constructions any SVG blob or starburst tool uses — points sampled
+around an ellipse and joined with a Catmull-Rom spline, an alternating-radius
+polygon, a run of semicircles laid on a rectangle's edges. Shipping clip art
+instead would mean RGB colour in a CMYK file, someone else's licence in the
+repo, and a raster or a foreign coordinate space in a pipeline that has
+neither. Generated, a doodle is print colour from the first line, scales to
+any paper, is identical in the preview and the print, and costs no bytes.
+
+**The inside is the child's to colour, not the printer's.** Worksheets carry
+a doodle border in the motif the chosen cover uses — balloons, stars, a
+rainbow in the corner, a road along the foot — so a sheet pulled from the
+middle of the pack still belongs to its cover. It is drawn as K-only
+outlines in a band the work area keeps clear, which is a deliberate choice
+and not a limitation: crayon is translucent, so a printed tint swallows a
+child's own colour instead of adding to it, and it costs contrast exactly
+where a four-year-old is trying to follow a dotted line. Fisher, Godwin and
+Seltman (2014) found kindergarteners in heavily decorated rooms more often
+off-task and learning less than in sparse ones — decoration belongs where
+the child is not working. An outline the child can fill in is play; a
+printed background is ink they cannot draw on. *Minimalis* declines the
+border, because a style whose whole argument is restraint has to be able to
+say so on every page.
+
+**Colour, where it pays for itself.** Seven palettes — Krayon, Pop, Permen,
+Rimba, Pastel, Senja and Hitam Putih — colour the cover page and the listing
+images: a tinted card or a flooded ground, confetti in the border band a dot
+can never land on a word in, a headline spelled out one letter at a time in
+the palette's own ramp, and sample characters shown already coloured in, next
+to one still empty. Hitam Putih has no colour to lend, so the loud
+compositions draw themselves as line art rather than quietly refusing — the
+same balloon, the same arch, one plate of black. That last pair is the whole product in one picture: what the child
 starts with, and what they end up with. Worksheets stay K-only whatever is
 picked, because colour there would cost a second plate on press, muddy every
 photocopy and drain a home printer for nothing.
@@ -256,8 +296,9 @@ lib/
   charset.ts        Character set construction and validation
   wordlists.ts      Ready-made word sets for the word mode
   svgdoc.ts         Plan to a standalone SVG file, for Canva and Cricut
-  palette.ts        The four CMYK palettes
-  covers.ts         The four cover compositions, page and listing image
+  palette.ts        The seven CMYK palettes
+  covers.ts         The ten cover compositions, page and listing image
+  doodles.ts        Generated cover art: blobs, bursts, clouds, arches
 scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts
 ```

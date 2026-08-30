@@ -5,7 +5,7 @@ import { CoverMark, LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diag
 import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
-import { COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
+import { COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
 import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
@@ -331,12 +331,32 @@ export function SettingsPanel({
           onChange={(coverPage) => update({ coverPage })}
         />
         <Field label="Model sampul">
+          {/* Ten compositions in one list is a wall. Split at the line a
+              seller actually shops along: the loud ones and the plain ones. */}
+          <p className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
+            Warna-warni
+          </p>
           <ChoiceGrid<CoverStyleId>
-            label="Model sampul"
+            label="Model sampul warna-warni"
             columns={2}
             value={config.coverStyle}
             onChange={(coverStyle) => update({ coverStyle })}
-            options={COVER_STYLE_ORDER.map((id) => ({
+            options={COLOURFUL_STYLES.map((id) => ({
+              value: id,
+              label: COVER_STYLES[id].label,
+              note: COVER_STYLES[id].note,
+              art: <CoverMark kind={COVER_STYLES[id].page} />,
+            }))}
+          />
+          <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
+            Sederhana
+          </p>
+          <ChoiceGrid<CoverStyleId>
+            label="Model sampul sederhana"
+            columns={2}
+            value={config.coverStyle}
+            onChange={(coverStyle) => update({ coverStyle })}
+            options={COVER_STYLE_ORDER.filter((id) => !COLOURFUL_STYLES.includes(id)).map((id) => ({
               value: id,
               label: COVER_STYLES[id].label,
               note: COVER_STYLES[id].note,
@@ -345,7 +365,9 @@ export function SettingsPanel({
           />
           <Note>
             Dipakai halaman sampul sekaligus gambar listing: susunan lembar di sampul Etsy, TPT,
-            Gumroad, Shopee, dan Pinterest mengikuti pilihan yang sama.
+            Gumroad, Shopee, dan Pinterest mengikuti pilihan yang sama. Model warna-warni memakai
+            judul pelangi dan latar penuh warna dari palet di bawah — kecuali palet Hitam Putih,
+            yang menggambarnya sebagai garis saja agar tetap satu plat tinta.
           </Note>
         </Field>
         <Field label="Palet warna">
@@ -386,6 +408,18 @@ export function SettingsPanel({
             hitam K100 — satu plat cetak, bersih saat difotokopi, hemat tinta.
           </Note>
         </Field>
+        <Toggle
+          label="Hiasan halaman isi"
+          hint="Bingkai doodle mengikuti model sampul, di pinggir halaman latihan."
+          checked={config.pageDecor}
+          onChange={(pageDecor) => update({ pageDecor })}
+        />
+        <Note>
+          Digambar sebagai garis hitam K100, bukan latar berwarna — supaya anak bisa ikut
+          mewarnainya, dan supaya krayon mereka tetap terlihat. Latar berwarna justru menelan
+          warna anak, menurunkan kontras garis tracing, dan menambah biaya cetak. Model
+          Minimalis tidak memakai hiasan ini.
+        </Note>
         <Toggle
           label="Halaman lisensi"
           hint="Ketentuan pemakaian dua bahasa di halaman terakhir."

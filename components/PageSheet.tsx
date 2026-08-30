@@ -37,15 +37,26 @@ export function PageSheet({
     >
       <rect x="0" y="0" width={plan.widthPt} height={plan.heightPt} fill="#FFFFFF" />
 
-      {shapes.areas.map((area, index) =>
-        area.kind === 'ellipse' ? (
+      {shapes.areas.map((area, index) => {
+        // An area may be a fill, an outline, or both: the cover's sticker
+        // cards are drawn as a pale panel under a coloured contour, and a
+        // mono palette has no panel colour to give them at all.
+        const paint = {
+          fill: area.color ?? 'none',
+          stroke: area.stroke?.color,
+          strokeWidth: area.stroke?.width,
+        };
+        if (area.kind === 'path') {
+          return <path key={`area-${index}`} d={area.d} strokeLinejoin="round" {...paint} />;
+        }
+        return area.kind === 'ellipse' ? (
           <ellipse
             key={`area-${index}`}
             cx={area.x + area.w / 2}
             cy={area.y + area.h / 2}
             rx={area.w / 2}
             ry={area.h / 2}
-            fill={area.color}
+            {...paint}
           />
         ) : (
           <rect
@@ -55,10 +66,10 @@ export function PageSheet({
             width={area.w}
             height={area.h}
             rx={area.r || undefined}
-            fill={area.color}
+            {...paint}
           />
-        ),
-      )}
+        );
+      })}
 
       {showSafeArea ? (
         <rect

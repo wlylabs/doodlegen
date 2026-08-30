@@ -1,6 +1,6 @@
 import { cmykToHex } from './palette';
 import { INKS } from './presets';
-import type { Cmyk, Config, LoadedFont, PagePlan } from './types';
+import type { Cmyk, Config, LoadedFont, PagePlan, PathCmd } from './types';
 
 /**
  * The preview draws the very same glyph outlines the PDF strokes, pulled
@@ -32,15 +32,38 @@ export interface GuideShape {
   dash?: string;
 }
 
-/** A flat area of colour behind everything else: the cover's card and dots. */
+/** A flat area of colour behind everything else: the cover's card and art. */
 export interface AreaShape {
-  kind: 'rect' | 'ellipse';
+  kind: 'rect' | 'ellipse' | 'path';
   x: number;
   y: number;
   w: number;
   h: number;
   r: number;
-  color: string;
+  /** Fill; null where the shape is drawn as an outline only. */
+  color: string | null;
+  stroke?: { color: string; width: number };
+  /** Outline data, y already flipped into preview space; paths only. */
+  d?: string;
+}
+
+/**
+ * A page-space outline as SVG path data. The flip is the only change: the
+ * page thinks in points from the bottom-left, every screen renderer in
+ * pixels from the top-left, and one of the two has to give.
+ */
+function pathData(path: PathCmd[], height: number): string {
+  return path
+    .map((step) => {
+      if (step.c === 'Z') return 'Z';
+      if (step.c === 'C') {
+        return `C ${round(step.x1)} ${round(height - step.y1)} ${round(step.x2)} ${round(
+          height - step.y2,
+        )} ${round(step.x)} ${round(height - step.y)}`;
+      }
+      return `${step.c} ${round(step.x)} ${round(height - step.y)}`;
+    })
+    .join(' ');
 }
 
 export interface SheetShapes {
@@ -121,7 +144,11 @@ export function sheetShapes(font: LoadedFont, plan: PagePlan, config: Config): S
     w: round(shape.w),
     h: round(shape.h),
     r: round(shape.r ?? 0),
-    color: cmykToHex(shape.color),
+    color: shape.color ? cmykToHex(shape.color) : null,
+    stroke: shape.stroke
+      ? { color: cmykToHex(shape.stroke.color), width: shape.stroke.width }
+      : undefined,
+    d: shape.path ? pathData(shape.path, plan.heightPt) : undefined,
   }));
 
   for (const place of plan.placements) {
