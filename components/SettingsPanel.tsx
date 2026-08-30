@@ -5,7 +5,7 @@ import { CoverMark, LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diag
 import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
-import { COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
+import { BOOK_STYLES, COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
 import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
@@ -369,8 +369,24 @@ export function SettingsPanel({
             </span>
           </button>
 
-          {/* Ten compositions in one list is a wall. Split at the line a
-              seller actually shops along: the loud ones and the plain ones. */}
+          {/* A dozen compositions in one list is a wall. Split at the lines a
+              seller actually shops along: does it look like a book, like a
+              coloring book, or like neither. */}
+          <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
+            Standar buku
+          </p>
+          <ChoiceGrid<CoverStyleId>
+            label="Model sampul standar buku"
+            columns={2}
+            value={config.coverStyle}
+            onChange={(coverStyle) => update({ coverStyle })}
+            options={BOOK_STYLES.map((id) => ({
+              value: id,
+              label: COVER_STYLES[id].label,
+              note: COVER_STYLES[id].note,
+              art: <CoverMark kind={COVER_STYLES[id].page} />,
+            }))}
+          />
           <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
             Warna-warni
           </p>
@@ -395,7 +411,7 @@ export function SettingsPanel({
             value={config.coverStyle}
             onChange={(coverStyle) => update({ coverStyle })}
             options={COVER_STYLE_ORDER.filter(
-              (id) => id !== 'custom' && !COLOURFUL_STYLES.includes(id),
+              (id) => id !== 'custom' && !COLOURFUL_STYLES.includes(id) && !BOOK_STYLES.includes(id),
             ).map((id) => ({
               value: id,
               label: COVER_STYLES[id].label,
@@ -403,6 +419,11 @@ export function SettingsPanel({
               art: <CoverMark kind={COVER_STYLES[id].page} />,
             }))}
           />
+          <Note>
+            Model standar buku mengikuti susunan sampul buku terbitan: judul di panel kepala,
+            gambar di satu jendela, nama toko sendirian di kaki halaman di bawah garis — bukan di
+            atas seperti model lain.
+          </Note>
           <Note>
             Sampul tidak lagi mencetak jumlah halaman, DPI, atau syarat cetak ulang — itu urusan
             deskripsi listing, bukan halaman judul yang sudah dibeli. Yang tercetak hanya judul,

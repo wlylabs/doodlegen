@@ -186,6 +186,44 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
           {line('rule-bottom', 9, 31, 14, 1)}
         </>
       ) : null}
+      {kind === 'book' ? (
+        <>
+          {/* Masthead, one window, imprint at the foot: the shelf grammar. */}
+          <rect x="3" y="3.5" width="26" height="11" rx="1.8" {...stroke} strokeWidth="1.2" />
+          {line('title', 6, 8, 20, 2)}
+          {line('sub', 9.5, 12, 13, 1)}
+          <rect x="3" y="18" width="26" height="16" rx="1.8" {...stroke} strokeWidth="1.2" />
+          <rect x="6.5" y="21" width="8" height="10" rx="1.4" {...stroke} strokeWidth="1.2" />
+          <rect x="17.5" y="21" width="8" height="10" rx="1.4" {...stroke} strokeDasharray="1.6 1.6" strokeWidth="1.2" />
+          {line('rule', 5, 38, 22, 0.9)}
+          {line('imprint', 10, 41, 12, 1.4)}
+        </>
+      ) : null}
+      {kind === 'workbook' ? (
+        <>
+          <rect x="2.6" y="2.6" width="26.8" height="38.8" rx="2" {...stroke} strokeWidth="1.1" />
+          {line('title', 7, 8, 18, 2)}
+          {line('rule', 12, 11.5, 8, 0.9)}
+          {line('sub', 10, 14.5, 12, 1)}
+          <rect x="5.5" y="18" width="21" height="16" rx="1.6" {...stroke} strokeWidth="1.2" />
+          {[0, 1].flatMap((row) =>
+            [0, 1].map((col) => (
+              <rect
+                key={`${row}-${col}`}
+                x={7.5 + col * 9}
+                y={20 + row * 6.4}
+                width="7"
+                height="5"
+                rx="1"
+                {...stroke}
+                strokeWidth="1.1"
+                strokeDasharray={row === 1 && col === 1 ? '1.4 1.4' : undefined}
+              />
+            )),
+          )}
+          {line('imprint', 11, 38.5, 10, 1.3)}
+        </>
+      ) : null}
       {kind === 'custom' ? (
         <>
           {/* Handles on a loose box: the one mark that says "you move this". */}

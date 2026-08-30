@@ -25,6 +25,8 @@ export interface CoverStyle {
     | 'frame'
     | 'sticker'
     | 'rainbow'
+    | 'book'
+    | 'workbook'
     | 'custom';
   /** How many real characters from the set the cover puts on show. */
   samples: number;
@@ -151,6 +153,34 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     ground: true,
     rainbowTitle: true,
   },
+  book: {
+    id: 'book',
+    label: 'Buku Toko',
+    note: 'Judul di panel kepala, gambar di jendela tengah, penerbit di kaki',
+    page: 'book',
+    // A pair: one letter already coloured, one still dotted. Two fill a wide
+    // plate at a size that reads across a shop, where three would not.
+    samples: 2,
+    // Flooded colour, but no confetti: a shelf book carries its colour as a
+    // ground, not as scattered dots.
+    decoration: 'card',
+    sheets: 'hero',
+    ground: true,
+    rainbowTitle: false,
+  },
+  workbook: {
+    id: 'workbook',
+    label: 'Buku Latihan',
+    note: 'Bingkai garis, judul di kepala, empat contoh di plat tengah, penerbit di kaki',
+    page: 'workbook',
+    // Two by two. A row of letters can only ever be a third of the page tall;
+    // a grid fills the plate the way a workbook cover is meant to be filled.
+    samples: 4,
+    decoration: 'card',
+    sheets: 'grid',
+    ground: false,
+    rainbowTitle: false,
+  },
   custom: {
     id: 'custom',
     label: 'Custom',
@@ -180,6 +210,8 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
 
 export const COVER_STYLE_ORDER: CoverStyleId[] = [
   'custom',
+  'book',
+  'workbook',
   'bubble',
   'burst',
   'rainbow',
@@ -193,6 +225,15 @@ export const COVER_STYLE_ORDER: CoverStyleId[] = [
 ];
 
 /**
+ * The two compositions built to the convention a shelf book follows rather
+ * than the one a coloring book does: the title in a masthead at the head of
+ * the page, the art in one window under it, and the imprint alone at the
+ * foot. Kept as its own group because that is the choice a seller is making
+ * — "looks like a book" against "looks like a coloring book".
+ */
+export const BOOK_STYLES: CoverStyleId[] = ['book', 'workbook'];
+
+/**
  * The loud half of the catalogue. Kept as a list rather than derived from a
  * flag so the UI can group them under a heading a seller understands.
  */
@@ -204,6 +245,14 @@ export const COLOURFUL_STYLES: CoverStyleId[] = [
   'sticker',
   'frame',
 ];
+
+/**
+ * The compositions that run their art right up to the card's edge — a balloon
+ * bulging, a road leaving the page, a book's masthead spanning the full
+ * width. They need the quiet band inside the trim whether or not the palette
+ * paid for a card, or their overhang lands in the 0.5 inch safe margin.
+ */
+export const BANDED_STYLES: CoverStyleId[] = [...COLOURFUL_STYLES, ...BOOK_STYLES];
 
 /** Evenly spaced, distinct characters: an honest sample of the whole set. */
 export function coverSamples(characters: string[], count: number): string[] {

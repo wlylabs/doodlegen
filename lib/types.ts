@@ -25,6 +25,8 @@ export type CoverStyleId =
   | 'frame'
   | 'sticker'
   | 'rainbow'
+  | 'book'
+  | 'workbook'
   | 'custom';
 
 /** Ink, as the press mixes it: cyan, magenta, yellow, key, each 0 to 1. */

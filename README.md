@@ -61,7 +61,7 @@ the rest around it:
 
 | Part | What it is |
 | --- | --- |
-| Cover page | Brand line, product title, an optional tagline in the seller's own words, and real sample characters — in one of ten compositions the seller picks, six of them colourful, or one they lay out themselves in the cover studio. Vector like every other page, and the only page allowed to carry colour. No page counts, DPI or reprint terms: that is listing copy, not a title page. |
+| Cover page | Brand line, product title, an optional tagline in the seller's own words, and real sample characters — in one of twelve compositions the seller picks, two of them built to the convention a published book follows, or one they lay out themselves in the cover studio. Vector like every other page, and the only page allowed to carry colour. No page counts, DPI or reprint terms: that is listing copy, not a title page. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
@@ -93,10 +93,25 @@ correct. Material that ships in the repo is material whose licence is settled:
 OFL faces, and word lists that are public domain or plain vocabulary.
 
 **The cover is a choice, not a fixture.** It is the one page a buyer sees
-before they pay, so it is the one page that gets options — ten of them, in two
-groups, plus one the seller draws themselves.
+before they pay, so it is the one page that gets options — twelve of them, in
+three groups, plus one the seller draws themselves.
 
-Six are built to be loud, because that is what a children's coloring book
+Two follow the grammar of a *published* book rather than of a coloring book,
+because that is what a shelf, and a marketplace grid, have trained a buyer to
+read. Both put the title in a masthead panel across the head of the page, the
+art in one window under it, and the imprint alone at the foot beneath a
+hairline — never at the top, where every other composition here puts the brand
+— set in tracked-out small caps, the way a publisher's name has always been
+set. *Buku Toko* floods the page with colour and shows a pair of characters,
+one already coloured and one still dotted, at a size that reads across a shop.
+*Buku Latihan* turns the colour down to a tint, rules a border around the
+page, and grids four examples into its plate — the school workbook, and the
+cheapest cover here to print after Minimalis. Both plates are cut to what is
+on them rather than to the room left over: a pair of letters stranded in a
+tall panel reads as a mistake, and the colour breathing around the art is what
+the shelf look is made of.
+
+Six more are built to be loud, because that is what a children's coloring book
 looks like on a shelf: *Balon Kata* puts a rainbow title inside a big speech
 balloon; *Kilau* fires a starburst behind a scalloped cloud panel; *Pelangi*
 arches a rainbow over the title with a cloud on each foot; *Jalan Warna* runs
@@ -108,8 +123,8 @@ Four are quiet: *Klasik* centres the title over a strip of three samples;
 *Poster* blows one character up to the height of the page, which is what
 survives being shrunk to a marketplace thumbnail; *Etalase* grids four samples
 over a left-aligned title block; *Minimalis* is type between two hairlines on
-bare paper, and the cheapest of the ten to print. The choice carries into the
-listing images too — the sheet mockups fan, stand alone, tile or line up to
+bare paper, and the cheapest of the twelve to print. The choice carries into
+the listing images too — the sheet mockups fan, stand alone, tile or line up to
 match, and the ground and the rainbow title come across with them — so the
 shop front and the file agree.
 
@@ -385,7 +400,7 @@ lib/
   wordlists.ts      Ready-made word sets for the word mode
   svgdoc.ts         Plan to a standalone SVG file, for Canva and Cricut
   palette.ts        The seven CMYK palettes
-  covers.ts         The ten cover compositions, page and listing image
+  covers.ts         The twelve cover compositions, page and listing image
   coverDoc.ts       The custom cover document: elements, templates, inks
   doodles.ts        Generated cover art: blobs, bursts, clouds, arches
 scripts/            Font pipeline, icon and social card generation, QA tools

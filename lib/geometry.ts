@@ -1,5 +1,5 @@
 import { renderTitle, subjectOf } from './charset';
-import { COLOURFUL_STYLES, COVER_STYLES, coverSamples, type CoverStyle } from './covers';
+import { BANDED_STYLES, COVER_STYLES, coverSamples, type CoverStyle } from './covers';
 import {
   archPath,
   blobPath,
@@ -1808,6 +1808,205 @@ function customBackdrop(scene: CoverScene): Cmyk {
   return [0, 0, 0, 0];
 }
 
+/**
+ * How far apart an imprint's letters are set, as a fraction of its size. A
+ * publisher's name at the foot of a cover is always tracked out — it is what
+ * separates an imprint from a caption.
+ */
+const IMPRINT_TRACK = 0.16;
+
+function trackedWidth(font: LoadedFont, text: string, size: number, track: number): number {
+  const letters = [...text];
+  return (
+    letters.reduce((total, letter) => total + textWidth(font, letter, size), 0) +
+    Math.max(0, letters.length - 1) * size * track
+  );
+}
+
+/**
+ * A line set one letter at a time so it can be tracked out. A TextDraw is a
+ * single run with no spacing of its own, so this is the only way to letter-
+ * space anything here — the same trick the rainbow titles use, for a
+ * different reason.
+ */
+function trackedLine(
+  scene: CoverScene,
+  text: string,
+  size: number,
+  left: number,
+  baseline: number,
+  colour: Cmyk,
+  track: number,
+): void {
+  let cursor = left;
+  for (const letter of [...text]) {
+    if (letter.trim()) {
+      scene.texts.push({ text: letter, size, x: cursor, y: baseline, ink: 1, color: colour });
+    }
+    cursor += textWidth(scene.font, letter, size) + size * track;
+  }
+}
+
+/**
+ * The colophon a book closes with: a hairline, and the imprint tracked out
+ * under it, centred. Answers the height it claimed, so the composition above
+ * knows where its floor is.
+ */
+function bookImprint(scene: CoverScene, box: Box): number {
+  const { font } = scene;
+  if (!scene.brand) return coverFootHeight(scene);
+  const size = COVER_BRAND_SIZE * 1.05;
+  const baseline = box.y + size * 0.5;
+  const width = trackedWidth(font, scene.brand, size, IMPRINT_TRACK);
+  trackedLine(scene, scene.brand, size, midX(box) - width / 2, baseline, scene.brandInk, IMPRINT_TRACK);
+  const rule = baseline + size * 1.6;
+  scene.rules.push({
+    x1: box.x,
+    x2: box.x + box.w,
+    y: rule,
+    width: 0.7,
+    ink: 0.22,
+    color: scene.ruleInk,
+  });
+  return rule - box.y;
+}
+
+/** A panel: the light plate a book lays its title and its art on. */
+function panelRect(scene: CoverScene, box: Box): void {
+  const paint = panelPaint(scene.palette);
+  scene.shapes.push({
+    kind: 'rect',
+    ...box,
+    r: Math.min(box.w, box.h) * 0.06,
+    color: paint.fill,
+    stroke: paint.stroke,
+  });
+}
+
+/**
+ * Buku Toko: the composition a published book actually uses, rather than the
+ * one a coloring book does. Colour floods the page, the title sits in a
+ * masthead panel across the head, the art has one window of its own beneath
+ * it, and the imprint stands alone at the foot under a hairline. It is the
+ * arrangement a shelf reads at three metres — and the one a buyer scanning a
+ * marketplace grid has been trained on since childhood.
+ */
+function bookCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  const gap = inner.h * 0.028;
+
+  // A book names its publisher at the foot, not at the head, so the colophon
+  // is placed first and everything above is measured off it.
+  const floor = inner.y + bookImprint(scene, inner) + gap;
+
+  const hasSubtitle = Boolean(scene.subtitle);
+  const mastheadH = inner.h * (hasSubtitle ? 0.25 : 0.21);
+  const masthead: Box = {
+    x: inner.x,
+    y: inner.y + inner.h - mastheadH,
+    w: inner.w,
+    h: mastheadH,
+  };
+  panelRect(scene, masthead);
+
+  const inside = inset(masthead, Math.min(masthead.w, masthead.h) * 0.085);
+  const subtitleBand = hasSubtitle ? COVER_SUBTITLE_SIZE * 2 : 0;
+  const titleBox: Box = { ...inside, y: inside.y + subtitleBand, h: inside.h - subtitleBand };
+  centredTitle(scene, coverTitleIn(font, scene.title, titleBox, 36), titleBox, false, panelInk(palette));
+  if (hasSubtitle) {
+    scene.texts.push({
+      ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, inside, inside.y + COVER_SUBTITLE_SIZE * 0.4, 0.5),
+      // The subtitle is on the panel, not on the ground, so it takes the
+      // palette's own body colour whatever the page is flooded with.
+      color: palette.body,
+    });
+  }
+
+  // Everything the buyer is actually shown goes in one window. A cover that
+  // scatters its art has no focus; a cover with a plate has exactly one.
+  //
+  // The plate is sized to what is on it rather than to the room left over: a
+  // pair of letters stranded in a tall panel reads as a mistake, and colour
+  // breathing above and below the art is what the shelf look is made of.
+  const free = masthead.y - gap - floor;
+  const cell = (inner.w * 0.88) / Math.max(1, scene.samples.length);
+  const plateH = Math.min(free, cell * 1.55);
+  const plate: Box = { x: inner.x, y: floor + (free - plateH) / 2, w: inner.w, h: plateH };
+  if (plate.h > 60) {
+    panelRect(scene, plate);
+    sampleStrip(scene, inset(plate, Math.min(plate.w, plate.h) * 0.07), { w: 0.92, h: 0.86 });
+  }
+}
+
+/**
+ * Buku Latihan: the same book grammar with the colour turned down — a ruled
+ * border, the title in the clear at the head, the art in a plate, the imprint
+ * at the foot. This is the educational workbook every school shelf carries,
+ * and the cheapest cover here to print after Minimalis: one tint and one
+ * hairline.
+ */
+function workbookCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  const gap = inner.h * 0.028;
+
+  // The ruled border is the oldest mark on a workbook cover and costs nothing:
+  // one hairline, no second plate.
+  scene.shapes.push({
+    kind: 'rect',
+    ...inner,
+    r: Math.min(inner.w, inner.h) * 0.025,
+    stroke: { color: palette.headline, width: 1.1 },
+  });
+
+  const frame = inset(inner, Math.min(inner.w, inner.h) * 0.055);
+  const floor = frame.y + bookImprint(scene, frame) + gap;
+
+  const titleH = frame.h * 0.19;
+  const titleBox: Box = { x: frame.x, y: frame.y + frame.h - titleH, w: frame.w, h: titleH };
+  centredTitle(scene, coverTitleIn(font, scene.title, titleBox, 34), titleBox, false, cardInk(palette));
+
+  let cursor = titleBox.y;
+  const ruleInset = frame.w * 0.36;
+  scene.rules.push({
+    x1: frame.x + ruleInset,
+    x2: frame.x + frame.w - ruleInset,
+    y: cursor,
+    width: 0.9,
+    ink: 0.3,
+    color: scene.ruleInk,
+  });
+
+  if (scene.subtitle) {
+    cursor -= COVER_SUBTITLE_SIZE * 1.7;
+    scene.texts.push({
+      ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, frame, cursor, 0.5),
+      color: scene.bodyInk,
+    });
+  }
+
+  // Four examples in a framed plate, two by two — the arrangement a school
+  // workbook has used forever, and the one that actually fills a cover: a row
+  // of letters can never be taller than a third of the page, a grid can.
+  const free = cursor - gap * 1.4 - floor;
+  // A set with one or two characters in it still has to look composed, so the
+  // grid narrows rather than leaving an empty cell.
+  const cols = Math.min(2, Math.max(1, scene.samples.length));
+  const rows = Math.max(1, Math.ceil(scene.samples.length / cols));
+  const cell = (frame.w * 0.92) / cols;
+  const plateH = Math.min(free, cell * rows * 1.12);
+  const plate: Box = { x: frame.x, y: floor + (free - plateH) / 2, w: frame.w, h: plateH };
+  if (plate.h > 60 && scene.samples.length) {
+    panelRect(scene, plate);
+    const boxes = tile(inset(plate, Math.min(plate.w, plate.h) * 0.07), cols, rows, 0.05);
+    scene.placements.push(
+      ...coverSampleArt(scene.font, scene.config, palette, boxes, scene.samples, true, {
+        w: 0.88,
+        h: 0.84,
+      }),
+    );
+  }
+}
+
 const COVER_COMPOSERS: Record<CoverStyle['page'], (scene: CoverScene) => void> = {
   classic: classicCover,
   poster: posterCover,
@@ -1819,6 +2018,8 @@ const COVER_COMPOSERS: Record<CoverStyle['page'], (scene: CoverScene) => void> =
   frame: frameCover,
   sticker: stickerCover,
   rainbow: rainbowCover,
+  book: bookCover,
+  workbook: workbookCover,
   custom: customCover,
 };
 
@@ -1875,11 +2076,12 @@ function planCover({
   // Inside the tinted card, type keeps clear of the rounded corners — and
   // that same band is where the confetti lives.
   const filled = carded || grounded;
-  // The colourful compositions run their art to the card's edge — a balloon
-  // bulges, a road leaves the page, a rainbow's feet spread — so they are
-  // given the quiet band whether or not the palette paid for a card. Without
-  // it those overhangs would land inside the 0.5 inch safe margin.
-  const banded = filled || COLOURFUL_STYLES.includes(style.id);
+  // The compositions that run their art to the card's edge — a balloon
+  // bulges, a road leaves the page, a book's masthead spans the full width —
+  // are given the quiet band whether or not the palette paid for a card.
+  // Without it those overhangs would land inside the 0.5 inch safe margin,
+  // which is exactly what `verify` catches on a palette with no card at all.
+  const banded = filled || BANDED_STYLES.includes(style.id);
   // A custom cover measures its elements against the very box the studio drew
   // them in, so the two can never drift apart.
   const inner = custom ? coverElementArea(paper, config) : banded ? coverBand(art) : art;

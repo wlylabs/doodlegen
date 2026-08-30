@@ -296,6 +296,24 @@ export const COVER_TEMPLATES: CoverTemplate[] = [
     },
   },
   {
+    id: 'buku',
+    label: 'Standar buku',
+    note: 'Judul di panel kepala, gambar di jendela tengah, penerbit di kaki',
+    doc: {
+      ground: 'ground',
+      confetti: false,
+      elements: [
+        element('rect', { x: 0, y: 0, w: 1, h: 0.25 }),
+        element('title', { x: 0.06, y: 0.035, w: 0.88, h: 0.12, rainbow: false }),
+        element('tagline', { x: 0.12, y: 0.175, w: 0.76, h: 0.045 }),
+        element('rect', { x: 0, y: 0.32, w: 1, h: 0.5 }),
+        element('sample', { sample: 0, x: 0.07, y: 0.36, w: 0.4, h: 0.42 }),
+        element('trace', { sample: 1, x: 0.53, y: 0.36, w: 0.4, h: 0.42 }),
+        element('brand', { x: 0.2, y: 0.9, w: 0.6, h: 0.045 }),
+      ],
+    },
+  },
+  {
     id: 'poster',
     label: 'Poster satu huruf',
     note: 'Satu huruf besar memenuhi halaman, judul di kakinya',
