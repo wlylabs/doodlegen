@@ -1,5 +1,4 @@
 import type {
-  DecorId,
   FontId,
   GridId,
   InkId,
@@ -173,43 +172,6 @@ export const INKS: Record<InkId, { label: string; note: string; solid: number; d
   },
 };
 
-/**
- * How wide the doodle border is, as a fraction of the shorter side of the
- * safe area. The band is cut out of all four sides before anything is placed
- * on the page, so the width is paid for in work area and therefore in letter
- * size. What is left is (1 − 2r·s/w)(1 − 2r·s/h) of the safe area, s being
- * its shorter side: on A4 that is 78% at `full` and 87% at `slim`, and on US
- * Letter a point worse either way. The notes round to the A4 figure.
- *
- * Which one to pick is an age question more than a taste one. Decoration set
- * beside the work is the "seductive details" the multimedia-learning
- * literature keeps finding costs retention, and Fisher, Godwin and Seltman
- * (2014) found kindergarteners in heavily decorated rooms further off task;
- * decoration the child is invited to colour is not beside the work, it is
- * more of it. So the border earns its keep for a four- to six-year-old and
- * stops earning it for a three-year-old, whose hand needs the millimetres
- * more than it needs a balloon.
- */
-export const DECORS: Record<DecorId, { label: string; note: string; ratio: number }> = {
-  none: {
-    label: 'Polos',
-    note: 'Area kerja utuh, huruf paling besar',
-    ratio: 0,
-  },
-  slim: {
-    label: 'Tipis',
-    note: 'Bingkai ramping — area kerja −13%',
-    ratio: 0.04,
-  },
-  full: {
-    label: 'Penuh',
-    note: 'Bingkai lebar untuk diwarnai — area kerja −22%',
-    ratio: 0.07,
-  },
-};
-
-export const DECOR_ORDER: DecorId[] = ['none', 'slim', 'full'];
-
 /** Default page-title wording per pack language, offered when it is switched. */
 export const TITLE_TEMPLATES: Record<Config['language'], string> = {
   en: 'Trace and color — {char}',
@@ -248,7 +210,6 @@ export const DEFAULT_CONFIG: Config = {
   pageNumbers: false,
   coverPage: false,
   coverStyle: 'classic',
-  pageDecor: 'full',
   termsPage: false,
   brand: '',
   productTitle: '',
@@ -308,10 +269,6 @@ export const STARTER_PRESETS: StarterPreset[] = [
       titleTemplate: 'Trace and color — {char}',
       coverPage: true,
       coverStyle: 'rainbow',
-      // Three practice rows and a worked example already fill the page; a
-      // full-width border would take the height out of the rows that carry
-      // the exercise.
-      pageDecor: 'slim',
       palette: 'pastel',
       termsPage: true,
       pageNumbers: true,
@@ -355,9 +312,6 @@ export const STARTER_PRESETS: StarterPreset[] = [
       guides: true,
       coverPage: true,
       coverStyle: 'banner',
-      // A name is the longest string a child traces and usually the first
-      // one they try, so this pack spends the whole page on it.
-      pageDecor: 'none',
       palette: 'permen',
       termsPage: true,
       pageNumbers: true,

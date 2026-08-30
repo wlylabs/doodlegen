@@ -62,7 +62,6 @@ the rest around it:
 | Part | What it is |
 | --- | --- |
 | Cover page | Brand line, product title, page count, real sample characters, print specs — in one of ten compositions the seller picks, six of them colourful. Vector like every other page, and the only page allowed to carry colour. |
-| Page border | A K-only doodle border on every worksheet, in the motif the chosen cover uses, at one of two widths or not at all. Outlines, so the child can colour them too. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
@@ -124,51 +123,34 @@ repo, and a raster or a foreign coordinate space in a pipeline that has
 neither. Generated, a doodle is print colour from the first line, scales to
 any paper, is identical in the preview and the print, and costs no bytes.
 
-**The inside is the child's to colour, not the printer's.** Worksheets carry
-a doodle border in the motif the chosen cover uses — balloons, stars, a
-rainbow in the corner, a road along the foot — so a sheet pulled from the
-middle of the pack still belongs to its cover. It is drawn as K-only
-outlines in a band the work area keeps clear, which is a deliberate choice
-and not a limitation: crayon is translucent, so a printed tint swallows a
-child's own colour instead of adding to it, and it costs contrast exactly
-where a four-year-old is trying to follow a dotted line. An outline the
-child can fill in is play; a printed background is ink they cannot draw on.
+**The inside carries nothing but the exercise.** A worksheet draws the
+characters, the guide lines, an optional title and a numbered footer, and
+that is the whole list — no border, no stars, no boxes in the corners. The
+decoration all lives on the cover, which is where a buyer looks and where a
+second plate of ink can be justified. This is a rule in the layout engine
+rather than a setting: `frameFor` hands the entire safe area to the work, and
+a worksheet's `shapes` list is empty by construction, so there is no width to
+tune and no way for an ornament to reach a tracing row.
 
-**And it is a width, not a switch.** The band is cut out of the safe area
-before the title, the footer or a single tracing row is placed, so a border
-is always paid for in letter size. On A4, with the same twelve marks drawn
-either way:
+The reasoning is worth keeping written down, because a border is the obvious
+thing to add and the arguments against it are not obvious. It costs work
+area: the band has to come out of the safe area before the title, the footer
+or a single row is placed, and at the 7 % it used to take, an A4 worksheet
+kept 78 % of its area and a traced capital lost nearly a tenth of its height
+— paid by the youngest hands, who need the size most. It costs attention:
+the *seductive details* effect is the finding that interesting but irrelevant
+material added to a lesson reduces retention and transfer, modestly but
+consistently across meta-analyses, which is Mayer's coherence principle in
+practice; Fisher, Godwin and Seltman (2014) found kindergarteners in heavily
+decorated *rooms* further off task, which is a weaker claim about a different
+thing but points the same way. And it costs contrast where a four-year-old is
+trying to follow a dotted line. A cover can carry all the noise the shelf
+wants; the page the child works on should not have to.
 
-| Border | Band | Work area left | A traced capital |
-| --- | --- | --- | --- |
-| `Polos` | — | 100 % | 114.7 pt |
-| `Tipis` | 4 % of the shorter side | 87 % | 108.1 pt |
-| `Penuh` | 7 % | 78 % | 103.5 pt |
-
-Which one to pick is an age question, not a taste one. The border is worth
-those millimetres to a four- to six-year-old who finishes early and wants
-more to colour, and not to a three-year-old whose hand still needs the size;
-a name is the longest string a child ever traces and usually the first they
-try, so it gets the whole page. The starter packs say so rather than leaving
-it to be discovered — *Lembar Kerja Tracing* ships `Tipis`, *Latihan Kata &
-Nama* ships `Polos`, the colouring packs keep `Penuh`. *Minimalis* declines
-the border at any width, because a style whose whole argument is restraint
-has to be able to say so on every page.
-
-The evidence behind that is worth stating accurately, because it is usually
-cited loosely. The closest body of work is the *seductive details* effect:
-interesting but irrelevant material added to a lesson costs retention and
-transfer, modestly but consistently across meta-analyses, which is Mayer's
-coherence principle in practice. Fisher, Godwin and Seltman (2014) — the
-study normally reached for here, and the one this README used to lean on
-alone — found kindergarteners in heavily decorated rooms more often off-task
-and learning less than in sparse ones, but it is a study of *rooms*, and it
-cannot by itself decide what belongs on a page. What both agree on is
-narrower and sufficient: decoration set *beside* the work costs attention.
-Decoration the child is invited to colour is not beside the work — on a
-colouring pack it is more of the work — which is why the border gets a band
-of its own, never a tint behind the tracing rows, and why its width is the
-seller's to spend.
+That is also why a worksheet never gets a printed tint, only ever K-only
+line work: crayon is translucent, so a printed ground swallows a child's own
+colour instead of adding to it, and colour on the inside would cost a second
+plate on press, muddy every photocopy and drain a home printer for nothing.
 
 **Colour, where it pays for itself.** Seven palettes — Krayon, Pop, Permen,
 Rimba, Pastel, Senja and Hitam Putih — colour the cover page and the listing

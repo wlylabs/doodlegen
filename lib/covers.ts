@@ -9,9 +9,6 @@ import type { CoverStyleId } from './types';
  * the page layout, how many real characters it shows, and how the listing
  * images arrange their sheet mockups all move together.
  */
-/** The shape a worksheet border repeats. */
-export type PageMotif = 'none' | 'stars' | 'bubbles' | 'rays' | 'arch' | 'road' | 'cards';
-
 export interface CoverStyle {
   id: CoverStyleId;
   label: string;
@@ -46,13 +43,6 @@ export interface CoverStyle {
    */
   ground: boolean;
   /**
-   * The doodle the worksheets repeat in their border, so a page from the
-   * middle of the pack still looks like it came from this cover. `none` is
-   * not an omission: a style whose whole argument is restraint has to be
-   * able to say so on every page, not just the first.
-   */
-  motif: PageMotif;
-  /**
    * Spells the title out one letter at a time, cycling the palette's letter
    * ramp. It is the single loudest thing a children's cover can do, so it is
    * a per-style choice rather than a palette-wide one.
@@ -70,7 +60,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'fan',
     ground: false,
-    motif: 'stars',
     rainbowTitle: false,
   },
   poster: {
@@ -82,7 +71,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'hero',
     ground: false,
-    motif: 'stars',
     rainbowTitle: false,
   },
   showcase: {
@@ -94,7 +82,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'card',
     sheets: 'grid',
     ground: false,
-    motif: 'stars',
     rainbowTitle: false,
   },
   minimal: {
@@ -106,7 +93,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'none',
     sheets: 'row',
     ground: false,
-    motif: 'none',
     rainbowTitle: false,
   },
   bubble: {
@@ -118,7 +104,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'fan',
     ground: true,
-    motif: 'bubbles',
     rainbowTitle: true,
   },
   burst: {
@@ -130,7 +115,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'grid',
     ground: true,
-    motif: 'rays',
     rainbowTitle: true,
   },
   banner: {
@@ -142,7 +126,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'row',
     ground: false,
-    motif: 'road',
     rainbowTitle: true,
   },
   frame: {
@@ -154,7 +137,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'grid',
     ground: false,
-    motif: 'stars',
     rainbowTitle: true,
   },
   sticker: {
@@ -166,7 +148,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'grid',
     ground: true,
-    motif: 'cards',
     rainbowTitle: true,
   },
   rainbow: {
@@ -178,7 +159,6 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
     decoration: 'full',
     sheets: 'fan',
     ground: false,
-    motif: 'arch',
     rainbowTitle: true,
   },
 };
