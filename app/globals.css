@@ -200,16 +200,15 @@
    * A ticked circle in the corner, the mark every marketplace uses for the
    * option you picked. A tint alone says "different"; a tick says "chosen",
    * and it still says it in greyscale.
+   *
+   * It is drawn by <SelectedMark>, not by a pseudo-element: a tick faked out
+   * of two borders on a rotated box has mitred corners and square ends that
+   * no amount of nudging squares with the round-capped set the rest of the
+   * interface is drawn in, and it cannot be optically centred either.
    */
-  .choice[data-active='true']::after {
-    content: '';
-    @apply absolute right-2.5 top-2.5 h-[18px] w-[18px] rounded-full bg-accent;
-  }
-
-  .choice[data-active='true']::before {
-    content: '';
-    @apply absolute right-[15.5px] top-[12.5px] z-[1] h-[8px] w-[4px] rotate-45 border-white;
-    border-width: 0 1.7px 1.7px 0;
+  .selected-mark {
+    @apply absolute right-2.5 top-2.5 flex h-[18px] w-[18px] items-center justify-center
+           rounded-full bg-accent text-white;
   }
 
   /*

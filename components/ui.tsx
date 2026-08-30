@@ -1,7 +1,21 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { CheckIcon } from './diagrams';
 import { useRipple } from './motion';
+
+/**
+ * The tick on the option you picked. A real glyph in a real circle, so its
+ * ends are round and its vertex is a join — the same drawing the rest of the
+ * interface is set in — and so it can actually be centred.
+ */
+export function SelectedMark() {
+  return (
+    <span aria-hidden="true" className="selected-mark">
+      <CheckIcon className="h-3 w-3" />
+    </span>
+  );
+}
 
 export function Section({
   step,
@@ -91,6 +105,7 @@ export function ChoiceGrid<T extends string>({
               onChange(option.value);
             }}
           >
+            {active ? <SelectedMark /> : null}
             {option.art ? <span className="mb-1.5 block text-ink-soft">{option.art}</span> : null}
             <span className="text-[14px] font-semibold leading-tight tracking-tight">{option.label}</span>
             {option.note ? (
