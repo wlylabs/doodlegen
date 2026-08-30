@@ -4,7 +4,7 @@
  * PDFs are built entirely in the browser, so once the shell and the fonts are
  * cached the tool keeps working with no network at all.
  */
-const VERSION = 'doodlegen-v2';
+const VERSION = 'doodlegen-v3';
 // Two documents now: the landing page and the studio. Each is cached under
 // its own URL so an offline visit lands on the page that was asked for.
 const SHELL = [
@@ -16,6 +16,9 @@ const SHELL = [
   '/icon-512.png',
   '/og.png',
   '/fonts/Baloo2-ExtraBold.ttf',
+  // The interface face is shell, not content: without it an offline visit
+  // falls back to a system stack and the whole app changes shape.
+  '/fonts/Archivo-UI.woff2',
 ];
 
 self.addEventListener('install', (event) => {

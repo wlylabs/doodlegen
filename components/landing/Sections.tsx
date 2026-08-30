@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { CheckIcon, ChevronIcon, KitIcon, SparkIcon } from '../diagrams';
+import { CheckIcon, ChevronIcon, KitIcon } from '../diagrams';
 import { CountUp, Reveal, useRipple } from '../motion';
 import { IMAGE_SPECS } from '@/lib/cover';
 import { MARKETS, STARTER_PRESETS } from '@/lib/presets';
@@ -34,7 +34,7 @@ export function Marquee() {
           {row.map((name, index) => (
             <span
               key={`${name}-${index}`}
-              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-ink-mute"
+              className="whitespace-nowrap text-[12.5px] font-semibold uppercase tracking-[0.14em] text-ink-mute"
             >
               {name}
             </span>
@@ -117,15 +117,24 @@ export function Features() {
           </h2>
         </Reveal>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/*
+         * A hairline grid, not eight identical boxes with the same icon in
+         * them. The rules do the separating, the numbers do the ordering, and
+         * nothing is repeated eight times except the rhythm.
+         */}
+        <div className="mt-10 grid border-t border-line sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature, index) => (
-            <Reveal key={feature.title} delay={index * 60}>
-              <article className="card-lift h-full p-5">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                  <SparkIcon className="h-[18px] w-[18px]" />
-                </span>
-                <h3 className="mt-3 text-[16px] font-semibold tracking-tight">{feature.title}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">{feature.body}</p>
+            <Reveal
+              key={feature.title}
+              delay={index * 45}
+              className="border-b border-line px-0 py-6 sm:odd:pr-7 sm:even:border-l sm:even:pl-7
+                         lg:[&:nth-child(4n+1)]:pr-7 lg:[&:not(:nth-child(4n+1))]:border-l
+                         lg:[&:not(:nth-child(4n+1))]:px-7 lg:[&:nth-child(4n)]:pr-0"
+            >
+              <article className="h-full">
+                <p className="spec text-accent">{String(index + 1).padStart(2, '0')}</p>
+                <h3 className="mt-2.5 text-[15px] font-semibold leading-snug">{feature.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{feature.body}</p>
               </article>
             </Reveal>
           ))}
@@ -161,18 +170,24 @@ export function Standards() {
             </p>
           </Reveal>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          {/* Read as what it is: a spec sheet, ruled line by line. */}
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface">
             {STANDARDS.map((item, index) => (
-              <Reveal key={item.label} delay={index * 50}>
-                <div className="card-lift h-full p-4">
-                  <p className="flex items-start gap-2 text-[14px] font-semibold leading-snug">
-                    <span className="mt-0.5 text-accent">
-                      <CheckIcon className="h-4 w-4" />
-                    </span>
-                    {item.label}
-                  </p>
-                  <p className="mt-1.5 pl-6 text-[13px] leading-relaxed text-ink-mute">{item.body}</p>
+              <Reveal
+                key={item.label}
+                delay={index * 45}
+                className="flex gap-3 border-b border-line px-4 py-3.5 last:border-b-0"
+              >
+                <span className="mt-[3px] shrink-0 text-accent">
+                  <CheckIcon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold leading-snug">{item.label}</p>
+                  <p className="mt-1 text-[12.5px] leading-relaxed text-ink-mute">{item.body}</p>
                 </div>
+                <span className="spec ml-auto hidden shrink-0 pt-0.5 sm:block">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
               </Reveal>
             ))}
           </div>
@@ -242,10 +257,11 @@ export function KitShowcase() {
               yang sama, jadi angka di deskripsi selalu cocok dengan isi berkasnya.
             </p>
 
-            <ul className="mt-6 space-y-2.5">
+            {/* One ruled panel, matching the copy panel opposite it. */}
+            <ul className="mt-6 overflow-hidden rounded-2xl border border-line bg-surface">
               {IMAGE_SPECS.map((spec, index) => (
-                <Reveal key={spec.id} delay={index * 60} as="li">
-                  <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
+                <Reveal key={spec.id} delay={index * 60} as="li" className="border-b border-line last:border-b-0">
+                  <div className="flex items-center gap-3 px-4 py-3">
                     <span
                       aria-hidden="true"
                       className="flex shrink-0 items-center justify-center rounded border border-line-strong bg-paper

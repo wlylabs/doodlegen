@@ -64,9 +64,15 @@ export function PreviewDeck({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
       <header className={`${compact ? 'hidden lg:flex' : 'flex'} flex-wrap items-center gap-3 border-b border-line px-4 py-3 sm:px-6`}>
-        <div className="flex items-baseline gap-3">
-          <span className="text-[11px] font-semibold tabular-nums text-accent">05</span>
+        <div className="flex items-center gap-2.5">
+          <span className="step-mark">05</span>
           <h2 className="text-[15px] font-semibold tracking-tight">Pratinjau</h2>
+          {/* The slug a proof carries: what this sheet is, in the units a
+              printer works in. */}
+          <p className="spec hidden truncate sm:block">
+            {activePaper.label} · {activePaper.note} · {Math.round(activePaper.widthPt)} ×{' '}
+            {Math.round(activePaper.heightPt)} pt
+          </p>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -110,17 +116,18 @@ export function PreviewDeck({
           if (event.key === 'ArrowRight') scrollTo(Math.min(current + 1, total - 1));
           if (event.key === 'ArrowLeft') scrollTo(Math.max(current - 1, 0));
         }}
-        className="deck rail flex min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+        className="deck rail bench flex min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
       >
         {plans.map((plan, position) => (
           <div
             key={`${plan.label}-${position}`}
-            className="flex h-full w-full shrink-0 items-center justify-center p-3 sm:p-5"
+            className="flex h-full w-full shrink-0 items-center justify-center p-5 sm:p-7"
           >
             <div
-              className="h-full max-h-full overflow-hidden rounded-lg border border-line bg-white shadow-sheet"
+              className="trim h-full max-h-full bg-white shadow-proof"
               style={{ aspectRatio: `${paper.widthPt} / ${paper.heightPt}` }}
             >
+              <span className="trim-alt" aria-hidden="true" />
               {Math.abs(position - current) <= WINDOW ? (
                 <PageSheet
                   plan={plan}

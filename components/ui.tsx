@@ -16,11 +16,11 @@ export function Section({
 }) {
   return (
     <section className="border-t border-line px-5 py-6 first:border-t-0">
-      <header className="mb-4 flex items-baseline gap-3">
-        <span className="text-[11px] font-semibold tabular-nums text-accent">{step}</span>
-        <div>
-          <h2 className="text-[15px] font-semibold leading-tight tracking-tight">{title}</h2>
-          {hint ? <p className="mt-1 text-[13px] leading-snug text-ink-mute">{hint}</p> : null}
+      <header className="mb-4 flex gap-3">
+        <span className="step-mark mt-[1px]">{step}</span>
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-semibold leading-tight">{title}</h2>
+          {hint ? <p className="mt-1 text-[12.5px] leading-snug text-ink-mute">{hint}</p> : null}
         </div>
       </header>
       <div className="space-y-4">{children}</div>
