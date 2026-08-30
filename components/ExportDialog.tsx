@@ -102,7 +102,7 @@ export function ExportDialog({
       }}
     >
       <div className="flex max-h-[92vh] w-full max-w-3xl animate-pop-in flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-pop sm:rounded-2xl">
-        <header className="flex items-center gap-3 border-b border-line px-5 py-4">
+        <header className="flex shrink-0 items-center gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold tracking-tight">Kit marketplace</h2>
             <p className="truncate text-[12px] text-ink-mute">
@@ -122,7 +122,7 @@ export function ExportDialog({
           </button>
         </header>
 
-        <div className="rail flex gap-1 overflow-x-auto border-b border-line px-3 py-2">
+        <div className="rail flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b border-line px-3 py-2">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -240,7 +240,7 @@ export function ExportDialog({
           ) : null}
         </div>
 
-        <footer className="flex items-center gap-3 border-t border-line px-5 py-3">
+        <footer className="flex shrink-0 items-center gap-3 border-t border-line px-5 py-3">
           <p className="hidden text-[12px] text-ink-mute sm:block">
             ZIP berisi file cetak{config.svgFiles ? ', SVG per halaman' : ''}, gambar listing, teks,
             dan lisensi font.
