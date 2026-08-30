@@ -104,13 +104,16 @@ export const PALETTES: Record<PaletteId, Palette> = {
       [0, 0.06, 0.4, 0],
       [0.25, 0.3, 0, 0],
     ],
+    // Deep enough to survive a near-white panel — a pastel title that no one
+    // can read is not softness, it is a missing title — and still soft
+    // enough to be why someone picked this palette.
     letters: [
-      [0, 0.32, 0.14, 0],
-      [0.35, 0, 0.28, 0],
-      [0.35, 0.1, 0, 0],
-      [0, 0.06, 0.4, 0],
-      [0.25, 0.3, 0, 0],
-      [0, 0.22, 0.1, 0],
+      [0, 0.55, 0.32, 0.04],
+      [0.52, 0, 0.42, 0.06],
+      [0.55, 0.3, 0, 0.04],
+      [0, 0.3, 0.7, 0.06],
+      [0.42, 0.5, 0, 0.04],
+      [0, 0.48, 0.38, 0.04],
     ],
   },
   sunset: {
@@ -118,7 +121,7 @@ export const PALETTES: Record<PaletteId, Palette> = {
     label: 'Senja',
     note: 'Jingga hangat dan teal, kontras tinggi di listing',
     card: [0, 0.05, 0.12, 0],
-    ground: [0, 0.62, 0.72, 0.02],
+    ground: [0.05, 0.75, 0.82, 0.12],
     panel: [0, 0.03, 0.12, 0],
     onGround: [0, 0.05, 0.15, 0],
     headline: [0.25, 0.85, 0.5, 0.25],
@@ -202,7 +205,7 @@ export const PALETTES: Record<PaletteId, Palette> = {
     label: 'Rimba',
     note: 'Hijau daun dan jingga tropis, ramai tanpa jadi silau',
     card: [0.05, 0, 0.1, 0],
-    ground: [0.72, 0.15, 0.85, 0.05],
+    ground: [0.85, 0.32, 0.95, 0.22],
     panel: [0.03, 0.02, 0.14, 0],
     onGround: [0.03, 0.02, 0.14, 0],
     headline: [0.85, 0.35, 0.9, 0.3],
@@ -243,6 +246,36 @@ export function cmykToHex([c, m, y, k]: Cmyk): string {
     Math.round(255 * (1 - Math.min(1, Math.max(0, value))) * (1 - Math.min(1, Math.max(0, k))));
   const hex = (value: number) => value.toString(16).padStart(2, '0');
   return `#${hex(channel(c))}${hex(channel(m))}${hex(channel(y))}`;
+}
+
+/** Relative luminance of an ink, once it has been approximated on screen. */
+function luminance(color: Cmyk): number {
+  const hex = cmykToHex(color);
+  const channel = (at: number) => {
+    const value = parseInt(hex.slice(at, at + 2), 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+/** The WCAG ratio between two inks, 1 (identical) to 21 (black on white). */
+export function contrastRatio(a: Cmyk, b: Cmyk): number {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * The letters of a rainbow title, minus any that would disappear.
+ *
+ * A ramp is picked to look cheerful together, not to survive every backdrop
+ * it might land on: the pastel ramp on a near-white balloon is a title
+ * nobody can read, and a yellow letter on a yellow ground is not a design
+ * choice but a missing letter. Anything without real separation is dropped,
+ * and if too little survives the title falls back to one solid colour.
+ */
+export function readableInks(ramp: Cmyk[], backdrop: Cmyk, minimum = 2.2): Cmyk[] {
+  const kept = ramp.filter((ink) => contrastRatio(ink, backdrop) >= minimum);
+  return kept.length >= 2 ? kept : [];
 }
 
 /** Colours for the palette chip in the settings panel. */

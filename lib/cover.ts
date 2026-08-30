@@ -1,7 +1,7 @@
 import { COVER_STYLES, coverSamples, sheetCount, type CoverStyle } from './covers';
 import { planDocument } from './geometry';
 import { brandName, packSlug, productTitle } from './naming';
-import { PALETTES, cmykToHex, type Palette } from './palette';
+import { PALETTES, cmykToHex, readableInks, type Palette } from './palette';
 import { PAPERS, papersFor } from './presets';
 import { sheetShapes } from './svg';
 import type { Cmyk, Config, LanguageId, LoadedFont, PagePlan } from './types';
@@ -109,34 +109,6 @@ interface Skin {
   grounded: boolean;
 }
 
-/** Relative luminance of a #rrggbb colour, per WCAG. */
-function luminance(hex: string): number {
-  const channel = (at: number) => {
-    const value = parseInt(hex.slice(at, at + 2), 16) / 255;
-    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
-}
-
-function contrast(a: string, b: string): number {
-  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (light + 0.05) / (dark + 0.05);
-}
-
-/**
- * The letters of a rainbow title, minus any that would disappear.
- *
- * On the cover page the ramp always lands on a pale panel, so every colour in
- * it reads. A listing image has no panel — the headline sits straight on the
- * ground — and a yellow letter on a yellow ground is not a design choice, it
- * is a missing letter. Anything without real separation from the background
- * is dropped, and if too little survives the title goes back to one colour.
- */
-function readableRamp(ramp: string[], background: string): string[] {
-  const kept = ramp.filter((colour) => contrast(colour, background) >= 2);
-  return kept.length >= 2 ? kept : [];
-}
-
 function skinOf(palette: Palette, style: CoverStyle): Skin {
   // A listing image that stayed pale while the cover shouted would be the
   // one place the two disagree, and it is the half a buyer sees first. So
@@ -144,11 +116,15 @@ function skinOf(palette: Palette, style: CoverStyle): Skin {
   const grounded = style.ground && Boolean(palette.ground);
   const onGround = grounded ? cmykToHex(palette.onGround) : null;
   // A style that prints on bare paper is shown on bare paper here too.
-  const background = grounded
-    ? cmykToHex(palette.ground as Cmyk)
+  // The headline sits straight on this, with no panel under it the way the
+  // printed cover has, so it is also what the letter ramp has to survive.
+  const backdrop: Cmyk = grounded
+    ? (palette.ground as Cmyk)
     : palette.card && style.decoration !== 'none'
-      ? cmykToHex(palette.card)
-      : PAPER;
+      ? palette.card
+      : [0, 0, 0, 0];
+  const background =
+    grounded || (palette.card && style.decoration !== 'none') ? cmykToHex(backdrop) : PAPER;
   return {
     background,
     headline: onGround ?? (palette.card ? cmykToHex(palette.headline) : INK),
@@ -159,7 +135,7 @@ function skinOf(palette: Palette, style: CoverStyle): Skin {
     accent: palette.card ? cmykToHex(palette.brand) : ACCENT,
     confetti: palette.confetti.map(cmykToHex),
     letters: style.rainbowTitle
-      ? readableRamp(palette.letters.map(cmykToHex), background)
+      ? readableInks(palette.letters, backdrop).map(cmykToHex)
       : [],
     grounded,
   };

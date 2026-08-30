@@ -18,7 +18,7 @@ import {
   starPath,
   tapePath,
 } from './doodles';
-import { PALETTES, type Palette } from './palette';
+import { PALETTES, readableInks, type Palette } from './palette';
 import { FADED_INK, FONTS, GRIDS, INKS, MIN_FADED_INK, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
 import { brandName, printedTitle } from './naming';
 import type {
@@ -1197,12 +1197,29 @@ function minimalCover(scene: CoverScene): void {
  * page that will only ever see one plate of black.
  */
 function panelPaint(palette: Palette): {
-  fill?: Cmyk;
-  stroke?: { color: Cmyk; width: number };
+  fill: Cmyk;
+  stroke: { color: Cmyk; width: number };
 } {
-  return palette.card
-    ? { fill: palette.panel }
-    : { stroke: { color: palette.headline, width: 1.2 } };
+  return {
+    // 0% ink is white paper, not "no fill": a panel has to be opaque so the
+    // art behind it stops at its edge, and on a mono page that is the only
+    // thing keeping a road from being drawn straight through a letter.
+    fill: palette.card ? palette.panel : [0, 0, 0, 0],
+    // And it is always outlined. A pale panel on a bright ground separates
+    // by hue rather than by lightness, which a photocopier throws away —
+    // and an outline is what makes a shape read as a sticker anyway.
+    stroke: { color: palette.headline, width: 1.2 },
+  };
+}
+
+/** What a panel actually ends up painted, for anything laid on top of it. */
+function panelInk(palette: Palette): Cmyk {
+  return palette.card ? palette.panel : [0, 0, 0, 0];
+}
+
+/** What the page behind an unpanelled title ends up painted. */
+function cardInk(palette: Palette): Cmyk {
+  return palette.card ?? [0, 0, 0, 0];
 }
 
 function panelShape(scene: CoverScene, path: PathCmd[]): void {
@@ -1218,10 +1235,20 @@ function mark(
   radius: number,
   index: number,
 ): void {
-  const colours = scene.palette.confetti;
-  if (!colours.length) return;
   const path = kind === 'star' ? starPath(centre, radius) : sparklePath(centre, radius);
-  scene.shapes.push(pathShape(path, colours[index % colours.length]));
+  scene.shapes.push(decorShape(scene.palette, path, index));
+}
+
+/**
+ * A piece of decoration, filled from the confetti ramp where the palette has
+ * one and outlined where it has not. Dropping it entirely on a mono page
+ * costs the composition the very thing it is named after — a "Kilau" with no
+ * rays, a "Bingkai Ceria" with no pattern.
+ */
+function decorShape(palette: Palette, path: PathCmd[], index: number): ShapeDraw {
+  return palette.confetti.length
+    ? pathShape(path, palette.confetti[index % palette.confetti.length])
+    : pathShape(path, undefined, { color: palette.headline, width: 1 });
 }
 
 /**
@@ -1245,8 +1272,9 @@ function rainbowLine(
   size: number,
   left: number,
   baseline: number,
+  backdrop: Cmyk,
 ): TextDraw[] {
-  const ramp = scene.palette.letters;
+  const ramp = readableInks(scene.palette.letters, backdrop);
   const out: TextDraw[] = [];
   let cursor = left;
   [...text].forEach((letter, index) => {
@@ -1308,6 +1336,7 @@ function centredTitle(
   fitted: { lines: string[]; size: number },
   box: Box,
   rainbow: boolean,
+  backdrop: Cmyk,
 ): number {
   const { font } = scene;
   // A title was wrapped by a measurement that includes kerning, and a rainbow
@@ -1325,7 +1354,7 @@ function centredTitle(
   for (const line of block.lines) {
     if (rainbow) {
       const left = midX(box) - rainbowWidth(font, line, block.size) / 2;
-      scene.texts.push(...rainbowLine(scene, line, block.size, left, cursor));
+      scene.texts.push(...rainbowLine(scene, line, block.size, left, cursor, backdrop));
     } else {
       scene.texts.push({
         ...centred(font, line, block.size, box, cursor, 1),
@@ -1417,7 +1446,7 @@ function bubbleCover(scene: CoverScene): void {
     h: ry * 1.1,
   };
   const block = coverTitleIn(scene.font, scene.title, titleBox, 34);
-  centredTitle(scene, block, titleBox, true);
+  centredTitle(scene, block, titleBox, true, panelInk(scene.palette));
 
   // Sparkles ride the balloon's shoulders, never its middle: a dot over a
   // letter is the one decoration a cover cannot afford.
@@ -1458,15 +1487,10 @@ function burstCover(scene: CoverScene): void {
   const cloudW = Math.min(inner.w * 0.7, reach * 1.45);
   const cloudH = reach * 0.62;
   const centre = { x: midX(inner), y: band.y + band.h - reach };
-  if (palette.confetti.length) {
-    scene.shapes.push(
-      pathShape(burstPath(centre, reach, reach * 0.66, 16), palette.confetti[1 % palette.confetti.length]),
-      pathShape(
-        burstPath(centre, reach * 0.82, reach * 0.5, 12, Math.PI / 12),
-        palette.confetti[0],
-      ),
-    );
-  }
+  scene.shapes.push(
+    decorShape(palette, burstPath(centre, reach, reach * 0.66, 16), 1),
+    decorShape(palette, burstPath(centre, reach * 0.82, reach * 0.5, 12, Math.PI / 12), 0),
+  );
 
   const cloudBox: Box = {
     x: centre.x - cloudW / 2,
@@ -1477,7 +1501,7 @@ function burstCover(scene: CoverScene): void {
   panelShape(scene, cloudPath(cloudBox, 5, 2));
 
   const block = coverTitleIn(scene.font, scene.title, inset(cloudBox, cloudH * 0.14), 30);
-  centredTitle(scene, block, cloudBox, true);
+  centredTitle(scene, block, cloudBox, true, panelInk(palette));
 
   const subtitleY = centre.y - reach - COVER_SUBTITLE_SIZE * 1.2;
   groundSubtitle(scene, subtitleY);
@@ -1508,7 +1532,7 @@ function bannerCover(scene: CoverScene): void {
     h: inner.h * 0.2,
   };
   const block = coverTitleIn(font, scene.title, titleBox, 34);
-  cursor = centredTitle(scene, block, titleBox, true) - block.size * 0.6;
+  cursor = centredTitle(scene, block, titleBox, true, cardInk(palette)) - block.size * 0.6;
 
   if (scene.subtitle) {
     cursor -= COVER_SUBTITLE_SIZE * 1.2;
@@ -1533,11 +1557,15 @@ function bannerCover(scene: CoverScene): void {
   const waves = 1.5;
   const half = (bandH * thickness) / 2;
   const amplitude = bandH / 2 - half;
-  const roadPaint = palette.ground
-    ? { fill: palette.ground, stroke: undefined }
-    : { fill: undefined, stroke: { color: palette.headline, width: 1.2 } };
+  // Filled even on a mono page — with white — so the samples riding the road
+  // sit on top of it instead of having its far edge drawn through them.
+  const roadPaint = panelPaint(palette);
   scene.shapes.push(
-    pathShape(ribbonPath(road, waves, thickness), roadPaint.fill, roadPaint.stroke),
+    pathShape(
+      ribbonPath(road, waves, thickness),
+      palette.ground ?? roadPaint.fill,
+      palette.ground ? undefined : roadPaint.stroke,
+    ),
   );
 
   // The samples ride on the road's own surface: the crest is computed from
@@ -1633,15 +1661,17 @@ function frameCover(scene: CoverScene): void {
       const radius = unit * (0.55 + random() * 0.5);
       if (index % 3 === 0) mark(scene, 'star', point, radius, index);
       else if (index % 3 === 1) mark(scene, 'sparkle', point, radius * 0.9, index);
-      else if (palette.confetti.length) {
+      else {
         const dot = radius * 0.42;
+        const colours = palette.confetti;
         scene.shapes.push({
           kind: 'ellipse',
           x: point.x - dot,
           y: point.y - dot,
           w: dot * 2,
           h: dot * 2,
-          color: palette.confetti[index % palette.confetti.length],
+          color: colours.length ? colours[index % colours.length] : undefined,
+          stroke: colours.length ? undefined : { color: palette.headline, width: 1 },
         });
       }
     }
@@ -1656,7 +1686,7 @@ function frameCover(scene: CoverScene): void {
     stroke: paint.stroke,
   });
 
-  const lastBaseline = centredTitle(scene, panelTitle, panelBox, true);
+  const lastBaseline = centredTitle(scene, panelTitle, panelBox, true, panelInk(palette));
   groundSubtitle(scene, lastBaseline - COVER_SUBTITLE_SIZE * 1.8);
 
   sampleStrip(scene, stripBox);
@@ -1684,7 +1714,7 @@ function stickerCover(scene: CoverScene): void {
   scene.shapes.push(pathShape(tapePath(tapeBox, 0.03), paint.fill, paint.stroke));
 
   const block = coverTitleIn(font, scene.title, inset(tapeBox, tapeBox.h * 0.16), 30);
-  centredTitle(scene, block, tapeBox, true);
+  centredTitle(scene, block, tapeBox, true, panelInk(palette));
 
   const subtitleY = tapeBox.y - COVER_SUBTITLE_SIZE * 1.6;
   groundSubtitle(scene, subtitleY);
@@ -1785,7 +1815,7 @@ function rainbowCover(scene: CoverScene): void {
     h: inner.h * 0.18,
   };
   const block = coverTitleIn(font, scene.title, titleBox, 34);
-  const lastBaseline = centredTitle(scene, block, titleBox, true);
+  const lastBaseline = centredTitle(scene, block, titleBox, true, cardInk(palette));
 
   const subtitleY = lastBaseline - COVER_SUBTITLE_SIZE * 2;
   groundSubtitle(scene, subtitleY);
