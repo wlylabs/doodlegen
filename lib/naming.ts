@@ -50,6 +50,12 @@ export function productTitle(config: Config, characters: string[]): Bilingual {
   return { id: written, en: written };
 }
 
+/** The title as it is printed and written into the pack, in one language. */
+export function printedTitle(config: Config, characters: string[]): string {
+  const title = productTitle(config, characters);
+  return config.language === 'id' ? title.id : title.en;
+}
+
 export function brandName(config: Config): string {
   return config.brand.trim();
 }

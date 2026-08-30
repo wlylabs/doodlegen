@@ -2,7 +2,7 @@ import { planDocument } from './geometry';
 import { brandName, packSlug, productTitle } from './naming';
 import { PAPERS, papersFor } from './presets';
 import { sheetShapes } from './svg';
-import type { Config, LoadedFont, PagePlan } from './types';
+import type { Config, LanguageId, LoadedFont, PagePlan } from './types';
 
 /**
  * Listing images are the half of a digital product the marketplaces judge
@@ -18,6 +18,12 @@ export interface ImageSpec {
   height: number;
   /** Which marketplace asks for this canvas. */
   market: string;
+  /**
+   * The language that marketplace's buyers read. An Etsy listing image in
+   * Indonesian sells nothing, and neither does a Shopee one in English, so
+   * this is not the seller's choice to make.
+   */
+  language: LanguageId;
 }
 
 export const IMAGE_SPECS: ImageSpec[] = [
@@ -28,6 +34,7 @@ export const IMAGE_SPECS: ImageSpec[] = [
     width: 2000,
     height: 2000,
     market: 'Etsy',
+    language: 'en',
   },
   {
     id: 'gumroad',
@@ -36,6 +43,7 @@ export const IMAGE_SPECS: ImageSpec[] = [
     width: 1280,
     height: 720,
     market: 'Gumroad',
+    language: 'en',
   },
   {
     id: 'shopee',
@@ -44,6 +52,7 @@ export const IMAGE_SPECS: ImageSpec[] = [
     width: 1200,
     height: 1200,
     market: 'Shopee / Tokopedia',
+    language: 'id',
   },
   {
     id: 'pinterest',
@@ -52,6 +61,7 @@ export const IMAGE_SPECS: ImageSpec[] = [
     width: 1000,
     height: 1500,
     market: 'Pinterest',
+    language: 'en',
   },
 ];
 
@@ -296,8 +306,7 @@ function drawBrandLine(
 interface Scene {
   title: string;
   brand: string;
-  worksheets: number;
-  papers: string;
+  subtitle: string;
   pills: string[];
   bullets: string[];
   plans: PagePlan[];
@@ -389,7 +398,7 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
   ctx.font = `500 ${subtitleSize}px ${TEXT_STACK}`;
   ctx.fillStyle = MUTED;
   const subtitleY = y + subtitleSize * 0.6;
-  ctx.fillText(`${scene.worksheets} halaman siap cetak — ${scene.papers}`, W / 2, subtitleY);
+  ctx.fillText(scene.subtitle, W / 2, subtitleY);
 
   // The sheets take whatever vertical room is left between the copy above and
   // the badge row below, so nothing ever runs off the canvas.
@@ -464,24 +473,40 @@ export async function renderListingImages({
   const previewConfig: Config = { ...config, coverPage: false, termsPage: false };
   const plans = planDocument({ font, config: previewConfig, paper, characters: picks });
 
-  const title = productTitle(config, characters).id;
+  const title = productTitle(config, characters);
   const brand = brandName(config) || 'DoodleGen';
   const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
+  const pages = characters.length;
 
-  const scene: Scene = {
-    title,
-    brand,
-    worksheets: characters.length,
-    papers,
-    pills: [`${characters.length} halaman`, papers, 'PDF 300 DPI'],
-    bullets: [
-      'Vector 300 DPI - garis bersih, tanpa watermark',
-      `${characters.length} halaman siap cetak - ${papers}`,
-      'Margin aman 0.5 inci, cocok untuk printer rumahan',
-    ],
-    plans,
-    font,
-    config: previewConfig,
+  const scenes: Record<LanguageId, Scene> = {
+    en: {
+      title: title.en,
+      brand,
+      subtitle: `${pages} print-ready pages — ${papers}`,
+      pills: [`${pages} pages`, papers, 'PDF 300 DPI'],
+      bullets: [
+        'Vector 300 DPI - clean lines, no watermark',
+        `${pages} print-ready pages - ${papers}`,
+        '0.5 inch safe margin, prints on any home printer',
+      ],
+      plans,
+      font,
+      config: previewConfig,
+    },
+    id: {
+      title: title.id,
+      brand,
+      subtitle: `${pages} halaman siap cetak — ${papers}`,
+      pills: [`${pages} halaman`, papers, 'PDF 300 DPI'],
+      bullets: [
+        'Vector 300 DPI - garis bersih, tanpa watermark',
+        `${pages} halaman siap cetak - ${papers}`,
+        'Margin aman 0.5 inci, cocok untuk printer rumahan',
+      ],
+      plans,
+      font,
+      config: previewConfig,
+    },
   };
 
   // The wordmark face is already on the page for the UI; make sure it is
@@ -506,7 +531,7 @@ export async function renderListingImages({
     canvas.height = spec.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Peramban ini tidak mendukung canvas 2D.');
-    paint(ctx, spec, scene);
+    paint(ctx, spec, scenes[spec.language]);
 
     const blob = await toPng(canvas);
     const bytes = new Uint8Array(await blob.arrayBuffer());

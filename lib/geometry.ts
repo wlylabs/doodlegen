@@ -1,6 +1,6 @@
 import { renderTitle, subjectOf } from './charset';
 import { FONTS, GRIDS, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
-import { brandName, productTitle } from './naming';
+import { brandName, printedTitle } from './naming';
 import type {
   Box,
   Config,
@@ -8,6 +8,7 @@ import type {
   LoadedFont,
   Mode,
   PagePlan,
+  LanguageId,
   Placement,
   RuleDraw,
   TextDraw,
@@ -434,6 +435,115 @@ interface MatterInput {
 }
 
 /**
+ * Everything a buyer reads is written twice: a pack sold on Etsy or Gumroad
+ * with an Indonesian licence page reads as unfinished, and so does a Shopee
+ * pack with an English one. The seller picks; the marketplace canvases pick
+ * for themselves.
+ */
+const COVER_COPY: Record<
+  LanguageId,
+  { subtitle: (pages: number, papers: string) => string; specs: string[] }
+> = {
+  en: {
+    subtitle: (pages, papers) => `${pages} print-ready pages — ${papers}`,
+    specs: [
+      'Vector 300 DPI — 0.5 inch safe margin — single-plate black ink',
+      'Print as many copies as you need for personal and classroom use',
+    ],
+  },
+  id: {
+    subtitle: (pages, papers) => `${pages} halaman siap cetak — ${papers}`,
+    specs: [
+      'Vector 300 DPI — margin aman 0.5 inci — tinta hitam K100',
+      'Cetak ulang sebanyak yang dibutuhkan untuk pemakaian pribadi dan kelas',
+    ],
+  },
+};
+
+interface TermsCopy {
+  title: string;
+  footer: string;
+  contents: (pages: number, papers: string) => string;
+  papers: (both: boolean, label: string) => string;
+  sections: (contents: string, fontFamily: string, owner: string) => TermsSection[];
+}
+
+const TERMS_COPY: Record<LanguageId, TermsCopy> = {
+  en: {
+    title: 'Terms of Use',
+    footer: 'Made with DoodleGen — print-ready coloring and tracing pages',
+    contents: (pages, papers) =>
+      `${pages} practice pages as a PDF, ${papers}, ready to print again and again.`,
+    papers: (both, label) => (both ? 'A4 and US Letter' : label),
+    sections: (contents, fontFamily, owner) => [
+      { heading: 'What is inside', body: [contents] },
+      {
+        heading: 'Printing tips',
+        body: [
+          'Print at 100% scale with page scaling turned off, on 80-120 gsm paper, in black and white or greyscale.',
+        ],
+      },
+      {
+        heading: 'What you may do',
+        body: ['Print an unlimited number of copies for personal, family, classroom or library use.'],
+      },
+      {
+        heading: 'What you may not do',
+        body: [
+          'Resell, share, or re-upload this PDF file, in whole or in part, and do not claim it as your own work.',
+        ],
+      },
+      {
+        heading: 'Fonts and licence',
+        body: [
+          `The typeface in this file is ${fontFamily}, licensed under the SIL Open Font License 1.1.`,
+        ],
+      },
+      {
+        heading: 'Copyright',
+        body: [`This file and its contents belong to ${owner}. All rights reserved.`],
+      },
+    ],
+  },
+  id: {
+    title: 'Ketentuan Penggunaan',
+    footer: 'Dibuat dengan DoodleGen — halaman mewarnai dan tracing siap cetak',
+    contents: (pages, papers) =>
+      `${pages} halaman latihan dalam format PDF, ${papers}, siap cetak berulang kali.`,
+    papers: (both, label) => (both ? 'A4 dan US Letter' : label),
+    sections: (contents, fontFamily, owner) => [
+      { heading: 'Isi paket', body: [contents] },
+      {
+        heading: 'Tips mencetak',
+        body: [
+          'Cetak pada ukuran asli 100% tanpa "fit to page", pakai kertas 80-120 gsm agar krayon tidak tembus.',
+        ],
+      },
+      {
+        heading: 'Yang boleh dilakukan',
+        body: ['Cetak ulang tanpa batas untuk pemakaian pribadi, keluarga, kelas, atau perpustakaan.'],
+      },
+      {
+        heading: 'Yang tidak boleh',
+        body: [
+          'Menjual kembali, membagikan, atau mengunggah ulang berkas PDF ini, baik utuh maupun sebagian.',
+        ],
+      },
+      {
+        heading: 'Font & lisensi',
+        body: [
+          `Huruf pada berkas ini memakai ${fontFamily}, dilisensikan di bawah SIL Open Font License 1.1.`,
+        ],
+      },
+      {
+        heading: 'Hak cipta',
+        body: [`Isi berkas ini adalah milik ${owner}. Semua hak dilindungi.`],
+      },
+    ],
+  },
+};
+
+/**
  * The title page a paid download is expected to open with: who made it, what
  * is inside, and what it prints as. Built from the same glyph outlines as the
  * worksheets, so the cover is vector too.
@@ -480,7 +590,8 @@ function planCover({
   }
 
   const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
-  const subtitle = safeLine(font, `${worksheetCount} halaman siap cetak — ${papers}`);
+  const copy = COVER_COPY[config.language];
+  const subtitle = safeLine(font, copy.subtitle(worksheetCount, papers));
   if (subtitle) {
     const size = 12;
     cursor -= size * 1.4;
@@ -494,10 +605,7 @@ function planCover({
     characters[characters.length - 1],
   ].filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
 
-  const specLines = [
-    safeLine(font, 'Vector 300 DPI — margin aman 0.5 inci — tinta hitam K100'),
-    safeLine(font, 'Cetak ulang sebanyak yang dibutuhkan untuk pemakaian pribadi dan kelas'),
-  ].filter(Boolean);
+  const specLines = copy.specs.map((line) => safeLine(font, line)).filter(Boolean);
 
   const specSize = 10;
   const specBlock = specLines.length * specSize * 1.9 + specSize * 2;
@@ -545,55 +653,6 @@ interface TermsSection {
   body: string[];
 }
 
-function termsSections(
-  brand: string,
-  fontFamily: string,
-  contents: string,
-): TermsSection[] {
-  const owner = brand || 'the seller';
-  return [
-    {
-      heading: 'Isi paket / What is inside',
-      body: [contents],
-    },
-    {
-      heading: 'Tips mencetak / Printing tips',
-      body: [
-        'Cetak pada ukuran asli 100% tanpa "fit to page", pakai kertas 80-120 gsm agar krayon tidak tembus.',
-        'Print at 100% scale with page scaling off, on 80-120 gsm paper, in black and white or greyscale.',
-      ],
-    },
-    {
-      heading: 'Yang boleh dilakukan / What you may do',
-      body: [
-        'Cetak ulang tanpa batas untuk pemakaian pribadi, keluarga, kelas, atau perpustakaan.',
-        'Print an unlimited number of copies for personal, family, classroom or library use.',
-      ],
-    },
-    {
-      heading: 'Yang tidak boleh / What you may not do',
-      body: [
-        'Menjual kembali, membagikan, atau mengunggah ulang berkas PDF ini, baik utuh maupun sebagian.',
-        'Resell, share, or re-upload this PDF file, in whole or in part, and do not claim it as your own work.',
-      ],
-    },
-    {
-      heading: 'Font & lisensi / Fonts and licence',
-      body: [
-        `Huruf pada berkas ini memakai ${fontFamily}, dilisensikan di bawah SIL Open Font License 1.1.`,
-        'The embedded typeface is licensed under the SIL Open Font License 1.1, which permits this use.',
-      ],
-    },
-    {
-      heading: 'Hak cipta / Copyright',
-      body: [
-        `Isi berkas ini adalah milik ${owner}. Semua hak dilindungi.`,
-        `This file and its contents belong to ${owner}. All rights reserved.`,
-      ],
-    },
-  ];
-}
-
 /** The licence page a marketplace buyer expects to find at the back. */
 function planTerms(
   { font, config, paper, brand, worksheetCount }: MatterInput,
@@ -608,13 +667,14 @@ function planTerms(
   };
   const texts: TextDraw[] = [];
   const rules: RuleDraw[] = [];
+  const copy = TERMS_COPY[config.language];
 
   let cursor = art.y + art.h;
 
   const titleSize = 20;
   cursor -= titleSize;
   texts.push({
-    text: safeLine(font, 'Ketentuan Penggunaan / Terms of Use'),
+    text: safeLine(font, copy.title),
     size: titleSize,
     x: art.x,
     y: cursor,
@@ -626,9 +686,10 @@ function planTerms(
 
   const headingSize = 12;
   const bodySize = 10.5;
-  const papers = config.paper === 'both' ? 'A4 dan US Letter' : paper.label;
-  const contents = `${worksheetCount} halaman latihan dalam format PDF, ${papers}, siap cetak berulang kali.`;
-  for (const section of termsSections(brand, fontFamily, contents)) {
+  const papers = copy.papers(config.paper === 'both', paper.label);
+  const contents = copy.contents(worksheetCount, papers);
+  const owner = brand || (config.language === 'id' ? 'penjual' : 'the seller');
+  for (const section of copy.sections(contents, fontFamily, owner)) {
     cursor -= headingSize;
     texts.push({ text: safeLine(font, section.heading), size: headingSize, x: art.x, y: cursor, ink: 0.85 });
     cursor -= headingSize * 0.7;
@@ -642,7 +703,7 @@ function planTerms(
     cursor -= headingSize * 0.9;
   }
 
-  const footer = safeLine(font, 'Dibuat dengan DoodleGen — halaman mewarnai dan tracing siap cetak');
+  const footer = safeLine(font, copy.footer);
   texts.push(centred(font, footer, 9.5, art, art.y + 4, 0.4));
   rules.push({ x1: art.x, x2: art.x + art.w, y: art.y + 18, width: 0.6, ink: 0.2 });
 
@@ -667,7 +728,7 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
   const art = frame.art;
   const strokeBase = STROKES[config.stroke].base;
   const band = bandFor(font, characters);
-  const title = productTitle(config, characters).id;
+  const title = printedTitle(config, characters);
   const brand = brandName(config);
 
   const heroRatio = config.layout === 'single' ? HERO_RATIO : WORKSHEET_HERO_RATIO;
@@ -761,7 +822,8 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
   return [
     ...(config.coverPage ? [planCover(matter)] : []),
     ...worksheets,
-    ...(config.termsPage ? [planTerms(matter, FONTS[config.font].family)] : []),
+    // The face's provenance note belongs in FONTS.md, not on a buyer's page.
+    ...(config.termsPage ? [planTerms(matter, FONTS[config.font].family.replace(/\s*\(.*\)$/, ''))] : []),
   ];
 }
 

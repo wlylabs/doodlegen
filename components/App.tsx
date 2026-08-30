@@ -14,7 +14,7 @@ import { renderListingImages, type GeneratedImage } from '@/lib/cover';
 import { downloadBlob, downloadFile, downloadZip } from '@/lib/download';
 import { loadFont, prefetchFont } from '@/lib/fontStore';
 import { pageCountOf, planDocument } from '@/lib/geometry';
-import { productTitle } from '@/lib/naming';
+import { printedTitle } from '@/lib/naming';
 import type { GeneratedFile } from '@/lib/pdf';
 import {
   DEFAULT_CONFIG,
@@ -274,7 +274,7 @@ export function App() {
             <Logo />
           </Link>
           <span className="hidden text-[12px] text-ink-mute sm:inline">
-            {productTitle(config, characters).id}
+            {printedTitle(config, characters)}
           </span>
 
           <button

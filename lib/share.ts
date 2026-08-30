@@ -15,6 +15,7 @@ const ONE_OF = {
   paper: ['a4', 'letter', 'both'],
   stroke: Object.keys(STROKES),
   ink: Object.keys(INKS),
+  language: ['en', 'id'],
 } as const;
 
 const BOOLEANS = ['guides', 'showTitle', 'pageNumbers', 'coverPage', 'termsPage'] as const;

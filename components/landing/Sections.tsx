@@ -82,11 +82,15 @@ const FEATURES = [
   },
   {
     title: 'Sampul & lisensi otomatis',
-    body: 'Halaman sampul bermerek di depan, halaman ketentuan pemakaian dua bahasa di belakang, nomor halaman di setiap lembar — persis seperti paket digital berbayar.',
+    body: 'Halaman sampul bermerek di depan, halaman ketentuan pemakaian di belakang, nomor halaman di setiap lembar — persis seperti paket digital berbayar.',
+  },
+  {
+    title: 'Bahasa mengikuti pasarnya',
+    body: 'Satu klik memindahkan sampul, lisensi, dan panduan cetak ke bahasa Inggris untuk Etsy dan Gumroad, atau bahasa Indonesia untuk Shopee. Gambar listing selalu ikut pasarnya sendiri.',
   },
   {
     title: 'Gambar listing siap unggah',
-    body: 'Empat kanvas untuk Etsy, Gumroad, Shopee, dan Pinterest digambar dari halaman aslinya. Ukurannya sudah sesuai aturan tiap marketplace.',
+    body: 'Empat kanvas untuk Etsy, Gumroad, Shopee, dan Pinterest digambar dari halaman aslinya — ukuran dan bahasanya sudah sesuai aturan tiap marketplace.',
   },
   {
     title: 'Draf judul, deskripsi, dan tag',
@@ -280,10 +284,10 @@ export function KitShowcase() {
               </div>
               <div className="border-t border-line bg-paper px-4 py-3">
                 <p className="text-[12px] leading-relaxed text-ink-mute">
-                  Isi ZIP: <span className="text-ink-soft">01-FILE-CETAK</span>,{' '}
-                  <span className="text-ink-soft">02-GAMBAR-LISTING</span>,{' '}
-                  <span className="text-ink-soft">03-TEKS-LISTING</span>, BACA-DULU.txt, dan
-                  LISENSI-FONT.txt.
+                  Isi ZIP: <span className="text-ink-soft">01-PRINT-FILES</span>,{' '}
+                  <span className="text-ink-soft">02-LISTING-IMAGES</span>,{' '}
+                  <span className="text-ink-soft">03-LISTING-COPY</span>, READ-ME-FIRST.txt, dan
+                  FONT-LICENSE.txt — dalam bahasa Indonesia bila paketnya berbahasa Indonesia.
                 </p>
               </div>
             </div>
@@ -354,6 +358,11 @@ const FAQ = [
     question: 'Berapa halaman maksimal dalam satu berkas?',
     answer:
       'Dua ratus halaman per berkas, cukup untuk rentang angka 1–200 atau daftar kata yang panjang. Satu set A–Z 26 halaman biasanya berukuran sekitar 20 KB karena tidak ada gambar raster di dalamnya.',
+  },
+  {
+    question: 'Kalau saya jual ke pembeli luar negeri?',
+    answer:
+      'Pilih bahasa berkas "English" di langkah 05. Halaman sampul, halaman ketentuan, kaki halaman, dan panduan cetak untuk pembeli ikut berbahasa Inggris, dan nama folder di dalam ZIP juga. Gambar listing tidak perlu diatur: kanvas Etsy, Gumroad, dan Pinterest selalu berbahasa Inggris, kanvas Shopee selalu berbahasa Indonesia.',
   },
   {
     question: 'Bisa pakai nama anak atau kata pesanan pelanggan?',

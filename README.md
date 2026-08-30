@@ -63,21 +63,28 @@ the rest around it:
 | --- | --- |
 | Cover page | Brand line, product title, page count, three real sample characters, print specs. Vector, like every other page. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
-| Terms page | What a buyer may and may not do, in Indonesian and English, plus printing tips and the font licence. |
+| Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Listing images | 2000×2000 (Etsy), 1280×720 (Gumroad), 1200×1200 (Shopee), 1000×1500 (Pinterest), drawn from the same page plans. |
 | Listing copy | Title, description and tags for Etsy, Gumroad and Shopee, already inside each marketplace's character and tag limits. |
-| Paperwork | `BACA-DULU.txt` for the buyer and the full SIL OFL text of the embedded face. |
+| Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
 `Kit marketplace` builds all of it and hands back one ZIP:
 
 ```
 doodlegen-<subject>-<style>-<layout>/
-  01-FILE-CETAK/        A4 and US Letter PDFs
-  02-GAMBAR-LISTING/    the four listing canvases, PNG
-  03-TEKS-LISTING/      etsy.txt, gumroad.txt, shopee.txt
-  BACA-DULU.txt
-  LISENSI-FONT.txt
+  01-PRINT-FILES/       A4 and US Letter PDFs
+  02-LISTING-IMAGES/    the four listing canvases, PNG
+  03-LISTING-COPY/      etsy.txt, gumroad.txt, shopee.txt
+  READ-ME-FIRST.txt
+  FONT-LICENSE.txt
 ```
+
+**Language follows the market.** Everything a buyer reads — cover, licence
+page, page footer, read-me, and the folder names above — is written in the
+pack's language, English by default and Indonesian on request. The listing
+images are not the seller's call: the Etsy, Gumroad and Pinterest canvases are
+always English, the Shopee canvas always Indonesian, because that is who reads
+them. The listing copy has always worked that way.
 
 Content is not limited to A–Z and 0–9: the `Kata & Nama` mode takes a list of
 words, one per line, which is what a custom name-tracing order actually is.

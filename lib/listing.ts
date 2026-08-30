@@ -1,5 +1,5 @@
 import { subjectOf } from './charset';
-import { brandName, layoutLabel, productTitle, styleLabel } from './naming';
+import { brandName, layoutLabel, printedTitle, productTitle, styleLabel } from './naming';
 import { FONTS, MARKETS, PAPERS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
 import type { Config } from './types';
@@ -259,29 +259,78 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
 
 /** The read-me that ships inside the pack, addressed to the buyer. */
 export function buyerReadme({ config, characters, pageCount }: ListingInput): string {
-  const title = productTitle(config, characters);
+  const title = printedTitle(config, characters);
   const brand = brandName(config);
-  return [
-    title.id,
-    '='.repeat(title.id.length),
-    '',
-    `Isi: ${pageCount} halaman PDF (${paperLine(config)}).`,
-    '',
-    'CARA MENCETAK',
-    '1. Buka file PDF dengan Adobe Reader, Preview, atau aplikasi PDF apa pun.',
-    '2. Pada dialog cetak, pilih ukuran asli 100% dan matikan "fit to page".',
-    '3. Gunakan kertas 80-120 gsm agar crayon dan spidol tidak tembus.',
-    '4. Cetak hitam putih saja; semua garis memakai tinta hitam tunggal.',
-    '',
-    'KETENTUAN',
-    '- Boleh dicetak ulang tanpa batas untuk pemakaian pribadi, keluarga, dan kelas.',
-    '- Tidak boleh dijual kembali, dibagikan, atau diunggah ulang dalam bentuk file.',
-    brand ? `- Hak cipta ${brand}. Semua hak dilindungi.` : null,
-    '',
-    'Dibuat dengan DoodleGen.',
-  ]
+  const papers = paperLine(config);
+
+  const lines =
+    config.language === 'id'
+      ? [
+          `Isi: ${pageCount} halaman PDF (${papers}).`,
+          '',
+          'CARA MENCETAK',
+          '1. Buka file PDF dengan Adobe Reader, Preview, atau aplikasi PDF apa pun.',
+          '2. Pada dialog cetak, pilih ukuran asli 100% dan matikan "fit to page".',
+          '3. Gunakan kertas 80-120 gsm agar crayon dan spidol tidak tembus.',
+          '4. Cetak hitam putih saja; semua garis memakai tinta hitam tunggal.',
+          '',
+          'KETENTUAN',
+          '- Boleh dicetak ulang tanpa batas untuk pemakaian pribadi, keluarga, dan kelas.',
+          '- Tidak boleh dijual kembali, dibagikan, atau diunggah ulang dalam bentuk file.',
+          brand ? `- Hak cipta ${brand}. Semua hak dilindungi.` : null,
+          '',
+          'Dibuat dengan DoodleGen.',
+        ]
+      : [
+          `Inside: ${pageCount} PDF pages (${papers}).`,
+          '',
+          'HOW TO PRINT',
+          '1. Open the PDF in Adobe Reader, Preview, or any other PDF app.',
+          '2. In the print dialog, choose 100% scale and turn page scaling off.',
+          '3. Use 80-120 gsm paper so crayon and marker do not bleed through.',
+          '4. Print in black and white; every line uses a single black ink.',
+          '',
+          'TERMS',
+          '- Print as many copies as you like for personal, family and classroom use.',
+          '- Do not resell, share, or re-upload the file itself.',
+          brand ? `- Copyright ${brand}. All rights reserved.` : null,
+          '',
+          'Made with DoodleGen.',
+        ];
+
+  return [title, '='.repeat(title.length), '', ...lines]
     .filter((line): line is string => line !== null)
     .join('\n');
+}
+
+/** File names inside the pack, in the language the pack is written in. */
+export function packFileNames(config: Config): { readme: string; licence: string } {
+  return config.language === 'id'
+    ? { readme: 'BACA-DULU.txt', licence: 'LISENSI-FONT.txt' }
+    : { readme: 'READ-ME-FIRST.txt', licence: 'FONT-LICENSE.txt' };
+}
+
+/** The note that introduces the font licence shipped with the pack. */
+export function licenceNote(config: Config, family: string, licence: string | null): string {
+  return config.language === 'id'
+    ? [
+        `Huruf pada paket ini: ${family}`,
+        'Lisensi: SIL Open Font License 1.1',
+        '',
+        'Lisensi ini mengizinkan penyematan font di dalam PDF serta penjualan',
+        'berkas PDF yang dihasilkan. Teks lisensi lengkap disertakan di bawah.',
+        '',
+        licence ?? 'Teks lisensi lengkap: https://openfontlicense.org',
+      ].join('\n')
+    : [
+        `Typeface used in this pack: ${family}`,
+        'Licence: SIL Open Font License 1.1',
+        '',
+        'This licence permits embedding the font inside a PDF and selling the',
+        'resulting PDF files. The full licence text follows.',
+        '',
+        licence ?? 'Full licence text: https://openfontlicense.org',
+      ].join('\n');
 }
 
 /** One text file per marketplace, ready to paste field by field. */

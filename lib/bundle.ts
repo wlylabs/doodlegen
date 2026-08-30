@@ -1,5 +1,5 @@
-import { buildListing, buyerReadme, copyToText } from './listing';
-import { packSlug, productTitle } from './naming';
+import { buildListing, buyerReadme, copyToText, licenceNote, packFileNames } from './listing';
+import { packSlug, printedTitle } from './naming';
 import { FONTS } from './presets';
 import type { GeneratedImage } from './cover';
 import type { GeneratedFile } from './pdf';
@@ -11,11 +11,18 @@ import type { Config } from './types';
  * Folder names are numbered so the order to work through them is obvious the
  * moment the archive is opened.
  */
-export const BUNDLE_FOLDERS = {
-  print: '01-FILE-CETAK',
-  images: '02-GAMBAR-LISTING',
-  copy: '03-TEKS-LISTING',
-} as const;
+export const BUNDLE_FOLDERS: Record<Config['language'], Record<'print' | 'images' | 'copy', string>> = {
+  en: {
+    print: '01-PRINT-FILES',
+    images: '02-LISTING-IMAGES',
+    copy: '03-LISTING-COPY',
+  },
+  id: {
+    print: '01-FILE-CETAK',
+    images: '02-GAMBAR-LISTING',
+    copy: '03-TEKS-LISTING',
+  },
+};
 
 export interface BundleInput {
   config: Config;
@@ -59,50 +66,42 @@ export async function buildBundle({
 
   const pageCount = files[0]?.pages ?? characters.length;
   const listings = buildListing({ config, characters, pageCount });
+  const folders = BUNDLE_FOLDERS[config.language];
+  const names = packFileNames(config);
   const entries: string[] = [];
 
-  const printFolder = root.folder(BUNDLE_FOLDERS.print);
+  const printFolder = root.folder(folders.print);
   for (const file of files) {
     printFolder?.file(file.name, file.bytes);
-    entries.push(`${BUNDLE_FOLDERS.print}/${file.name}`);
+    entries.push(`${folders.print}/${file.name}`);
   }
 
   if (images.length) {
-    const imageFolder = root.folder(BUNDLE_FOLDERS.images);
+    const imageFolder = root.folder(folders.images);
     for (const image of images) {
       imageFolder?.file(image.name, image.bytes);
-      entries.push(`${BUNDLE_FOLDERS.images}/${image.name}`);
+      entries.push(`${folders.images}/${image.name}`);
     }
   }
 
-  const copyFolder = root.folder(BUNDLE_FOLDERS.copy);
+  const copyFolder = root.folder(folders.copy);
   for (const listing of listings) {
     const name = `${listing.market}.txt`;
     copyFolder?.file(name, copyToText(listing));
-    entries.push(`${BUNDLE_FOLDERS.copy}/${name}`);
+    entries.push(`${folders.copy}/${name}`);
   }
 
-  root.file('BACA-DULU.txt', buyerReadme({ config, characters, pageCount }));
-  entries.push('BACA-DULU.txt');
+  // The read-me and the licence travel with the PDFs to the buyer, so they
+  // are written in the pack's language, not the seller's.
+  root.file(names.readme, buyerReadme({ config, characters, pageCount }));
+  entries.push(names.readme);
 
   const licence = await licenceText(config);
-  const family = FONTS[config.font].family;
-  root.file(
-    'LISENSI-FONT.txt',
-    [
-      `Huruf pada paket ini: ${family}`,
-      'Lisensi: SIL Open Font License 1.1',
-      '',
-      'Lisensi ini mengizinkan penyematan font di dalam PDF serta penjualan',
-      'berkas PDF yang dihasilkan. Teks lisensi lengkap disertakan di bawah.',
-      '',
-      licence ?? 'Teks lisensi lengkap: https://openfontlicense.org',
-    ].join('\n'),
-  );
-  entries.push('LISENSI-FONT.txt');
+  root.file(names.licence, licenceNote(config, FONTS[config.font].family, licence));
+  entries.push(names.licence);
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-  const title = productTitle(config, characters).id;
+  const title = printedTitle(config, characters);
   return {
     name: `${stem}-marketplace-kit.zip`,
     blob,

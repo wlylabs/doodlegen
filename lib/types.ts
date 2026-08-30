@@ -8,6 +8,8 @@ export type PaperChoice = 'a4' | 'letter' | 'both';
 export type PaperId = 'a4' | 'letter';
 export type StrokeId = 'thin' | 'medium' | 'thick';
 export type InkId = 'black' | 'soft';
+/** Language of everything the buyer reads: cover, licence, footer, read-me. */
+export type LanguageId = 'en' | 'id';
 
 export interface Config {
   content: ContentType;
@@ -37,6 +39,11 @@ export interface Config {
   brand: string;
   /** Product title; empty means "derive it from the character set". */
   productTitle: string;
+  /**
+   * The language of the printed pack. Listing images are not covered by it:
+   * each canvas follows the marketplace it is cut for.
+   */
+  language: LanguageId;
 }
 
 /** A stroke mode for one drawn character group. */

@@ -19,7 +19,7 @@ import fontkit from '@pdf-lib/fontkit';
 import { FONT_FEATURES } from './fontStore';
 import { pageCountOf, planDocument } from './geometry';
 import { subjectOf } from './charset';
-import { autoTitle, brandName, packSlug, productTitle } from './naming';
+import { autoTitle, brandName, packSlug, printedTitle } from './naming';
 import { FONTS, INKS, PAPERS, papersFor } from './presets';
 import type { PaperSpec } from './presets';
 import type { Config, GuideLine, LoadedFont, PagePlan, Placement, RuleDraw } from './types';
@@ -185,7 +185,7 @@ async function buildOne(
   const bytes = await doc.save({ useObjectStreams: true });
   return {
     name: fileName(config, paper, characters),
-    title: productTitle(config, characters).id,
+    title: printedTitle(config, characters),
     paperId: paper.id,
     paperLabel: paper.label,
     pages: plans.length,

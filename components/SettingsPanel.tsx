@@ -11,17 +11,20 @@ import {
   GRIDS,
   GRID_ORDER,
   INKS,
+  LANGUAGES,
   LAYOUTS,
   MARGIN_OPTIONS,
   STARTER_PRESETS,
   STROKES,
   STROKE_ORDER,
   STYLES,
+  TITLE_TEMPLATES,
 } from '@/lib/presets';
 import type {
   Config,
   ContentType,
   FontId,
+  LanguageId,
   GridId,
   InkId,
   LayoutId,
@@ -274,6 +277,27 @@ export function SettingsPanel({
         title="Merek & Paket"
         hint="Bagian yang membuat berkas terlihat seperti produk, bukan draf."
       >
+        <Field label="Bahasa berkas">
+          <ChipRow<LanguageId>
+            label="Bahasa berkas"
+            value={config.language}
+            onChange={(language) => {
+              // Swapping the language should carry the page title with it,
+              // but never overwrite wording the seller typed themselves.
+              const other = TITLE_TEMPLATES[config.language];
+              const patch: Partial<Config> = { language };
+              if (config.titleTemplate.trim() === other) patch.titleTemplate = TITLE_TEMPLATES[language];
+              update(patch);
+            }}
+            options={LANGUAGES.map((item) => ({ value: item.id, label: item.label }))}
+          />
+          <Note>
+            Sampul, halaman lisensi, kaki halaman, dan panduan cetak untuk pembeli —{' '}
+            {LANGUAGES.find((item) => item.id === config.language)?.note}. Gambar listing selalu
+            mengikuti pasarnya: Etsy, Gumroad, dan Pinterest dalam bahasa Inggris, Shopee dalam
+            bahasa Indonesia.
+          </Note>
+        </Field>
         <TextField
           label="Nama toko / merek"
           value={config.brand}
@@ -369,7 +393,7 @@ export function SettingsPanel({
                   <TextField
                     label="Teks judul"
                     value={config.titleTemplate}
-                    placeholder="Trace and color — {char}"
+                    placeholder={TITLE_TEMPLATES[config.language]}
                     onChange={(titleTemplate) => update({ titleTemplate })}
                   />
                   <Note>{'{char}'} diganti dengan karakter halaman itu.</Note>
