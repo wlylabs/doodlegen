@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { CoverStyle } from '@/lib/covers';
 
 /**
@@ -363,130 +364,157 @@ export function PaperMark({ kind }: { kind: 'a4' | 'letter' | 'both' }) {
   );
 }
 
+/**
+ * The interface glyphs are Lucide, traced verbatim rather than redrawn: one
+ * 24-unit grid, one stroke weight, one cap and one join, which is the whole
+ * reason to take a set instead of drawing eleven icons by hand. The ones
+ * these replaced were hand-drawn at six different stroke weights, and a row
+ * of buttons showed it.
+ *
+ * Lucide is ISC-licensed. Provenance and the full licence are in ICONS.md,
+ * and the licence text ships at /ISC-lucide.txt beside the font licences.
+ *
+ * The marks above are not from any set and could not be: they are schematics
+ * of this product's own compositions.
+ */
+function Icon({ className = 'h-4 w-4', children }: { className?: string; children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+/** lucide/loader-circle */
 export function Spinner({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={`animate-spin ${className}`} aria-hidden="true">
-      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-      <path
-        d="M21 12a9 9 0 0 0-9-9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </svg>
+    <Icon className={`animate-spin ${className}`}>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </Icon>
   );
 }
 
+/** lucide/chevron-left, chevron-right, chevron-down */
 export function ChevronIcon({ direction }: { direction: 'left' | 'right' | 'down' }) {
   const d =
-    direction === 'left' ? 'M14 5 8 12l6 7' : direction === 'right' ? 'M10 5l6 7-6 7' : 'M5 9l7 6 7-6';
+    direction === 'left' ? 'm15 18-6-6 6-6' : direction === 'right' ? 'm9 18 6-6-6-6' : 'm6 9 6 6 6-6';
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <Icon>
+      <path d={d} />
+    </Icon>
   );
 }
 
+/** lucide/download */
 export function DownloadIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <path
-        d="M12 4v11m0 0 4.2-4.2M12 15l-4.2-4.2M4.5 18.5h15"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <Icon>
+      <path d="M12 15V3" />
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m7 10 5 5 5-5" />
+    </Icon>
   );
 }
 
+/**
+ * lucide/check, drawn on rather than switched on: `pathLength` normalises the
+ * stroke so one dash animation fits it whatever size it is rendered at.
+ */
 export function CheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <path
-        d="M5 12.5 10 17.5 19 7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        pathLength={1}
-        className="animate-check-in"
-      />
-    </svg>
+    <Icon className={className}>
+      <path d="M20 6 9 17l-5-5" pathLength={1} className="animate-check-in" />
+    </Icon>
   );
 }
 
-/** The marketplace kit: a page, a picture and a caption, stacked. */
+/** lucide/package — the marketplace kit is one bundle, not one file. */
 export function KitIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <rect x="3" y="3" width="12" height="15" rx="2" {...stroke} strokeWidth="1.8" />
-      <path d="M6.5 8.5h5M6.5 12h3.5" {...stroke} strokeWidth="1.6" />
-      <rect x="12" y="10" width="9" height="11" rx="2" {...stroke} fill="#FFF" strokeWidth="1.8" />
-      <path d="M14.4 18.2 16.6 15l2 2.2 1-1.1" {...stroke} strokeWidth="1.5" strokeLinejoin="round" />
-    </svg>
+    <Icon>
+      <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+      <path d="M12 22V12" />
+      <polyline points="3.29 7 12 12 20.71 7" />
+      <path d="m7.5 4.27 9 5.15" />
+    </Icon>
   );
 }
 
+/** lucide/copy */
 export function CopyIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <rect x="8" y="8" width="12" height="12" rx="2.5" {...stroke} strokeWidth="1.8" />
-      <path d="M16 5.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 5.5 16" {...stroke} strokeWidth="1.8" />
-    </svg>
+    <Icon>
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </Icon>
   );
 }
 
+/** lucide/link */
 export function LinkIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7L11.5 6.8" {...stroke} strokeWidth="1.8" />
-      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 1 0 11 18.7l1.4-1.4" {...stroke} strokeWidth="1.8" />
-    </svg>
+    <Icon>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </Icon>
   );
 }
 
+/** lucide/x */
 export function CloseIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <path d="M6 6l12 12M18 6 6 18" {...stroke} strokeWidth="2" />
-    </svg>
+    <Icon>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </Icon>
   );
 }
 
+/** lucide/sparkles */
 export function SparkIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <path
-        d="M12 3.5 13.8 9 19.5 10.8 13.8 12.6 12 18.2 10.2 12.6 4.5 10.8 10.2 9z"
-        fill="currentColor"
-      />
-      <path d="M18.5 15.5 19.4 18l2.5.9-2.5.9-.9 2.5-.9-2.5-2.5-.9 2.5-.9z" fill="currentColor" opacity="0.55" />
-    </svg>
+    <Icon className={className}>
+      <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
+      <path d="M20 2v4" />
+      <path d="M22 4h-4" />
+      <circle cx="4" cy="20" r="2" />
+    </Icon>
   );
 }
 
-/** Install: the app tile itself, dropping onto a home screen. */
+/**
+ * lucide/monitor-down: a screen with the app coming down into it. Deliberately
+ * not the download glyph, which is a tray and already means "this file is
+ * yours now" three inches away in the results bar.
+ */
 export function InstallIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <rect x="5.5" y="2.5" width="13" height="10.5" rx="2.5" {...stroke} strokeWidth="1.8" />
-      <path d="M12 6.2v4.4m0 0 2-2m-2 2-2-2" {...stroke} strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M4 17.5h16M7 21h10" {...stroke} strokeWidth="1.8" />
-    </svg>
+    <Icon>
+      <path d="M12 13V7" />
+      <path d="m15 10-3 3-3-3" />
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <path d="M12 17v4" />
+      <path d="M8 21h8" />
+    </Icon>
   );
 }
 
-/** The iOS share glyph, because on iPhone that is the button to name. */
+/** lucide/share, which is the iOS share glyph — the button being named. */
 export function IosShareIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <path d="M12 3.5v11m0-11L9 6.7M12 3.5l3 3.2" {...stroke} strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M7.5 10.5H6.2A1.7 1.7 0 0 0 4.5 12.2v6.6A1.7 1.7 0 0 0 6.2 20.5h11.6a1.7 1.7 0 0 0 1.7-1.7v-6.6a1.7 1.7 0 0 0-1.7-1.7H16.5" {...stroke} strokeWidth="1.8" />
-    </svg>
+    <Icon className={className}>
+      <path d="M12 2v13" />
+      <path d="m16 6-4-4-4 4" />
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+    </Icon>
   );
 }
