@@ -16,6 +16,7 @@ The full licence text for each family ships alongside the fonts in
 | Sans Tebal | `ArchivoBlack-Regular.ttf` | Archivo Black | [google/fonts `ofl/archivoblack`](https://github.com/google/fonts/tree/main/ofl/archivoblack) | OFL 1.1 |
 | Playful | `Fredoka-SemiBold.ttf` | Fredoka | [google/fonts `ofl/fredoka`](https://github.com/google/fonts/tree/main/ofl/fredoka) | OFL 1.1 |
 | Sekolah | `DoodleGenSchool-Bold.ttf` | Andika (SIL) | [google/fonts `ofl/andika`](https://github.com/google/fonts/tree/main/ofl/andika) | OFL 1.1 |
+| *Interface* | `Archivo-UI.woff2` | Archivo | [google/fonts `ofl/archivo`](https://github.com/google/fonts/tree/main/ofl/archivo) | OFL 1.1 |
 
 ## What was changed, and why
 
@@ -38,6 +39,25 @@ transforms, in order:
    what makes it practical to embed the *complete* face in every PDF rather
    than a generator-side subset.
 
+## The interface face
+
+`Archivo-UI.woff2` is the only face here that is never embedded in a PDF: it
+sets the studio and the landing page. It is built differently for that reason.
+
+1. **No overlap removal.** The screen fills its glyphs; there are no internal
+   seams to see, and removing them would only cost fidelity.
+2. **The weight axis is kept**, 400 to 700, rather than pinned. One variable
+   file is smaller than the two static weights the interface would otherwise
+   load, and it can hold any weight in between.
+3. **woff2, not TTF.** Only the browser reads it, and woff2 is roughly half
+   the bytes — 50 KB for the whole range.
+
+It is Archivo because Archivo Black, one of the worksheet faces, is its
+sibling: the interface and the product it makes are set in one superfamily.
+Its tabular figures are the working reason — page counts, pixel sizes and
+paper dimensions are set in `tnum`, so a number changing under the cursor
+never nudges the words beside it.
+
 ## The Andika rename
 
 Andika reserves the names "Andika" and "SIL". OFL 1.1 clause 3 forbids a
@@ -53,6 +73,8 @@ The other three families reserve no name, so they keep theirs.
 1. Confirm the licence permits commercial use and embedding. OFL, Apache 2.0
    and CC0 are fine. "Free for personal use" is not.
 2. Add an entry to `SOURCES` in `scripts/build-fonts.py` and run `npm run fonts`.
+   An interface face goes in `UI_SOURCE` instead, and is registered in
+   `tailwind.config.ts` and `app/globals.css` rather than in `lib/presets.ts`.
 3. Register it in `FONTS` and `FONT_ORDER` in `lib/presets.ts`.
 4. Run `npm run samples && npm run verify` to confirm the outlines stroke
    cleanly and nothing crosses the safe margin.

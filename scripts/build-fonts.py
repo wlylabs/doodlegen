@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Builds the four worksheet faces shipped in public/fonts.
+Builds the four worksheet faces, and the one interface face, shipped in
+public/fonts.
 
 Every source is SIL OFL 1.1, which allows commercial use, modification and
 redistribution — the licence position DoodleGen output depends on.
@@ -20,7 +21,14 @@ Andika carries the Reserved Font Names "Andika" and "SIL". OFL 1.1 clause 3
 forbids a modified version from using them, so that face is renamed. The
 other three carry no reserved name and keep theirs.
 
-Requires: pip install fonttools skia-pathops
+The interface face is built differently, because the screen fills its glyphs
+rather than stroking them: no overlaps are removed (there is nothing to see),
+the weight axis is kept rather than pinned, and the file is written as woff2,
+which only the browser has to read. Its numerals are the reason it is here —
+Archivo carries real tabular figures, and a page of print specs that does not
+shift as it counts is the whole point.
+
+Requires: pip install fonttools skia-pathops brotli
 Usage:    python3 scripts/build-fonts.py
 """
 from __future__ import annotations
@@ -75,6 +83,26 @@ SOURCES = [
             "postscript": "DoodleGenSchool-Bold",
         },
     },
+]
+
+# The interface face. Archivo is the family Archivo Black already comes from,
+# so the studio and the worksheets are set in one superfamily — and it reserves
+# no name, so a subset build keeps it.
+UI_SOURCE = {
+    "dir": "archivo",
+    "file": "Archivo%5Bwdth%2Cwght%5D.ttf",
+    "out": "Archivo-UI.woff2",
+    # One file covers every weight the interface uses; the width axis is pinned
+    # because nothing on screen varies it.
+    "instance": {"wdth": 100, "wght": (400, 700)},
+}
+
+# What the interface itself is written in: ASCII, the punctuation the copy
+# actually uses, and the few marks the UI draws as text.
+UI_EXTRA_CODEPOINTS = [
+    0x00A0, 0x00A9, 0x00AB, 0x00BB, 0x00B0, 0x00B7, 0x00D7, 0x00E9, 0x00ED,
+    0x2013, 0x2014, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2026, 0x2192,
+    0x2212, 0x2248, 0x2713,
 ]
 
 # Printable ASCII covers every worksheet character. These extras exist only
@@ -135,6 +163,37 @@ def shrink(font: TTFont) -> None:
     subsetter.subset(font)
 
 
+def build_ui(work: Path) -> None:
+    """The interface face: filled on screen, so it keeps its overlaps."""
+    src = work / f"{UI_SOURCE['dir']}.ttf"
+    fetch(f"{RAW}/{UI_SOURCE['dir']}/{UI_SOURCE['file']}", src)
+    fetch(f"{RAW}/{UI_SOURCE['dir']}/OFL.txt", OUT / f"OFL-{UI_SOURCE['dir']}.txt")
+
+    font = instancer.instantiateVariableFont(
+        TTFont(src), UI_SOURCE["instance"], updateFontNames=False
+    )
+    options = subset.Options()
+    # tnum and lnum are the reason this face was picked: specs, page counts and
+    # pixel sizes are set in tabular lining figures so columns of them line up.
+    options.layout_features = [
+        "ccmp", "liga", "kern", "locl", "tnum", "lnum", "case", "frac", "zero",
+    ]
+    options.name_IDs = ["*"]
+    options.name_legacy = True
+    options.recommended_glyphs = True
+    options.notdef_outline = True
+    options.drop_tables += ["DSIG"]
+    options.flavor = "woff2"
+    subsetter = subset.Subsetter(options=options)
+    subsetter.populate(unicodes=[*range(0x20, 0x7F), *UI_EXTRA_CODEPOINTS])
+    subsetter.subset(font)
+
+    target = OUT / UI_SOURCE["out"]
+    font.save(target)
+    size = target.stat().st_size / 1024
+    print(f"{UI_SOURCE['out']:<32} {font['name'].getDebugName(4):<26} {size:7.1f} KB")
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -160,6 +219,8 @@ def main() -> int:
             font.save(target)
             size = target.stat().st_size / 1024
             print(f"{source['out']:<32} {font['name'].getDebugName(4):<26} {size:7.1f} KB")
+
+        build_ui(work)
     return 0
 
 

@@ -15,6 +15,20 @@
 }
 
 /*
+ * The interface face. One variable file covers 400 to 700, which is fewer
+ * bytes than the two static weights it replaces, and it is the only reason
+ * `tabular-nums` does anything here: the system stacks it used to fall back
+ * to mostly have no tnum, so every changing number nudged the layout.
+ */
+@font-face {
+  font-family: 'Archivo UI';
+  src: url('/fonts/Archivo-UI.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
  * Keyframes used from plain CSS below. Tailwind only emits the keyframes
  * behind an animate-* utility it can see in the markup, so anything driven
  * from a component class has to be declared here or it silently never runs.
@@ -69,6 +83,35 @@
   body {
     @apply bg-paper text-ink antialiased;
     text-rendering: optimizeLegibility;
+    /* Real quotes and dashes, and figures that hold their column. */
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1;
+  }
+
+  /*
+   * Anything that counts — page numbers, pixel sizes, paper dimensions — is
+   * set in lining tabular figures, so a number changing under the cursor
+   * never shifts the words next to it.
+   */
+  .tabular-nums,
+  input[type='number'],
+  th,
+  td {
+    font-feature-settings:
+      'kern' 1,
+      'tnum' 1,
+      'lnum' 1;
+  }
+
+  /* Optical sizing by hand: the bigger the type, the tighter it is set. */
+  h1 {
+    @apply tracking-tightest;
+  }
+
+  h2,
+  h3 {
+    letter-spacing: -0.018em;
   }
 
   :focus-visible {
@@ -111,31 +154,57 @@
   }
 
   .field-label {
-    @apply text-[11px] font-medium uppercase tracking-[0.14em] text-ink-mute;
+    @apply text-[10.5px] font-semibold uppercase tracking-[0.16em] text-ink-mute;
+  }
+
+  /*
+   * A spec, set the way a print shop writes one: small, tracked, tabular, and
+   * never competing with the thing it describes.
+   */
+  .spec {
+    @apply text-[11px] font-medium tabular-nums tracking-[0.04em] text-ink-mute;
+  }
+
+  /* The number that heads a step, in its own gutter down the left edge. */
+  .step-mark {
+    @apply inline-flex h-5 min-w-[1.35rem] items-center justify-center rounded-[5px] bg-accent-soft
+           px-1 text-[10.5px] font-bold tabular-nums tracking-[0.06em] text-accent;
   }
 
   .card {
     @apply rounded-xl border border-line bg-surface;
   }
 
-  /* Option tiles: one accent, no shadows, state carried by border and tint. */
+  /*
+   * Option tiles. The resting state is a hairline on white — no shadow, no
+   * second border — so a panel of them reads as one field rather than a wall
+   * of boxes. Selection is carried by an inset rule the full weight of the
+   * accent, which survives being printed, photographed or colour-blind.
+   */
   .choice {
-    @apply ripple-host press relative flex w-full flex-col gap-1 rounded-xl border border-line bg-surface px-3 py-3
-           text-left transition-[colors,transform,box-shadow] duration-150 hover:border-line-strong;
+    @apply ripple-host press relative flex w-full flex-col gap-1 rounded-[10px] border border-line bg-surface
+           px-3 py-3 text-left transition-[border-color,background-color,transform,box-shadow] duration-150
+           hover:border-line-strong hover:bg-paper;
   }
 
   .choice[data-active='true'] {
-    @apply border-accent bg-accent-soft;
+    @apply border-accent-line bg-accent-soft;
+    box-shadow: inset 0 0 0 1px theme('colors.accent.line');
     animation: dg-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
+  .choice[data-active='true']::before {
+    content: '';
+    @apply absolute left-0 top-3 h-[calc(100%-1.5rem)] w-[2.5px] rounded-r bg-accent;
+  }
+
   .chip {
-    @apply ripple-host press rounded-lg border border-line bg-surface px-3 py-2 text-[13px] font-medium
-           text-ink-soft transition-colors duration-150 hover:border-line-strong;
+    @apply ripple-host press rounded-lg border border-line bg-surface px-3 py-2 text-[12.5px] font-medium
+           text-ink-soft transition-colors duration-150 hover:border-line-strong hover:text-ink;
   }
 
   .chip[data-active='true'] {
-    @apply border-accent bg-accent-soft text-accent;
+    @apply border-accent-line bg-accent-soft text-accent-ink;
     animation: dg-pop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
@@ -165,6 +234,54 @@
   .pill {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1
            text-[12px] font-medium text-ink-soft;
+  }
+
+  /*
+   * The proofing bench: a sunk, faintly gridded ground for the sheet to lie
+   * on, so a white page reads as a page rather than as more interface.
+   */
+  .bench {
+    @apply bg-sunk;
+    background-image: radial-gradient(rgba(26, 22, 19, 0.07) 1px, transparent 1px);
+    background-size: 16px 16px;
+    background-position: -1px -1px;
+  }
+
+  /*
+   * Crop marks, the way a proof carries them: four corner ticks sitting off
+   * the trim, drawn by the frame rather than by the page, so the page itself
+   * stays exactly what the PDF will be.
+   */
+  .trim {
+    @apply relative;
+  }
+
+  .trim::before,
+  .trim::after {
+    content: '';
+    @apply pointer-events-none absolute h-3.5 w-3.5 border-ink-mute/45;
+  }
+
+  .trim::before {
+    @apply -left-2 -top-2 border-l border-t;
+  }
+
+  .trim::after {
+    @apply -bottom-2 -right-2 border-b border-r;
+  }
+
+  .trim > .trim-alt::before,
+  .trim > .trim-alt::after {
+    content: '';
+    @apply pointer-events-none absolute h-3.5 w-3.5 border-ink-mute/45;
+  }
+
+  .trim > .trim-alt::before {
+    @apply -right-2 -top-2 border-r border-t;
+  }
+
+  .trim > .trim-alt::after {
+    @apply -bottom-2 -left-2 border-b border-l;
   }
 
   .rail {

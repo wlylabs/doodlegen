@@ -269,11 +269,15 @@ export function App() {
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-paper">
       <header className="z-30 shrink-0 border-b border-line bg-surface">
+        {/* The one line of colour in the chrome: a press bar across the top,
+            so the app is stamped rather than merely bordered. */}
+        <div className="h-[3px] bg-accent" aria-hidden="true" />
         <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-4 py-3 sm:px-6">
           <Link href="/" className="press rounded-lg" aria-label="Ke beranda DoodleGen">
             <Logo />
           </Link>
-          <span className="hidden text-[12px] text-ink-mute sm:inline">
+          <span className="hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
+          <span className="hidden min-w-0 truncate text-[12.5px] font-medium text-ink-soft sm:inline">
             {printedTitle(config, characters)}
           </span>
 

@@ -111,6 +111,19 @@ starts with, and what they end up with. Worksheets stay K-only whatever is
 picked, because colour there would cost a second plate on press, muddy every
 photocopy and drain a home printer for nothing.
 
+**The interface is set, not styled.** The studio and the landing page are set
+in Archivo — the family Archivo Black, one of the worksheet faces, comes from —
+self-hosted as one 50 KB variable file covering 400 to 700, and precached with
+the shell so an offline visit is not a different-looking app. It is there for
+its tabular figures as much as its shapes: page counts, pixel sizes and paper
+dimensions are set in `tnum`, so a number changing under the cursor never
+nudges the words beside it. Colour is one warm scale with a role per step —
+ground, surface, sunk well, two borders, three text levels — rather than three
+greys picked by eye, which is the discipline Radix Colors argues for. And the
+preview is furniture, not a card: the sheet lies on a sunk, faintly gridded
+bench under real crop marks, with a slug of specs beside it, because the thing
+being made is a printed page and it should look like one on screen too.
+
 **The tracing ladder.** `Bertahap` is the progression every printed
 handwriting sheet uses and the one every open-source worksheet generator
 converges on: a worked example, dotted repeats to trace, faded ones that give

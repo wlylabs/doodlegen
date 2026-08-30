@@ -64,9 +64,9 @@ export function GenerateBar({
 
       <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center">
         <div className="min-w-0 flex-1">
-          <p className="flex items-baseline gap-2 text-[13px]">
-            <span className="text-[11px] font-semibold tabular-nums text-accent">06</span>
-            <span className="font-semibold tracking-tight text-ink">Hasil</span>
+          <p className="flex items-center gap-2 text-[13px]">
+            <span className="step-mark">06</span>
+            <span className="font-semibold text-ink">Hasil</span>
             <span className="truncate text-ink-mute">{summary}</span>
           </p>
           <p className="mt-0.5 flex items-center gap-1.5 text-[12px] tabular-nums text-ink-mute" aria-live="polite">
