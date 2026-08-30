@@ -85,16 +85,16 @@ const FEATURES = [
     body: 'Dua belas model sampul bermerek dengan palet warna pilihan — termasuk dua yang mengikuti susunan sampul buku terbitan: judul di panel kepala, gambar di satu jendela, penerbit di kaki. Halaman ketentuan di belakang, nomor halaman di setiap lembar.',
   },
   {
-    title: 'Bahasa mengikuti pasarnya',
-    body: 'Satu klik memindahkan sampul, lisensi, dan panduan cetak ke bahasa Inggris untuk Etsy, TPT, dan Gumroad, atau bahasa Indonesia untuk Shopee dan Tokopedia. Gambar listing selalu ikut pasarnya sendiri.',
-  },
-  {
     title: 'Gambar listing siap unggah',
     body: 'Lima kanvas untuk Etsy, TPT, Gumroad, Shopee/Tokopedia, dan Pinterest digambar dari halaman aslinya — ukuran dan bahasanya sudah sesuai aturan tiap marketplace.',
   },
   {
     title: 'Teks listing dan langkah unggahnya',
     body: 'Judul, deskripsi, dan tag enam kanal terisi dari setelan yang dipakai, lalu disusun mengikuti formulir tambah produk masing-masing: foto mana yang diunggah, kategori apa, sampai kolom berat dan kurir yang tetap diminta Shopee dan Tokopedia untuk berkas yang tidak dikirim.',
+  },
+  {
+    title: 'Kata kunci dan bahasa ikut pasarnya',
+    body: 'Satu klik memindahkan sampul, lisensi, dan panduan cetak ke bahasa Inggris atau Indonesia. Kata kuncinya sendiri dihitung dari isi paket, lalu ditaruh di tempat yang memang dibaca: tag untuk Etsy, nama produk untuk Shopee yang tidak punya kolom tag, nama sekaligus deskripsi untuk Tokopedia — dan semuanya diperiksa mesin sebelum keluar.',
   },
   {
     title: 'SVG untuk Canva & Cricut',

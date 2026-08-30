@@ -10,6 +10,20 @@
  * Titles grow with the brand name and the character set, so the matrix
  * below runs the longest realistic combinations, not the default one.
  *
+ * The same drafts are checked against each marketplace's ranking surface,
+ * because "SEO" has to mean something a script can fail on:
+ *
+ *   - the focus phrase appears in the title, verbatim
+ *   - it appears in the opening of the description, wherever that
+ *     marketplace reads descriptions at all
+ *   - Etsy's title carries the tags that fitted, since a phrase in both is
+ *     the one that ranks
+ *   - no word is repeated in a title more than twice — that is stuffing,
+ *     and every marketplace here ranks it down
+ *   - the tag field is filled to its count, with no duplicate searches
+ *   - Shopee's name uses the field it is given, since the name is the only
+ *     thing its search engine reads
+ *
  * The upload guides are checked against the same drafts: every marketplace
  * has one, every step has fields, every field says what to put in it, and
  * every field that pastes generated copy pastes the very string the copy
@@ -58,6 +72,16 @@ const cases = [
     },
   },
   {
+    name: 'custom title longer than Tokopedia allows',
+    patch: {
+      content: 'letters',
+      language: 'id',
+      brand: 'Rumah Kreatif Nusantara',
+      productTitle:
+        'Paket Lengkap Lembar Kerja Belajar Menulis dan Mewarnai Huruf Alfabet untuk Anak Usia Dini',
+    },
+  },
+  {
     name: 'custom product title',
     patch: {
       content: 'letters',
@@ -94,6 +118,57 @@ for (const testCase of cases) {
 
     const body = market.bodyMax ? `${listing.body.length}/${market.bodyMax}` : `${listing.body.length}`;
     const line = `  ${listing.market.padEnd(10)} title ${listing.title.length}/${market.titleMax}  body ${body}  tags ${listing.tags.length}/${market.tagCount}`;
+    if (problems.length) {
+      failures += problems.length;
+      console.log(`${line}  FAIL — ${problems.join('; ')}`);
+    } else {
+      console.log(line);
+    }
+  }
+
+  for (const listing of listings) {
+    const market = lib.MARKETS.find((spec) => spec.id === listing.market);
+    const problems = [];
+    const flat = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const has = (haystack, needle) => flat(haystack).includes(flat(needle));
+
+    // A seller's own title can eat the whole budget; the phrase is only
+    // owed a place in the title when the generator picked the title.
+    if (!config.productTitle && !has(listing.title, listing.focus)) {
+      problems.push(`focus "${listing.focus}" missing from the title`);
+    }
+    // Etsy is the exception: its search does not read descriptions.
+    if (listing.market !== 'etsy' && listing.market !== 'gumroad') {
+      if (!has(listing.body.slice(0, 200), listing.focus)) {
+        problems.push('focus phrase not in the opening of the description');
+      }
+    }
+    if (listing.market === 'etsy') {
+      const carried = listing.tags.slice(0, 3).filter((tag) => has(listing.title, tag));
+      if (carried.length < 2) problems.push(`only ${carried.length} of the top 3 tags are in the title`);
+    }
+    if (listing.market === 'shopee') {
+      const target = market.titleTarget ?? market.titleMax;
+      if (listing.title.length < target * 0.6) {
+        problems.push(`name ${listing.title.length} chars, wasting a field that reaches ${target}`);
+      }
+    }
+
+    const counts = new Map();
+    for (const word of flat(listing.title).split(' ')) {
+      if (word.length < 3) continue;
+      counts.set(word, (counts.get(word) ?? 0) + 1);
+    }
+    const stuffed = [...counts].filter(([, n]) => n > 2).map(([word, n]) => `${word}x${n}`);
+    if (stuffed.length) problems.push(`repeated in the title: ${stuffed.join(', ')}`);
+
+    if (listing.tags.length < market.tagCount) {
+      problems.push(`${listing.tags.length} of ${market.tagCount} tag slots used`);
+    }
+    const prints = listing.tags.map((tag) => flat(tag).split(' ').sort().join(' '));
+    if (new Set(prints).size !== prints.length) problems.push('two tags are the same search');
+
+    const line = `  ${listing.market.padEnd(10)} seo: fokus "${listing.focus}"`;
     if (problems.length) {
       failures += problems.length;
       console.log(`${line}  FAIL — ${problems.join('; ')}`);

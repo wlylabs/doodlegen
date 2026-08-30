@@ -319,9 +319,21 @@ export function ExportDialog({
             </div>
           ) : guide ? (
             <div className="animate-fade-up space-y-5">
-              <div className="rounded-xl border border-line bg-paper px-3 py-2.5">
-                <p className="text-[12.5px] leading-relaxed text-ink-soft">{guide.entry}</p>
-                <p className="mt-1 text-[11.5px] text-ink-mute">{guide.copy.limits}</p>
+              <div className="space-y-2.5">
+                <div className="rounded-xl border border-line bg-paper px-3 py-2.5">
+                  <p className="text-[12.5px] leading-relaxed text-ink-soft">{guide.entry}</p>
+                  <p className="mt-1 text-[11.5px] text-ink-mute">{guide.copy.limits}</p>
+                </div>
+
+                {/* The phrase the whole draft is built to win, and where that
+                    marketplace actually reads it. */}
+                <div className="rounded-xl border border-accent/25 bg-accent-soft px-3 py-2.5">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <p className="field-label !text-accent">Kata kunci utama</p>
+                    <p className="text-[13px] font-semibold text-accent-ink">{guide.copy.focus}</p>
+                  </div>
+                  <p className="mt-1 text-[11.5px] leading-relaxed text-accent-hover">{guide.copy.seo}</p>
+                </div>
               </div>
 
               {guide.steps.map((step, index) => (

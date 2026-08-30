@@ -182,7 +182,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               kind: 'title',
               label: 'Nama Produk *',
               value: copy.title,
-              note: 'Shopee memberi 255 karakter; draf ini sengaja lebih pendek supaya tidak terpotong di layar HP.',
+              note: 'Ini satu-satunya kolom yang dibaca mesin pencari Shopee — tidak ada kolom tag. Draf mengisi ±165 dari 255 karakter: bagian sebelum tanda "|" untuk pembeli yang membacanya di kartu HP, sisanya kata kunci untuk mesin.',
             },
           ],
           tips: [
@@ -328,7 +328,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               kind: 'title',
               label: 'Nama Produk *',
               value: copy.title,
-              note: 'Tokopedia memotong tepat di 70 karakter, jadi draf ini dipendekkan sampai muat utuh.',
+              note: 'Tokopedia memotong tepat di 70 karakter. Draf memuat kata kunci utama di dalamnya, karena nama produk dan deskripsi dua-duanya terbaca pencarian.',
             },
           ],
         },
@@ -357,7 +357,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               kind: 'body',
               label: 'Deskripsi *',
               value: copy.body,
-              note: 'Batas 2000 karakter, dan draf Tokopedia sudah dipotong untuk itu.',
+              note: 'Batas 2000 karakter. Berbeda dari Etsy, deskripsi Tokopedia ikut terbaca pencarian — kata kunci utamanya sudah ditaruh di kalimat pertama, jangan dihapus.',
             },
           ],
           tips: [
@@ -453,7 +453,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
         {
           title: 'Listing details',
           fields: [
-            { kind: 'title', label: 'Title', value: copy.title, note: 'Batas 140 karakter. Etsy membaca seluruh judul, jadi tiap ruas draf ini membawa frasa pencarian yang berbeda.' },
+            { kind: 'title', label: 'Title', value: copy.title, note: 'Batas 140 karakter. Etsy mencocokkan pencarian ke judul dan tag sekaligus, jadi tag teratas sengaja diulang persis di judul ini.' },
             { kind: 'pick', label: 'Who made it?', value: 'I did', note: 'Kamu yang menyusun berkasnya di studio ini.' },
             { kind: 'pick', label: 'What is it?', value: 'A finished product', note: 'Bukan bahan baku dan bukan alat.' },
             {
@@ -484,9 +484,9 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               kind: 'body',
               label: 'Description',
               value: copy.body,
-              note: 'Kalimat pertama yang dipakai Google dan pratinjau Etsy, jadi biarkan baris pembuka draf ini di tempatnya.',
+              note: 'Etsy tidak memeringkat dari deskripsi, tapi Google mengutip ±160 karakter pertamanya — di situlah kata kunci utama draf ini duduk.',
             },
-            { kind: 'tags', label: 'Tags', value: copy.tags, note: '13 tag, maksimal 20 karakter per tag. Isi semuanya: tag kosong adalah pintu masuk pencarian yang dibuang.' },
+            { kind: 'tags', label: 'Tags', value: copy.tags, note: 'Inilah yang memeringkat di Etsy, bukan deskripsi. 13 tag maksimal 20 karakter, semuanya terisi frasa dua kata ke atas — kata tunggal kalah oleh semua lapak lain yang memakainya juga.' },
             {
               kind: 'pick',
               label: 'Materials',
@@ -751,6 +751,9 @@ export function guideToText(guide: UploadGuide): string {
   const lines: string[] = [
     `${guide.label.toUpperCase()} — LANGKAH TAMBAH PRODUK`,
     guide.entry,
+    '',
+    `KATA KUNCI UTAMA: ${guide.copy.focus}`,
+    guide.copy.seo,
     '',
   ];
 

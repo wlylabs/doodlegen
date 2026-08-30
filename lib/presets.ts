@@ -327,6 +327,13 @@ export interface MarketSpec {
   label: string;
   /** Hard limits the copy generator has to respect. */
   titleMax: number;
+  /**
+   * What the generator aims for, where the hard limit is not the useful one.
+   * Shopee allows 255 characters in a product name and its search reads all
+   * of them, but a name stuffed to the limit reads as spam to the buyer who
+   * opens it — so the draft stops here instead.
+   */
+  titleTarget?: number;
   tagMax: number;
   tagCount: number;
   /** Only where the marketplace actually caps the description field. */
@@ -343,7 +350,7 @@ export const MARKETS: MarketSpec[] = [
     tagMax: 20,
     tagCount: 13,
     language: 'en',
-    note: 'Judul 140 karakter, 13 tag maksimal 20 karakter',
+    note: 'Tag yang menentukan peringkat, bukan deskripsi: 13 tag maksimal 20 karakter, judul 140',
   },
   {
     id: 'tpt',
@@ -366,12 +373,13 @@ export const MARKETS: MarketSpec[] = [
   {
     id: 'shopee',
     label: 'Shopee',
-    titleMax: 120,
+    titleMax: 255,
+    titleTarget: 165,
     tagMax: 25,
     tagCount: 10,
     bodyMax: 3000,
     language: 'id',
-    note: 'Judul bahasa Indonesia, gambar 1:1',
+    note: 'Nama produk satu-satunya kolom yang dibaca pencarian Shopee — 255 karakter, draf mengisi ±165',
   },
   {
     id: 'tokopedia',
@@ -381,7 +389,7 @@ export const MARKETS: MarketSpec[] = [
     tagCount: 8,
     bodyMax: 2000,
     language: 'id',
-    note: 'Nama produk 70 karakter, deskripsi maksimal 2000 karakter',
+    note: 'Nama 70 karakter; deskripsi ikut terbaca pencarian, jadi kata kuncinya ditaruh di paragraf pertama',
   },
   {
     id: 'pinterest',

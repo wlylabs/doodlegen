@@ -66,7 +66,7 @@ the rest around it:
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
 | Listing images | 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 (Gumroad), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest), drawn from the same page plans. |
-| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, already inside each channel's character and tag limits. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
+| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
 | Upload steps | Each channel's own add-product form, walked field by field: photo, product name, category, description, price, stock, SKU — and the weight, package size and courier Shopee and Tokopedia will not let a listing save without. Every blank says whether it is pasted, chosen or uploaded, and the pasted ones carry the copy above. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
@@ -99,6 +99,33 @@ in the steps that ask for them, with their counters, so the whole listing is
 filled from one screen — and where a marketplace has no field at all for
 something, such as tags on Shopee and Tokopedia, the guide says so instead of
 pretending otherwise.
+
+**The keywords come out of the config, and each channel gets them where it
+reads them.** A fixed keyword list would describe a fixed product, and this
+one is not: an outline pack is bought by someone searching for colouring
+pages, a progressive pack by someone searching for handwriting practice, and
+a numbers pack by someone who typed the range. So `lib/seo.ts` derives a
+focus phrase and a long-tail pool from the same config that drew the pages —
+which also stops two packs from one studio competing for the same phrase.
+
+Where those words are allowed to work is not the same on any two channels,
+and that is the whole reason the file exists apart from the copy:
+
+| Channel | What ranks | What the draft does about it |
+| --- | --- | --- |
+| Etsy | Tags and title, matched against the query together; descriptions do not rank | All 13 tag slots filled with two-word-and-up phrases, and the tags that fitted are repeated verbatim in the title. The phrase still opens the description, because Google quotes the first ~160 characters. |
+| TPT | Grade, subject and resource-type facets first, keywords second | The facets are answered from the character set in the upload guide; the title reads as a teacher would search. |
+| Gumroad | Category and sales; prose barely counts | A short, legible name. No keyword tail. |
+| Shopee | The product name, and nothing else — there is no tag field | A name in Shopee's own Merek + Jenis Produk + Spesifikasi order, then a keyword tail, stopping at ~165 of the 255 the form allows. |
+| Tokopedia | The name *and* the description | 70 characters of name carrying the phrase, and the phrase again in the first sentence of the body. |
+| Pinterest | Title, description, board name and alt text, as prose | Sentences, not a pile of hashtags. |
+
+None of that is asserted, it is checked: `verify:listing` fails the build if
+the focus phrase is missing from a title, if fewer than two of Etsy's top
+tags reach its title, if a tag slot is left empty or two tags carry the same
+search, if a word appears in a title more than twice — that is stuffing, and
+every marketplace here ranks it down — or if Shopee's name wastes the only
+field its search engine reads.
 
 **Why there is no Canva integration, and what replaces it.** The app is a
 static export with no server, so there is nowhere to keep the client secret an
@@ -347,7 +374,7 @@ browser offers an install, and that a new build waits to be let in.
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run samples` | Renders sample PDFs across layouts into `.samples/` |
 | `npm run verify` | Checks those PDFs against the table above |
-| `npm run verify:listing` | Checks every marketplace draft against that marketplace's title, description and tag limits, and every upload guide against the draft it pastes |
+| `npm run verify:listing` | Checks every marketplace draft against that marketplace's limits and its ranking surface, and every upload guide against the draft it pastes |
 | `npm run verify:pwa` | Checks the manifest's assets, the offline shell, the install offer and the update handshake |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |
 | `npm run icons` | Regenerates the logo, favicon, PWA icons and the social card |
