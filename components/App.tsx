@@ -234,18 +234,18 @@ export function App() {
   }, [files]);
 
   const onDownloadBundle = useCallback(async () => {
-    if (!files.length) return;
+    if (!files.length || !font) return;
     setBundling(true);
     try {
       const { buildBundle } = await import('@/lib/bundle');
-      const bundle = await buildBundle({ config, characters, files, images });
+      const bundle = await buildBundle({ config, characters, files, images, font });
       downloadBlob(bundle.blob, bundle.name);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Gagal menyiapkan ZIP.');
     } finally {
       setBundling(false);
     }
-  }, [config, characters, files, images]);
+  }, [config, characters, files, images, font]);
 
   const onShare = useCallback(() => {
     void copy(shareUrl(config), 'share');

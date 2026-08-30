@@ -1,9 +1,11 @@
+import { planDocument } from './geometry';
 import { buildListing, buyerReadme, copyToText, licenceNote, packFileNames } from './listing';
 import { packSlug, printedTitle } from './naming';
-import { FONTS } from './presets';
+import { FONTS, papersFor } from './presets';
+import { svgFilesFor } from './svgdoc';
 import type { GeneratedImage } from './cover';
 import type { GeneratedFile } from './pdf';
-import type { Config } from './types';
+import type { Config, LoadedFont } from './types';
 
 /**
  * One ZIP that is the whole product: the printable files, the listing images,
@@ -11,16 +13,21 @@ import type { Config } from './types';
  * Folder names are numbered so the order to work through them is obvious the
  * moment the archive is opened.
  */
-export const BUNDLE_FOLDERS: Record<Config['language'], Record<'print' | 'images' | 'copy', string>> = {
+export const BUNDLE_FOLDERS: Record<
+  Config['language'],
+  Record<'print' | 'images' | 'copy' | 'svg', string>
+> = {
   en: {
     print: '01-PRINT-FILES',
     images: '02-LISTING-IMAGES',
     copy: '03-LISTING-COPY',
+    svg: '04-SVG-EDITABLE',
   },
   id: {
     print: '01-FILE-CETAK',
     images: '02-GAMBAR-LISTING',
     copy: '03-TEKS-LISTING',
+    svg: '04-SVG-BISA-DIEDIT',
   },
 };
 
@@ -29,6 +36,8 @@ export interface BundleInput {
   characters: string[];
   files: GeneratedFile[];
   images: GeneratedImage[];
+  /** Needed to draw the editable SVGs, which are laid out here, not in the UI. */
+  font: LoadedFont;
 }
 
 export interface Bundle {
@@ -56,6 +65,7 @@ export async function buildBundle({
   characters,
   files,
   images,
+  font,
 }: BundleInput): Promise<Bundle> {
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
@@ -81,6 +91,18 @@ export async function buildBundle({
     for (const image of images) {
       imageFolder?.file(image.name, image.bytes);
       entries.push(`${folders.images}/${image.name}`);
+    }
+  }
+
+  // Editable vectors: the route into Canva, Figma, Illustrator and Cricut,
+  // and a second thing to sell on the same listing.
+  if (config.svgFiles) {
+    const paper = papersFor(config.paper)[0];
+    const plans = planDocument({ font, config, paper, characters });
+    const svgFolder = root.folder(folders.svg);
+    for (const file of svgFilesFor(font, plans, config, characters)) {
+      svgFolder?.file(file.name, file.content);
+      entries.push(`${folders.svg}/${file.name}`);
     }
   }
 

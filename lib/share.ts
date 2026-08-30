@@ -20,7 +20,14 @@ const ONE_OF = {
   palette: PALETTE_ORDER,
 } as const;
 
-const BOOLEANS = ['guides', 'showTitle', 'pageNumbers', 'coverPage', 'termsPage'] as const;
+const BOOLEANS = [
+  'guides',
+  'showTitle',
+  'pageNumbers',
+  'coverPage',
+  'termsPage',
+  'svgFiles',
+] as const;
 const STRINGS = ['words', 'titleTemplate', 'brand', 'productTitle'] as const;
 
 /** Longest value accepted from a shared link, so a URL cannot bloat the app. */

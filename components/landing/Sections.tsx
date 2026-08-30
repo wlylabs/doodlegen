@@ -97,6 +97,10 @@ const FEATURES = [
     body: 'Teks listing tiga marketplace langsung terisi dari setelan yang dipakai — dengan batas karakter dan jumlah tag yang sudah dipatuhi.',
   },
   {
+    title: 'SVG untuk Canva & Cricut',
+    body: 'Setiap lembar juga keluar sebagai SVG seukuran kertas aslinya, siap dibuka di Canva, Figma, Illustrator, atau Cricut — jadi Anda bisa menambahkan gambar sendiri di atas halaman yang sudah benar.',
+  },
+  {
     title: 'Jalan sepenuhnya di browser',
     body: 'PDF dibuat di perangkat Anda, tanpa server, tanpa antre, tanpa unggah. Setelah dibuka sekali, studio tetap bisa dipakai walau koneksi hilang.',
   },
@@ -358,6 +362,11 @@ const FAQ = [
     question: 'Berapa halaman maksimal dalam satu berkas?',
     answer:
       'Dua ratus halaman per berkas, cukup untuk rentang angka 1–200 atau daftar kata yang panjang. Satu set A–Z 26 halaman biasanya berukuran sekitar 20 KB karena tidak ada gambar raster di dalamnya.',
+  },
+  {
+    question: 'Bisa diedit di Canva atau Cricut?',
+    answer:
+      'Bisa. Selain PDF, setiap lembar latihan ikut sebagai berkas SVG seukuran kertas aslinya — Canva, Figma, Illustrator, Inkscape, dan Cricut Design Space semuanya membukanya, dan isinya bentuk yang sama persis dengan yang dicetak PDF-nya. DoodleGen sendiri tidak menyambung ke akun Canva: aplikasinya jalan tanpa server dan tanpa login, dan gambar pihak ketiga hampir tidak pernah membawa hak jual ulang yang Anda butuhkan.',
   },
   {
     question: 'Kenapa lembar latihannya tidak berwarna?',

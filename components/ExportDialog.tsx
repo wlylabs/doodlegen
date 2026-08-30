@@ -242,7 +242,8 @@ export function ExportDialog({
 
         <footer className="flex items-center gap-3 border-t border-line px-5 py-3">
           <p className="hidden text-[12px] text-ink-mute sm:block">
-            ZIP berisi file cetak, gambar listing, teks, dan lisensi font.
+            ZIP berisi file cetak{config.svgFiles ? ', SVG per halaman' : ''}, gambar listing, teks,
+            dan lisensi font.
           </p>
           <button
             type="button"

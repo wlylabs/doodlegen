@@ -117,4 +117,21 @@ for (const testCase of cases) {
     await fs.writeFile(target, file.bytes);
     console.log(`${path.relative(root, target)}  ${file.pages}p  ${(file.size / 1024).toFixed(1)} KB`);
   }
+
+  // The editable SVG is the same plan drawn a third way, so it is worth
+  // dumping one per case: a broken export shows up here, not in a buyer's
+  // Canva account.
+  const paper = lib.papersFor(config.paper)[0];
+  const plans = lib.planDocument({ font, config, paper, characters });
+  const wanted = [
+    ['', plans.find((plan) => plan.kind === 'char')],
+    ['-cover', plans.find((plan) => plan.kind === 'cover')],
+  ];
+  for (const [suffix, plan] of wanted) {
+    if (!plan) continue;
+    const svg = lib.pageToSvg(font, plan, config);
+    const svgTarget = path.join(outDir, `${testCase.name}${suffix}.svg`);
+    await fs.writeFile(svgTarget, svg);
+    console.log(`${path.relative(root, svgTarget)}  ${(svg.length / 1024).toFixed(1)} KB`);
+  }
 }

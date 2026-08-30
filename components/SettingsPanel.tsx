@@ -6,6 +6,7 @@ import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
+import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
   FONTS,
   FONT_ORDER,
@@ -44,12 +45,7 @@ const NUMBER_PRESETS: { label: string; from: number; to: number }[] = [
   { label: '1–100', from: 1, to: 100 },
 ];
 
-const WORD_IDEAS: { label: string; words: string }[] = [
-  { label: 'Keluarga', words: 'Ayah\nBunda\nAdik\nKakak\nNenek\nKakek' },
-  { label: 'Warna', words: 'Merah\nBiru\nHijau\nKuning\nUngu\nJingga' },
-  { label: 'Hewan', words: 'Kucing\nAnjing\nSapi\nAyam\nIkan\nBebek' },
-  { label: 'Sight words', words: 'the\nand\nsee\nlike\ncan\ngo' },
-];
+
 
 /** The starter packs, offered before any decision has to be made. */
 export function PresetRail({
@@ -177,22 +173,34 @@ export function SettingsPanel({
               hint={`Satu kata per baris atau dipisah koma. ${words.length} halaman akan dibuat.`}
               onChange={(value) => update({ words: value })}
             />
-            <div className="flex flex-wrap gap-2">
-              {WORD_IDEAS.map((idea) => (
-                <button
-                  key={idea.label}
-                  type="button"
-                  data-active={config.words.trim() === idea.words}
-                  className="chip"
-                  onClick={(event) => {
-                    ripple(event);
-                    update({ words: idea.words });
-                  }}
-                >
-                  {idea.label}
-                </button>
-              ))}
-            </div>
+            {(['id', 'en'] as const).map((language) => (
+              <Field
+                key={language}
+                label={language === 'id' ? 'Daftar siap pakai — Indonesia' : 'Daftar siap pakai — English'}
+              >
+                <div className="flex flex-wrap gap-2">
+                  {WORD_LISTS.filter((list) => list.language === language).map((list) => {
+                    const text = listToText(list);
+                    return (
+                      <button
+                        key={list.id}
+                        type="button"
+                        title={list.note}
+                        data-active={config.words.trim() === text}
+                        className="chip"
+                        onClick={(event) => {
+                          ripple(event);
+                          update({ words: text });
+                        }}
+                      >
+                        {list.label}
+                        <span className="ml-1 text-ink-mute">{list.words.length}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+            ))}
           </div>
         )}
       </Section>
@@ -369,6 +377,12 @@ export function SettingsPanel({
           hint="Nomor dan nama merek di kaki setiap lembar latihan."
           checked={config.pageNumbers}
           onChange={(pageNumbers) => update({ pageNumbers })}
+        />
+        <Toggle
+          label="Berkas SVG"
+          hint="Satu SVG per halaman di dalam ZIP — bisa dibuka di Canva, Figma, Illustrator, dan Cricut."
+          checked={config.svgFiles}
+          onChange={(svgFiles) => update({ svgFiles })}
         />
       </Section>
 

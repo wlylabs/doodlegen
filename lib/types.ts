@@ -53,6 +53,8 @@ export interface Config {
    * whatever this says.
    */
   palette: PaletteId;
+  /** Ship editable per-page SVGs alongside the PDFs. */
+  svgFiles: boolean;
 }
 
 /** A stroke mode for one drawn character group. */

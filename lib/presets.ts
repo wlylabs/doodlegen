@@ -201,6 +201,7 @@ export const DEFAULT_CONFIG: Config = {
   productTitle: '',
   language: 'en',
   palette: 'crayon',
+  svgFiles: true,
 };
 
 /**
