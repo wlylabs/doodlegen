@@ -1,9 +1,11 @@
 import { renderTitle, subjectOf } from './charset';
+import { COVER_STYLES, coverSamples, type CoverStyle } from './covers';
 import { PALETTES, type Palette } from './palette';
 import { FONTS, GRIDS, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
 import { brandName, printedTitle } from './naming';
 import type {
   Box,
+  Cmyk,
   Config,
   GuideLine,
   LanguageId,
@@ -564,17 +566,17 @@ const CONFETTI: { side: 'top' | 'bottom' | 'left' | 'right'; t: number; r: numbe
   { side: 'right', t: 0.74, r: 0.65 },
 ];
 
-/** The cover's tinted card and the dots around its border, in points. */
-function coverDecoration(art: Box, inner: Box, palette: Palette): ShapeDraw[] {
-  if (!palette.card || !palette.confetti.length) {
-    return palette.card
-      ? [{ kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: palette.card }]
-      : [];
-  }
+/**
+ * The cover's tinted card and, unless the style declines them, the dots
+ * around its border, in points.
+ */
+function coverDecoration(art: Box, inner: Box, palette: Palette, confetti: boolean): ShapeDraw[] {
+  if (!palette.card) return [];
 
   const shapes: ShapeDraw[] = [
     { kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: palette.card },
   ];
+  if (!confetti || !palette.confetti.length) return shapes;
 
   const band = inner.y - art.y;
   const unit = band * 0.28;
@@ -601,10 +603,349 @@ function coverDecoration(art: Box, inner: Box, palette: Palette): ShapeDraw[] {
   return shapes;
 }
 
+/** Type sizes the cover compositions share, so they read as one family. */
+const COVER_BRAND_SIZE = 10;
+const COVER_SPEC_SIZE = 10;
+const COVER_SUBTITLE_SIZE = 12;
+const COVER_SAMPLE_RATIO: Ratio = { w: 0.82, h: 0.82 };
+
+/** Boxes in reading order — left to right, top row first. */
+function tile(area: Box, cols: number, rows: number, gutterRatio: number): Box[] {
+  const gutter = Math.min(area.w, area.h) * gutterRatio;
+  const w = (area.w - gutter * (cols - 1)) / cols;
+  const h = (area.h - gutter * (rows - 1)) / rows;
+  const boxes: Box[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      boxes.push({
+        x: area.x + col * (w + gutter),
+        y: area.y + area.h - h - row * (h + gutter),
+        w,
+        h,
+      });
+    }
+  }
+  return boxes;
+}
+
+/**
+ * Sample characters drawn into boxes exactly as the worksheets draw them, and
+ * poured full of palette colour. Where the style has room for more than one,
+ * the last is left as dots: the cover then shows both what the child starts
+ * with and what they end up with.
+ */
+function coverSampleArt(
+  font: LoadedFont,
+  config: Config,
+  palette: Palette,
+  boxes: Box[],
+  texts: string[],
+  traceLast: boolean,
+  ratio: Ratio = COVER_SAMPLE_RATIO,
+): Placement[] {
+  const strokeBase = STROKES[config.stroke].base;
+  return texts.slice(0, boxes.length).map((text, index) => {
+    const box = boxes[index];
+    const size = fitWithStroke(font, text, box, ratio, strokeBase, 'fill', bandFor(font, [text]));
+    const dotted = traceLast && texts.length > 1 && index === texts.length - 1;
+    const place = placeFill(font, text, box, size, dotted ? 'dotted' : 'solid', strokeBase);
+    return dotted || !palette.letters.length
+      ? place
+      : { ...place, fill: palette.letters[index % palette.letters.length] };
+  });
+}
+
+/** Everything one cover composition needs, and the marks it has drawn. */
+interface CoverScene {
+  font: LoadedFont;
+  config: Config;
+  palette: Palette;
+  inner: Box;
+  title: string;
+  brand: string;
+  subtitle: string;
+  specs: string[];
+  samples: string[];
+  texts: TextDraw[];
+  rules: RuleDraw[];
+  placements: Placement[];
+}
+
+function coverRule(inner: Box, y: number, palette: Palette): RuleDraw {
+  return { x1: inner.x, x2: inner.x + inner.w, y, width: 0.6, ink: 0.22, color: palette.rule };
+}
+
+function leftText(text: string, size: number, x: number, y: number, ink: number, color: Cmyk): TextDraw {
+  return { text, size, x, y, ink, color };
+}
+
+/** Wrapped title lines, plus the one size at which every line still fits. */
+function coverTitle(
+  font: LoadedFont,
+  title: string,
+  start: number,
+  maxWidth: number,
+): { lines: string[]; size: number } {
+  const lines = wrapText(font, title, start, maxWidth).slice(0, 3);
+  const size = Math.min(start, ...lines.map((line) => fitLine(font, line, start, maxWidth)));
+  return { lines, size };
+}
+
+/** The height a title-plus-subtitle block will claim once drawn. */
+function coverCopyHeight(lines: string[], size: number, hasSubtitle: boolean): number {
+  return lines.length * size * 1.28 + (hasSubtitle ? COVER_SUBTITLE_SIZE * 2.2 : 0);
+}
+
+/** The specs at the foot of every cover, above their hairline. */
+function coverSpecs(scene: CoverScene, align: 'center' | 'left'): void {
+  const { font, inner, palette } = scene;
+  let bottom = inner.y + COVER_SPEC_SIZE * 0.4;
+  for (let index = scene.specs.length - 1; index >= 0; index -= 1) {
+    const line = scene.specs[index];
+    scene.texts.push(
+      align === 'center'
+        ? { ...centred(font, line, COVER_SPEC_SIZE, inner, bottom, 0.45), color: palette.body }
+        : leftText(line, COVER_SPEC_SIZE, inner.x, bottom, 0.45, palette.body),
+    );
+    bottom += COVER_SPEC_SIZE * 1.9;
+  }
+  scene.rules.push(coverRule(inner, bottom - COVER_SPEC_SIZE * 0.6, palette));
+}
+
+/** How tall the spec block at the foot of a cover is, hairline included. */
+function coverSpecHeight(scene: CoverScene): number {
+  return scene.specs.length * COVER_SPEC_SIZE * 1.9 + COVER_SPEC_SIZE * 2;
+}
+
+/**
+ * Klasik: brand line, centred title, a strip of three samples, specs. The
+ * shape a printable pack has been sold in since long before this tool.
+ */
+function classicCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  let cursor = inner.y + inner.h;
+
+  if (scene.brand) {
+    cursor -= COVER_BRAND_SIZE;
+    scene.texts.push({
+      ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
+      color: palette.brand,
+    });
+    cursor -= COVER_BRAND_SIZE * 0.9;
+    scene.rules.push(coverRule(inner, cursor, palette));
+  }
+
+  cursor -= inner.h * 0.06;
+
+  const title = coverTitle(font, scene.title, 30, inner.w * 0.94);
+  for (const line of title.lines) {
+    cursor -= title.size;
+    scene.texts.push({ ...centred(font, line, title.size, inner, cursor, 1), color: palette.headline });
+    cursor -= title.size * 0.28;
+  }
+
+  if (scene.subtitle) {
+    cursor -= COVER_SUBTITLE_SIZE * 1.4;
+    scene.texts.push({
+      ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, inner, cursor, 0.5),
+      color: palette.body,
+    });
+  }
+
+  const stripTop = cursor - inner.h * 0.04;
+  const stripBottom = inner.y + coverSpecHeight(scene) + inner.h * 0.04;
+  const free = stripTop - stripBottom;
+  // The samples sit in the middle of whatever the copy left, capped so three
+  // letters never grow into a second cover of their own.
+  const stripH = Math.min(free, inner.h * 0.5);
+
+  if (scene.samples.length && stripH > 20) {
+    const top = stripTop - (free - stripH) / 2;
+    const boxes = strip(
+      { x: inner.x, y: top - stripH, w: inner.w, h: stripH },
+      scene.samples.length,
+      0.04,
+    );
+    scene.placements.push(
+      ...coverSampleArt(font, scene.config, palette, boxes, scene.samples, true),
+    );
+  }
+
+  coverSpecs(scene, 'center');
+}
+
+/**
+ * Poster: one character blown up to the height of the page. It is the cover
+ * that survives being shrunk to a marketplace thumbnail, because at 200 px
+ * there is still exactly one thing on it.
+ */
+function posterCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  let cursor = inner.y + inner.h;
+
+  if (scene.brand) {
+    cursor -= COVER_BRAND_SIZE;
+    scene.texts.push({
+      ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
+      color: palette.brand,
+    });
+    cursor -= COVER_BRAND_SIZE * 1.4;
+  }
+
+  // The copy is laid from the foot upward, so whatever is left over between
+  // it and the brand line is the character's — however long the title runs.
+  const title = coverTitle(font, scene.title, 34, inner.w * 0.94);
+  let y = inner.y + coverSpecHeight(scene) + inner.h * 0.02;
+
+  if (scene.subtitle) {
+    scene.texts.push({
+      ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, inner, y, 0.5),
+      color: palette.body,
+    });
+    y += COVER_SUBTITLE_SIZE * 2.2;
+  }
+  for (let index = title.lines.length - 1; index >= 0; index -= 1) {
+    scene.texts.push({
+      ...centred(font, title.lines[index], title.size, inner, y, 1),
+      color: palette.headline,
+    });
+    y += title.size * 1.28;
+  }
+
+  const heroBottom = y + inner.h * 0.03;
+  if (scene.samples.length && cursor - heroBottom > 40) {
+    const box = { x: inner.x, y: heroBottom, w: inner.w, h: cursor - heroBottom };
+    scene.placements.push(
+      ...coverSampleArt(font, scene.config, palette, [box], scene.samples, false, {
+        w: 0.9,
+        h: 0.9,
+      }),
+    );
+  }
+
+  coverSpecs(scene, 'center');
+}
+
+/**
+ * Etalase: four samples in a grid over a left-aligned title block. Where the
+ * poster sells one character, this one sells the fact that there are many.
+ */
+function showcaseCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  let cursor = inner.y + inner.h;
+
+  if (scene.brand) {
+    cursor -= COVER_BRAND_SIZE;
+    scene.texts.push(leftText(scene.brand, COVER_BRAND_SIZE, inner.x, cursor, 0.45, palette.brand));
+    cursor -= COVER_BRAND_SIZE * 0.9;
+    scene.rules.push(coverRule(inner, cursor, palette));
+  }
+
+  const title = coverTitle(font, scene.title, 28, inner.w * 0.9);
+  let y = inner.y + coverSpecHeight(scene) + inner.h * 0.02;
+
+  if (scene.subtitle) {
+    scene.texts.push(
+      leftText(scene.subtitle, COVER_SUBTITLE_SIZE, inner.x, y, 0.5, palette.body),
+    );
+    y += COVER_SUBTITLE_SIZE * 2.2;
+  }
+  for (let index = title.lines.length - 1; index >= 0; index -= 1) {
+    scene.texts.push(leftText(title.lines[index], title.size, inner.x, y, 1, palette.headline));
+    y += title.size * 1.28;
+  }
+
+  const gridTop = cursor - inner.h * 0.04;
+  const gridBottom = y + inner.h * 0.04;
+  if (scene.samples.length && gridTop - gridBottom > 60) {
+    const rows = scene.samples.length > 2 ? 2 : 1;
+    const cols = Math.ceil(scene.samples.length / rows);
+    const boxes = tile(
+      { x: inner.x, y: gridBottom, w: inner.w, h: gridTop - gridBottom },
+      cols,
+      rows,
+      0.05,
+    );
+    scene.placements.push(
+      ...coverSampleArt(font, scene.config, palette, boxes, scene.samples, true),
+    );
+  }
+
+  coverSpecs(scene, 'left');
+}
+
+/**
+ * Minimalis: type between two hairlines on bare paper. No card, no dots, no
+ * samples — the cover for a shop whose look is restraint, and the cheapest
+ * of the four to print.
+ */
+function minimalCover(scene: CoverScene): void {
+  const { font, inner, palette } = scene;
+  const ruleInset = inner.w * 0.26;
+  const hairline = (y: number): RuleDraw => ({
+    x1: inner.x + ruleInset,
+    x2: inner.x + inner.w - ruleInset,
+    y,
+    width: 0.8,
+    ink: 0.22,
+    color: palette.rule,
+  });
+
+  const title = coverTitle(font, scene.title, 32, inner.w * 0.8);
+  const gap = inner.h * 0.05;
+  const blockH =
+    gap * 2 +
+    (scene.brand ? COVER_BRAND_SIZE * 2.8 : 0) +
+    title.lines.length * title.size * 1.3 +
+    (scene.subtitle ? COVER_SUBTITLE_SIZE * 1.6 : 0);
+
+  // The block is centred on the optical centre — a shade above the true one,
+  // which is where a title page has always sat.
+  let cursor = inner.y + inner.h * 0.56 + blockH / 2;
+  scene.rules.push(hairline(cursor));
+  cursor -= gap;
+
+  if (scene.brand) {
+    cursor -= COVER_BRAND_SIZE;
+    scene.texts.push({
+      ...centred(font, scene.brand, COVER_BRAND_SIZE, inner, cursor, 0.45),
+      color: palette.brand,
+    });
+    cursor -= COVER_BRAND_SIZE * 1.8;
+  }
+
+  for (const line of title.lines) {
+    cursor -= title.size;
+    scene.texts.push({ ...centred(font, line, title.size, inner, cursor, 1), color: palette.headline });
+    cursor -= title.size * 0.3;
+  }
+
+  if (scene.subtitle) {
+    cursor -= COVER_SUBTITLE_SIZE * 1.6;
+    scene.texts.push({
+      ...centred(font, scene.subtitle, COVER_SUBTITLE_SIZE, inner, cursor, 0.5),
+      color: palette.body,
+    });
+  }
+
+  cursor -= gap;
+  scene.rules.push(hairline(cursor));
+
+  coverSpecs(scene, 'center');
+}
+
+const COVER_COMPOSERS: Record<CoverStyle['page'], (scene: CoverScene) => void> = {
+  classic: classicCover,
+  poster: posterCover,
+  showcase: showcaseCover,
+  minimal: minimalCover,
+};
+
 /**
  * The title page a paid download is expected to open with: who made it, what
- * is inside, and what it prints as. Built from the same glyph outlines as the
- * worksheets, so the cover is vector too.
+ * is inside, and what it prints as. Which of those the page leads with is the
+ * seller's call — `coverStyle` picks the composition. Built from the same
+ * glyph outlines as the worksheets either way, so the cover is vector too.
  */
 function planCover({
   font,
@@ -615,6 +956,7 @@ function planCover({
   brand,
   worksheetCount,
 }: MatterInput): PagePlan {
+  const style = COVER_STYLES[config.coverStyle] ?? COVER_STYLES.classic;
   const margin = Math.max(config.marginIn, MIN_MARGIN_IN) * PT_PER_INCH;
   const art: Box = {
     x: margin,
@@ -623,101 +965,34 @@ function planCover({
     h: paper.heightPt - margin * 2,
   };
   const palette = PALETTES[config.palette];
-  const texts: TextDraw[] = [];
-  const rules: RuleDraw[] = [];
-  const placements: Placement[] = [];
+  // A style may turn the palette's card down; the type still takes its
+  // colours, so "Minimalis" reads as restraint rather than as monochrome.
+  const carded = style.decoration !== 'none' && Boolean(palette.card);
   // Inside the tinted card, type keeps clear of the rounded corners — and
   // that same band is where the confetti lives.
-  const inner = palette.card ? inset(art, Math.min(art.w, art.h) * 0.06) : art;
-  const shapes = coverDecoration(art, inner, palette);
-
-  let cursor = inner.y + inner.h; // walking down from the top of the safe area
-
-  const brandLine = safeLine(font, (brand || 'DoodleGen').toUpperCase());
-  if (brandLine) {
-    const size = 10;
-    cursor -= size;
-    texts.push({ ...centred(font, brandLine, size, inner, cursor, 0.45), color: palette.brand });
-    cursor -= size * 0.9;
-    rules.push({
-      x1: inner.x,
-      x2: inner.x + inner.w,
-      y: cursor,
-      width: 0.6,
-      ink: 0.22,
-      color: palette.rule,
-    });
-  }
-
-  cursor -= inner.h * 0.06;
-
-  const titleLines = wrapText(font, safeLine(font, title) || 'Worksheets', 30, inner.w * 0.94).slice(0, 3);
-  const titleSize = Math.min(30, ...titleLines.map((line) => fitLine(font, line, 30, inner.w * 0.94)));
-  for (const line of titleLines) {
-    cursor -= titleSize;
-    texts.push({ ...centred(font, line, titleSize, inner, cursor, 1), color: palette.headline });
-    cursor -= titleSize * 0.28;
-  }
+  const inner = carded ? inset(art, Math.min(art.w, art.h) * 0.06) : art;
+  const shapes = carded
+    ? coverDecoration(art, inner, palette, style.decoration === 'full')
+    : [];
 
   const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
   const copy = COVER_COPY[config.language];
-  const subtitle = safeLine(font, copy.subtitle(worksheetCount, papers));
-  if (subtitle) {
-    const size = 12;
-    cursor -= size * 1.4;
-    texts.push({ ...centred(font, subtitle, size, inner, cursor, 0.5), color: palette.body });
-  }
+  const scene: CoverScene = {
+    font,
+    config,
+    palette,
+    inner,
+    title: safeLine(font, title) || 'Worksheets',
+    brand: safeLine(font, (brand || 'DoodleGen').toUpperCase()),
+    subtitle: safeLine(font, copy.subtitle(worksheetCount, papers)),
+    specs: copy.specs.map((line) => safeLine(font, line)).filter(Boolean),
+    samples: coverSamples(characters, style.samples),
+    texts: [],
+    rules: [],
+    placements: [],
+  };
 
-  // A strip of real sample characters, drawn exactly as the pages draw them.
-  const sampleTexts = [
-    characters[0],
-    characters[Math.floor(characters.length / 2)],
-    characters[characters.length - 1],
-  ].filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
-
-  const specLines = copy.specs.map((line) => safeLine(font, line)).filter(Boolean);
-
-  const specSize = 10;
-  const specBlock = specLines.length * specSize * 1.9 + specSize * 2;
-  const stripTop = cursor - inner.h * 0.04;
-  const stripBottom = inner.y + specBlock + inner.h * 0.04;
-  const free = stripTop - stripBottom;
-  // The samples sit in the middle of whatever the copy left, capped so three
-  // letters never grow into a second cover of their own.
-  const stripH = Math.min(free, inner.h * 0.5);
-
-  if (sampleTexts.length && stripH > 20) {
-    const top = stripTop - (free - stripH) / 2;
-    const boxes = strip({ x: inner.x, y: top - stripH, w: inner.w, h: stripH }, sampleTexts.length, 0.04);
-    const strokeBase = STROKES[config.stroke].base;
-    sampleTexts.forEach((text, index) => {
-      const box = boxes[index];
-      const size = fitWithStroke(font, text, box, { w: 0.82, h: 0.82 }, strokeBase, 'fill', bandFor(font, [text]));
-      const dotted = index === sampleTexts.length - 1;
-      const place = placeFill(font, text, box, size, dotted ? 'dotted' : 'solid', strokeBase);
-      // The last sample stays an empty outline: the cover shows both what the
-      // child starts with and what they end up with.
-      placements.push(
-        dotted || !palette.letters.length
-          ? place
-          : { ...place, fill: palette.letters[index % palette.letters.length] },
-      );
-    });
-  }
-
-  let bottom = inner.y + specSize * 0.4;
-  for (let i = specLines.length - 1; i >= 0; i -= 1) {
-    texts.push({ ...centred(font, specLines[i], specSize, inner, bottom, 0.45), color: palette.body });
-    bottom += specSize * 1.9;
-  }
-  rules.push({
-    x1: inner.x,
-    x2: inner.x + inner.w,
-    y: bottom - specSize * 0.6,
-    width: 0.6,
-    ink: 0.22,
-    color: palette.rule,
-  });
+  COVER_COMPOSERS[style.page](scene);
 
   return {
     kind: 'cover',
@@ -725,10 +1000,10 @@ function planCover({
     widthPt: paper.widthPt,
     heightPt: paper.heightPt,
     shapes,
-    placements,
+    placements: scene.placements,
     guides: [],
-    texts,
-    rules,
+    texts: scene.texts,
+    rules: scene.rules,
   };
 }
 

@@ -1,4 +1,5 @@
 import { clampNumber } from './charset';
+import { COVER_STYLE_ORDER } from './covers';
 import { PALETTE_ORDER } from './palette';
 import { DEFAULT_CONFIG, FONTS, GRIDS, INKS, LAYOUTS, MARGIN_OPTIONS, STROKES, STYLES } from './presets';
 import type { Config } from './types';
@@ -18,6 +19,7 @@ const ONE_OF = {
   ink: Object.keys(INKS),
   language: ['en', 'id'],
   palette: PALETTE_ORDER,
+  coverStyle: COVER_STYLE_ORDER,
 } as const;
 
 const BOOLEANS = [

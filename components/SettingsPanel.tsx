@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diagrams';
+import { CoverMark, LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diagrams';
 import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
+import { COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
 import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
@@ -25,6 +26,7 @@ import {
 import type {
   Config,
   ContentType,
+  CoverStyleId,
   FontId,
   LanguageId,
   GridId,
@@ -328,6 +330,24 @@ export function SettingsPanel({
           checked={config.coverPage}
           onChange={(coverPage) => update({ coverPage })}
         />
+        <Field label="Model sampul">
+          <ChoiceGrid<CoverStyleId>
+            label="Model sampul"
+            columns={2}
+            value={config.coverStyle}
+            onChange={(coverStyle) => update({ coverStyle })}
+            options={COVER_STYLE_ORDER.map((id) => ({
+              value: id,
+              label: COVER_STYLES[id].label,
+              note: COVER_STYLES[id].note,
+              art: <CoverMark kind={COVER_STYLES[id].page} />,
+            }))}
+          />
+          <Note>
+            Dipakai halaman sampul sekaligus gambar listing: susunan lembar di sampul Etsy, TPT,
+            Gumroad, Shopee, dan Pinterest mengikuti pilihan yang sama.
+          </Note>
+        </Field>
         <Field label="Palet warna">
           <div role="radiogroup" aria-label="Palet warna" className="grid grid-cols-2 gap-2">
             {PALETTE_ORDER.map((id) => {

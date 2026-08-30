@@ -88,6 +88,21 @@ const cases = [
       productTitle: 'Alfabet A-Z Trace and Color',
     },
   },
+  // One case per cover style: the cover is the only page a buyer sees before
+  // paying, so every composition gets dumped as its own SVG to look at.
+  ...['classic', 'poster', 'showcase', 'minimal'].map((coverStyle) => ({
+    name: `cover-${coverStyle}`,
+    patch: {
+      layout: 'single',
+      style: 'outline',
+      font: 'rounded',
+      paper: 'a4',
+      coverPage: true,
+      coverStyle,
+      brand: 'Studio Cerdas',
+      productTitle: 'Alfabet A-Z Trace and Color',
+    },
+  })),
   {
     name: 'words-worksheet',
     patch: {

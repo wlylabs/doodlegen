@@ -61,7 +61,7 @@ the rest around it:
 
 | Part | What it is |
 | --- | --- |
-| Cover page | Brand line, product title, page count, three real sample characters, print specs. Vector like every other page — and the only page allowed to carry colour. |
+| Cover page | Brand line, product title, page count, real sample characters, print specs — in one of four compositions the seller picks. Vector like every other page, and the only page allowed to carry colour. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
@@ -91,6 +91,16 @@ size, which Canva, Figma, Illustrator, Inkscape and Cricut Design Space all
 open, so a seller can add their own art on top of pages that are already
 correct. Material that ships in the repo is material whose licence is settled:
 OFL faces, and word lists that are public domain or plain vocabulary.
+
+**The cover is a choice, not a fixture.** It is the one page a buyer sees
+before they pay, so it is the one page that gets options. Four compositions:
+*Klasik* centres the title over a strip of three samples; *Poster* blows one
+character up to the height of the page, which is what survives being shrunk to
+a marketplace thumbnail; *Etalase* grids four samples over a left-aligned title
+block, selling the fact that there are many; *Minimalis* is type between two
+hairlines on bare paper, no card and no dots, and the cheapest of the four to
+print. The choice carries into the listing images too — the sheet mockups fan,
+stand alone, tile or line up to match — so the shop front and the file agree.
 
 **Colour, where it pays for itself.** Four palettes — Krayon, Pastel, Senja
 and Hitam Putih — tint the cover page and the listing images: a tinted card,
@@ -151,7 +161,8 @@ baseline lines up — while "7" still isn't shrunk to suit "100".
 
 **Front and back matter.** The cover and licence pages are laid out by the
 same engine, from the same glyph outlines, and are measured against the same
-0.5 inch floor — so `verify` checks them exactly as it checks a worksheet.
+0.5 inch floor — so `verify` checks them exactly as it checks a worksheet, and
+`samples` dumps every cover composition as its own SVG to look at.
 Page numbers reserve a band inside the safe area rather than drifting into the
 margin, which is the usual reason a print shop sends a file back.
 
@@ -224,6 +235,7 @@ lib/
   wordlists.ts      Ready-made word sets for the word mode
   svgdoc.ts         Plan to a standalone SVG file, for Canva and Cricut
   palette.ts        The four CMYK palettes
+  covers.ts         The four cover compositions, page and listing image
 scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts
 ```

@@ -81,6 +81,76 @@ export function LayoutMark({ kind }: { kind: 'single' | 'grid' | 'worksheet' }) 
   );
 }
 
+/**
+ * The four cover compositions, as page furniture: where the type sits, and
+ * how many characters are on show.
+ */
+export function CoverMark({ kind }: { kind: 'classic' | 'poster' | 'showcase' | 'minimal' }) {
+  const line = (key: string, x: number, y: number, w: number, weight = 1.2) => (
+    <line key={key} x1={x} x2={x + w} y1={y} y2={y} {...stroke} strokeWidth={weight} />
+  );
+  return (
+    <svg viewBox="0 0 32 44" className="h-9 w-[26px]" aria-hidden="true">
+      <rect x="0.7" y="0.7" width="30.6" height="42.6" rx="2.5" {...stroke} strokeWidth="1.2" />
+      {kind === 'classic' ? (
+        <>
+          {line('brand', 11, 7, 10, 1)}
+          {line('title', 7, 13, 18, 2.2)}
+          {[0, 1, 2].map((index) => (
+            <rect
+              key={index}
+              x={5.5 + index * 7.4}
+              y="20"
+              width="5.6"
+              height="9"
+              rx="1.4"
+              {...stroke}
+              strokeWidth="1.2"
+            />
+          ))}
+          {line('foot', 8, 36, 16, 1)}
+        </>
+      ) : null}
+      {kind === 'poster' ? (
+        <>
+          {line('brand', 11, 6, 10, 1)}
+          <rect x="6" y="10" width="20" height="19" rx="3" {...stroke} strokeWidth="1.6" />
+          {line('title', 6, 34, 20, 2.4)}
+          {line('foot', 9, 39, 14, 1)}
+        </>
+      ) : null}
+      {kind === 'showcase' ? (
+        <>
+          {[0, 1].flatMap((row) =>
+            [0, 1].map((col) => (
+              <rect
+                key={`${row}-${col}`}
+                x={6 + col * 11}
+                y={7 + row * 11.5}
+                width="9"
+                height="9.5"
+                rx="1.6"
+                {...stroke}
+                strokeWidth="1.2"
+              />
+            )),
+          )}
+          {line('title', 6, 34, 17, 2.2)}
+          {line('foot', 6, 39, 11, 1)}
+        </>
+      ) : null}
+      {kind === 'minimal' ? (
+        <>
+          {line('rule-top', 9, 15, 14, 1)}
+          {line('title', 7, 21, 18, 2.2)}
+          {line('sub', 10, 26, 12, 1)}
+          {line('rule-bottom', 9, 31, 14, 1)}
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
 export function PaperMark({ kind }: { kind: 'a4' | 'letter' | 'both' }) {
   return (
     <svg viewBox="0 0 40 30" className="h-7 w-[38px]" aria-hidden="true">

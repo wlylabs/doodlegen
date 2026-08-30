@@ -196,6 +196,7 @@ export const DEFAULT_CONFIG: Config = {
   titleTemplate: 'Trace and color — {char}',
   pageNumbers: false,
   coverPage: false,
+  coverStyle: 'classic',
   termsPage: false,
   brand: '',
   productTitle: '',
