@@ -1,8 +1,71 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { CheckIcon } from './diagrams';
 import { useRipple } from './motion';
+
+/**
+ * The keyboard half of `role="radiogroup"`.
+ *
+ * The role is a promise, and it is a specific one: the group is a single tab
+ * stop and the arrow keys move between its options. Writing the role over a
+ * row of buttons and stopping there is worse than writing no role at all —
+ * the roving `tabIndex` it implies takes every unselected option out of the
+ * tab order, and with nothing listening for arrows they become unreachable
+ * without a mouse.
+ *
+ * Selection follows focus, which is what a radio group does: arrowing onto an
+ * option chooses it. Both groups below share this rather than each making the
+ * promise their own way.
+ *
+ * `columns` is why up and down are not simply previous and next: in a grid of
+ * tiles, down means the tile below, and that is one row — not one option.
+ */
+function useRadioKeys<T extends string>(
+  values: T[],
+  value: T,
+  onChange: (value: T) => void,
+  columns = 1,
+) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const move = (next: number) => {
+    const index = (next + values.length) % values.length;
+    const target = values[index];
+    if (target === undefined) return;
+    onChange(target);
+    // Focus follows the selection, so the next arrow press continues from
+    // where the user actually is rather than from the option they left.
+    ref.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[index]?.focus();
+  };
+
+  /*
+   * Which option owns the group's one tab stop.
+   *
+   * Clamped to the first rather than left at -1: a value that matches no
+   * option — a config restored from an older share link, say — would otherwise
+   * leave every option at `tabIndex={-1}` and the whole group unreachable by
+   * keyboard.
+   */
+  const activeIndex = Math.max(
+    0,
+    values.findIndex((item) => item === value),
+  );
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const from = activeIndex;
+    if (event.key === 'ArrowRight') move(from + 1);
+    else if (event.key === 'ArrowLeft') move(from - 1);
+    else if (event.key === 'ArrowDown') move(from + columns);
+    else if (event.key === 'ArrowUp') move(from - columns);
+    else if (event.key === 'Home') move(0);
+    else if (event.key === 'End') move(values.length - 1);
+    else return;
+    event.preventDefault();
+  };
+
+  return { ref, onKeyDown, activeIndex };
+}
 
 /**
  * The tick on the option you picked. A real glyph in a real circle, so its
@@ -87,10 +150,22 @@ export function ChoiceGrid<T extends string>({
   columns?: 1 | 2 | 3;
 }) {
   const ripple = useRipple<HTMLButtonElement>();
+  const keys = useRadioKeys(
+    options.map((option) => option.value),
+    value,
+    onChange,
+    columns,
+  );
   const grid = columns === 3 ? 'grid-cols-3' : columns === 2 ? 'grid-cols-2' : 'grid-cols-1';
   return (
-    <div role="radiogroup" aria-label={label} className={`grid gap-2 ${grid}`}>
-      {options.map((option) => {
+    <div
+      ref={keys.ref}
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={keys.onKeyDown}
+      className={`grid gap-2 ${grid}`}
+    >
+      {options.map((option, index) => {
         const active = option.value === value;
         return (
           <button
@@ -98,6 +173,8 @@ export function ChoiceGrid<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            // One tab stop for the whole group, on the option that is chosen.
+            tabIndex={index === keys.activeIndex ? 0 : -1}
             data-active={active}
             className="choice"
             onClick={(event) => {
@@ -130,9 +207,20 @@ export function ChipRow<T extends string>({
   onChange: (value: T) => void;
 }) {
   const ripple = useRipple<HTMLButtonElement>();
+  const keys = useRadioKeys(
+    options.map((option) => option.value),
+    value,
+    onChange,
+  );
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
-      {options.map((option) => {
+    <div
+      ref={keys.ref}
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={keys.onKeyDown}
+      className="flex flex-wrap gap-2"
+    >
+      {options.map((option, index) => {
         const active = option.value === value;
         return (
           <button
@@ -140,6 +228,7 @@ export function ChipRow<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            tabIndex={index === keys.activeIndex ? 0 : -1}
             data-active={active}
             className="chip"
             onClick={(event) => {

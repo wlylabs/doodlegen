@@ -3,6 +3,149 @@
 @tailwind utilities;
 
 /*
+ * The palette, stated once per theme.
+ *
+ * Every colour in the interface is one of these roles rather than a value:
+ * `paper` is the ground, `surface` is what is raised off it, `sunk` is a well
+ * cut into it, and the three ink levels and two line weights are the rest.
+ * `tailwind.config.ts` wraps each one so an opacity modifier still folds into
+ * it, so a dark theme is a second set of values for the same six roles — not
+ * a second set of classes strewn through the markup.
+ *
+ * Channels rather than hex, because `rgb(var(--ink) / 0.4)` is what makes
+ * `text-ink-mute/40` keep working once the value moved out of the config.
+ *
+ * Two things deliberately do not move: the sheet, which is white because it
+ * is going to be printed on white paper, and the scrim, which is a fixed dark
+ * wash so a dialog dims the page at both ends of the day.
+ */
+:root {
+  color-scheme: light;
+
+  --paper: 247 248 250;
+  --surface: 255 255 255;
+  --sunk: 237 239 243;
+
+  --ink: 16 19 23;
+  --ink-soft: 72 80 91;
+  --ink-mute: 121 129 142;
+
+  --line: 230 232 236;
+  --line-strong: 207 212 220;
+
+  --accent: 228 85 13;
+  --accent-hover: 194 65 12;
+  --accent-soft: 255 244 236;
+  --accent-line: 251 209 179;
+  --accent-ink: 184 67 10;
+  --accent-ring: 249 188 148;
+  --accent-on: 255 255 255;
+
+  --band: 16 19 23;
+  --band-ink: 247 248 250;
+
+  --overlay: rgb(16 19 23 / 0.45);
+
+  /* The glow under the one button that acts, tinted with the accent itself. */
+  --shadow-xs: 0 1px 2px rgb(16 19 23 / 0.05);
+  --shadow-sheet: 0 1px 2px rgb(16 19 23 / 0.04), 0 4px 12px -4px rgb(16 19 23 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(16 19 23 / 0.04), 0 14px 28px -10px rgb(16 19 23 / 0.14);
+  --shadow-proof: 0 1px 2px rgb(16 19 23 / 0.1), 0 14px 36px -14px rgb(16 19 23 / 0.3);
+  --shadow-pop: 0 24px 64px -24px rgb(16 19 23 / 0.4);
+  --shadow-accent: 0 1px 2px rgb(16 19 23 / 0.08), 0 8px 20px -10px rgb(228 85 13 / 0.75);
+  --shadow-bar: 0 -1px 2px rgb(16 19 23 / 0.04);
+}
+
+/*
+ * The dark ground, declared twice on purpose: once for the system preference
+ * and once for an explicit choice, so the toggle wins in both directions. A
+ * reader who has picked light on a dark-set device gets light.
+ *
+ * The roles keep their meaning and swap their order: `sunk` is still the well,
+ * so at night it is the darkest of the three rather than the lightest. The
+ * accent lifts to hold its 4.5:1 against a near-black ground, and the text on
+ * top of a filled accent goes dark, because white on a lifted orange is the
+ * one pairing that stops being readable.
+ *
+ * Shadow is re-tuned rather than reused: a wash built to darken white by four
+ * percent does nothing at all over near-black.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --paper: 14 16 20;
+    --surface: 22 25 31;
+    --sunk: 8 9 12;
+
+    --ink: 242 244 247;
+    --ink-soft: 180 188 200;
+    --ink-mute: 133 142 156;
+
+    --line: 38 42 49;
+    --line-strong: 58 64 73;
+
+    --accent: 255 122 47;
+    --accent-hover: 255 143 77;
+    --accent-soft: 36 24 18;
+    --accent-line: 74 42 18;
+    --accent-ink: 255 177 130;
+    --accent-ring: 255 177 130;
+    --accent-on: 26 14 5;
+
+    --band: 29 33 40;
+    --band-ink: 247 248 250;
+
+    --overlay: rgb(0 0 0 / 0.72);
+
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-sheet: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px -4px rgb(0 0 0 / 0.6);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 14px 28px -10px rgb(0 0 0 / 0.7);
+    --shadow-proof: 0 1px 2px rgb(0 0 0 / 0.6), 0 18px 44px -14px rgb(0 0 0 / 0.85);
+    --shadow-pop: 0 24px 64px -24px rgb(0 0 0 / 0.85);
+    --shadow-accent: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(255 122 47 / 0.55);
+    --shadow-bar: 0 -1px 2px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --paper: 14 16 20;
+  --surface: 22 25 31;
+  --sunk: 8 9 12;
+
+  --ink: 242 244 247;
+  --ink-soft: 180 188 200;
+  --ink-mute: 133 142 156;
+
+  --line: 38 42 49;
+  --line-strong: 58 64 73;
+
+  --accent: 255 122 47;
+  --accent-hover: 255 143 77;
+  --accent-soft: 36 24 18;
+  --accent-line: 74 42 18;
+  --accent-ink: 255 177 130;
+  --accent-ring: 255 177 130;
+  --accent-on: 26 14 5;
+
+  --band: 29 33 40;
+  --band-ink: 247 248 250;
+
+  --overlay: rgb(0 0 0 / 0.72);
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-sheet: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 12px -4px rgb(0 0 0 / 0.6);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 14px 28px -10px rgb(0 0 0 / 0.7);
+  --shadow-proof: 0 1px 2px rgb(0 0 0 / 0.6), 0 18px 44px -14px rgb(0 0 0 / 0.85);
+  --shadow-pop: 0 24px 64px -24px rgb(0 0 0 / 0.85);
+  --shadow-accent: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(255 122 47 / 0.55);
+  --shadow-bar: 0 -1px 2px rgb(0 0 0 / 0.5);
+}
+
+
+/*
  * Fredoka is already on disk for the worksheets, so the wordmark reuses it
  * instead of pulling a second family over the wire.
  */
@@ -80,6 +223,19 @@
     scroll-behavior: smooth;
   }
 
+  /*
+   * A fragment link lands its target's top edge at the top of the viewport,
+   * which — under the sticky nav — is behind it. The offset is the bar, the
+   * notch it may sit under, and a little air, so the heading a link is named
+   * after arrives clear of the bar rather than tucked under it.
+   *
+   * Held in `:where()` so it carries no specificity: a section that wants a
+   * different landing can still say so with one utility.
+   */
+  :where(section[id], [id]:target) {
+    scroll-margin-top: calc(4rem + env(safe-area-inset-top) + 0.75rem);
+  }
+
   body {
     @apply bg-paper text-ink antialiased;
     text-rendering: optimizeLegibility;
@@ -116,6 +272,54 @@
 
   :focus-visible {
     @apply outline-none ring-2 ring-accent-ring ring-offset-2 ring-offset-paper;
+  }
+
+  ::selection {
+    @apply bg-accent text-accent-on;
+  }
+
+  /* Removes the grey flash and the legacy 300ms delay on touch. */
+  a,
+  button,
+  [role='button'],
+  summary,
+  label {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /*
+   * The scrollbar is part of the theme too: the default one is painted by the
+   * platform in its own light colours, and a pale trough down the side of a
+   * dark panel is the one thing on screen that never got the memo.
+   */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--line-strong));
+    border-radius: 999px;
+    border: 3px solid rgb(var(--paper));
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--ink-mute));
+  }
+
+  /*
+   * Installed, DoodleGen is an app rather than a page: no rubber-band scroll
+   * past the ends of the settings panel, and no pull-to-refresh — which on the
+   * studio would reload the document out from under a half-configured pack,
+   * since the settings live in memory until they are shared or generated.
+   */
+  @media (display-mode: standalone), (display-mode: minimal-ui) {
+    html,
+    body {
+      overscroll-behavior-y: none;
+    }
   }
 
   input[type='number']::-webkit-outer-spin-button,
@@ -208,7 +412,7 @@
    */
   .selected-mark {
     @apply absolute right-2.5 top-2.5 flex h-[18px] w-[18px] items-center justify-center
-           rounded-full bg-accent text-white;
+           rounded-full bg-accent text-accent-on;
   }
 
   /*
@@ -223,16 +427,21 @@
 
   .chip[data-active='true'] {
     @apply border-accent bg-accent-soft text-accent-ink;
-    box-shadow: 0 0 0 1px theme('colors.accent.DEFAULT');
+    box-shadow: 0 0 0 1px rgb(var(--accent));
     animation: dg-pop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .btn-primary {
     @apply ripple-host press-lift inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5
-           text-[14.5px] font-semibold text-white shadow-[0_1px_2px_rgba(16,19,23,0.08),0_8px_20px_-10px_rgba(228,85,13,0.75)]
+           text-[14.5px] font-semibold text-accent-on
            transition-[background-color,transform,box-shadow] duration-150 hover:bg-accent-hover
            disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-mute
            disabled:shadow-none disabled:hover:translate-y-0;
+    box-shadow: var(--shadow-accent);
+  }
+
+  .btn-primary:disabled {
+    box-shadow: none;
   }
 
   .btn-quiet {
@@ -270,7 +479,7 @@
   }
 
   .input:focus {
-    box-shadow: 0 0 0 3px theme('colors.accent.soft');
+    box-shadow: 0 0 0 3px rgb(var(--accent-ring) / 0.45);
   }
 
   /*
@@ -279,7 +488,7 @@
    */
   .bench {
     @apply bg-sunk;
-    background-image: radial-gradient(rgba(16, 19, 23, 0.06) 1px, transparent 1px);
+    background-image: radial-gradient(rgb(var(--ink) / 0.06) 1px, transparent 1px);
     background-size: 18px 18px;
     background-position: -1px -1px;
   }
@@ -333,6 +542,91 @@
   .rail-fade {
     mask-image: linear-gradient(to right, black calc(100% - 40px), transparent 100%);
     -webkit-mask-image: linear-gradient(to right, black calc(100% - 40px), transparent 100%);
+  }
+
+  /*
+   * A modal that leaves the way it arrived.
+   *
+   * `<dialog>` is `display: none` when closed, so a transition off it needs
+   * `allow-discrete` on `display` and `overlay` — the first keeps the box
+   * rendered for the length of the animation, the second keeps it in the top
+   * layer while that happens. Without the second the panel drops behind its
+   * own backdrop for the exit and the whole thing reads as a glitch.
+   *
+   * `@starting-style` supplies the entry values. A browser that has neither
+   * lands on the resting state immediately, which is the behaviour this
+   * replaces, so there is nothing to feature-detect.
+   *
+   * Closing is quicker than opening: arriving content is worth watching, a
+   * dismissal should read as gone rather than as departing.
+   */
+  .dialog-reveal {
+    --dialog-open-dur: 280ms;
+    --dialog-close-dur: 200ms;
+    --dialog-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+    transition:
+      opacity var(--dialog-close-dur) var(--dialog-ease),
+      transform var(--dialog-close-dur) var(--dialog-ease),
+      overlay var(--dialog-close-dur) allow-discrete,
+      display var(--dialog-close-dur) allow-discrete;
+  }
+
+  .dialog-reveal[open] {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--dialog-open-dur) var(--dialog-ease),
+      transform var(--dialog-open-dur) var(--dialog-ease),
+      overlay var(--dialog-open-dur) allow-discrete,
+      display var(--dialog-open-dur) allow-discrete;
+  }
+
+  @starting-style {
+    .dialog-reveal[open] {
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+    }
+  }
+
+  /*
+   * The backdrop is part of the same gesture, so it is timed with the panel
+   * rather than snapping on ahead of it. Written here rather than as
+   * `backdrop:` utilities at the call site because the entry values have to be
+   * stated in `@starting-style`, which a utility cannot reach.
+   */
+  .dialog-reveal::backdrop {
+    background-color: rgb(0 0 0 / 0);
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+    transition:
+      background-color var(--dialog-close-dur) var(--dialog-ease),
+      -webkit-backdrop-filter var(--dialog-close-dur) var(--dialog-ease),
+      backdrop-filter var(--dialog-close-dur) var(--dialog-ease),
+      overlay var(--dialog-close-dur) allow-discrete,
+      display var(--dialog-close-dur) allow-discrete;
+  }
+
+  .dialog-reveal[open]::backdrop {
+    background-color: var(--overlay);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    transition:
+      background-color var(--dialog-open-dur) var(--dialog-ease),
+      -webkit-backdrop-filter var(--dialog-open-dur) var(--dialog-ease),
+      backdrop-filter var(--dialog-open-dur) var(--dialog-ease),
+      overlay var(--dialog-open-dur) allow-discrete,
+      display var(--dialog-open-dur) allow-discrete;
+  }
+
+  @starting-style {
+    .dialog-reveal[open]::backdrop {
+      background-color: rgb(0 0 0 / 0);
+      -webkit-backdrop-filter: blur(0px);
+      backdrop-filter: blur(0px);
+    }
   }
 }
 

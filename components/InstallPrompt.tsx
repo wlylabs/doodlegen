@@ -129,7 +129,7 @@ function IosHint({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/35 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-overlay p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-[2px]">
       <button type="button" className="absolute inset-0 cursor-default" aria-label="Tutup" onClick={dismiss} />
       <div
         role="dialog"

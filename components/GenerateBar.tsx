@@ -57,7 +57,7 @@ export function GenerateBar({
      * hand this to a marketplace lives on one line: what the pack is, how big
      * it came out, and the one button that makes it.
      */
-    <div className="relative z-20 border-t border-line bg-surface shadow-[0_-1px_2px_rgba(16,19,23,0.04)] px-safe pb-safe">
+    <div className="relative z-20 border-t border-line bg-surface shadow-[var(--shadow-bar)] px-safe pb-safe">
       {busy ? (
         <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-accent-soft">
           <div

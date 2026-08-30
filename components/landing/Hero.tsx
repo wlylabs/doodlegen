@@ -26,7 +26,7 @@ function DemoSkeleton() {
           <span key={index} className="h-8 rounded-full bg-line" style={{ width }} />
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-center rounded-2xl border border-line bg-white p-3 shadow-lift">
+      <div className="mt-3 flex items-center justify-center rounded-2xl border border-line bg-sheet p-3 shadow-lift">
         <div
           className="flex w-full max-w-[300px] items-center justify-center rounded-lg bg-sunk text-ink-mute"
           style={{ aspectRatio: `${PAPERS.a4.widthPt} / ${PAPERS.a4.heightPt}` }}
@@ -65,7 +65,8 @@ export function Hero() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(16,19,23,0.07) 1px, transparent 0)',
+          backgroundImage:
+            'radial-gradient(circle at 1px 1px, rgb(var(--ink) / 0.07) 1px, transparent 0)',
           backgroundSize: '24px 24px',
           maskImage: 'radial-gradient(ellipse 75% 60% at 50% 0%, black, transparent 72%)',
           WebkitMaskImage: 'radial-gradient(ellipse 75% 60% at 50% 0%, black, transparent 72%)',

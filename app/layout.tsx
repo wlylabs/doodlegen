@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar';
+import { THEME_SCRIPT } from '@/components/Theme';
 import './globals.css';
 
 const description =
@@ -66,7 +67,16 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#FFFFFF',
+  /*
+   * The colour the browser paints its own chrome with, per scheme. A single
+   * white value here is what leaves an installed app with a white status bar
+   * sitting on top of a dark page — the one strip of the window the CSS
+   * cannot reach.
+   */
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
+    { media: '(prefers-color-scheme: dark)', color: '#0E1014' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -74,13 +84,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="id">
       <head>
         {/*
-          Reveal-on-scroll hides sections until an observer shows them, so the
-          hidden state is scoped to a class the document only gets when
-          scripting is actually running.
+          Two decisions the document has to take before it is first painted,
+          in one blocking script.
+
+          The theme, because a stored "dark" applied after paint is a white
+          flash on a night-set device — and reveal-on-scroll, which hides
+          sections until an observer shows them, so the hidden state is scoped
+          to a class the document only gets when scripting is actually running.
         */}
-        <script
-          dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         {/* The default face is needed before the first paint of the preview. */}
         <link
           rel="preload"

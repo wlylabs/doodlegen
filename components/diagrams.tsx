@@ -513,6 +513,43 @@ export function InstallIcon() {
   );
 }
 
+/** lucide/sun */
+export function SunIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </Icon>
+  );
+}
+
+/** lucide/moon */
+export function MoonIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+    </Icon>
+  );
+}
+
+/** lucide/monitor — the theme that follows whatever the device decided. */
+export function SystemIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+    </Icon>
+  );
+}
+
 /** lucide/share, which is the iOS share glyph — the button being named. */
 export function IosShareIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (

@@ -8,6 +8,7 @@ import { InstallButton } from './InstallPrompt';
 import { Logo } from './Logo';
 import { PreviewDeck } from './PreviewDeck';
 import { PresetRail, SettingsPanel } from './SettingsPanel';
+import { ThemeToggle } from './Theme';
 import { CheckIcon, ChevronIcon, LinkIcon, Spinner } from './diagrams';
 import { useCopy, useRipple } from './motion';
 import { buildCharacters, validate } from '@/lib/charset';
@@ -289,6 +290,14 @@ export function App() {
           <div className="ml-auto flex items-center gap-2">
             {/* Renders nothing unless this browser has an install to offer. */}
             <InstallButton compact />
+
+            {/*
+             * A studio is looked at for an hour at a time, which is exactly
+             * where the ground being wrong for the room starts to matter. The
+             * strip is dropped on the narrowest screens, where the bar is
+             * already carrying the share and settings controls.
+             */}
+            <ThemeToggle className="hidden md:inline-flex" />
 
             <button
               type="button"
