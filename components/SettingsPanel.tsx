@@ -59,25 +59,38 @@ export function PresetRail({
 }) {
   const ripple = useRipple<HTMLButtonElement>();
   return (
-    <div className="border-b border-line bg-accent-soft/40 px-5 py-4">
-      <p className="field-label">Mulai cepat</p>
-      <div className="mt-2.5 grid gap-2">
+    /*
+     * The rail opens on a shelf, not on a form. Four packs laid out as cards
+     * the way a marketplace lays out its own categories, so the first thing a
+     * seller does is pick something rather than fill something in.
+     */
+    <div className="border-b border-line bg-surface px-5 py-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="field-label">Mulai cepat</p>
+        <p className="text-[11.5px] text-ink-mute">Bisa diubah setelah dipilih</p>
+      </div>
+      <div className="mt-3 grid gap-2">
         {STARTER_PRESETS.map((preset) => (
           <button
             key={preset.id}
             type="button"
             data-active={preset.id === activeId}
-            className="choice !py-2.5"
+            className="choice !py-3"
             onClick={(event) => {
               ripple(event);
               onApply(preset.id);
             }}
           >
-            <span className="flex items-baseline justify-between gap-2">
-              <span className="text-[14px] font-semibold leading-tight">{preset.label}</span>
-              <span className="shrink-0 text-[11px] font-medium text-accent">{preset.market}</span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-baseline gap-2">
+                <span className="min-w-0 truncate text-[14px] font-semibold leading-tight tracking-tight">
+                  {preset.label}
+                </span>
+                <span className="shrink-0 text-[11px] font-medium text-ink-mute">{preset.market}</span>
+              </span>
+              <span className="mt-0.5 block text-[12px] leading-snug text-ink-mute">{preset.note}</span>
             </span>
-            <span className="text-[12px] leading-snug text-ink-mute">{preset.note}</span>
+
           </button>
         ))}
       </div>
@@ -341,9 +354,7 @@ export function SettingsPanel({
           {/* A dozen compositions in one list is a wall. Split at the lines a
               seller actually shops along: does it look like a book, like a
               coloring book, or like neither. */}
-          <p className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
-            Standar buku
-          </p>
+          <p className="field-label mb-2">Standar buku</p>
           <ChoiceGrid<CoverStyleId>
             label="Model sampul standar buku"
             columns={2}
@@ -356,9 +367,7 @@ export function SettingsPanel({
               art: <CoverMark kind={COVER_STYLES[id].page} />,
             }))}
           />
-          <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
-            Warna-warni
-          </p>
+          <p className="field-label mb-2 mt-4">Warna-warni</p>
           <ChoiceGrid<CoverStyleId>
             label="Model sampul warna-warni"
             columns={2}
@@ -371,9 +380,7 @@ export function SettingsPanel({
               art: <CoverMark kind={COVER_STYLES[id].page} />,
             }))}
           />
-          <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
-            Sederhana
-          </p>
+          <p className="field-label mb-2 mt-4">Sederhana</p>
           <ChoiceGrid<CoverStyleId>
             label="Model sampul sederhana"
             columns={2}
@@ -431,12 +438,14 @@ export function SettingsPanel({
                     {swatches(id).map((color, index) => (
                       <span
                         key={index}
-                        className="h-4 w-4 rounded-full border border-black/5 transition-transform duration-200"
+                        className="h-[18px] w-[18px] rounded-full border border-black/5 transition-transform duration-200"
                         style={{ background: color, transitionDelay: `${index * 40}ms` }}
                       />
                     ))}
                   </span>
-                  <span className="mt-1 text-[13.5px] font-semibold leading-tight">{palette.label}</span>
+                  <span className="mt-1.5 text-[13.5px] font-semibold leading-tight tracking-tight">
+                    {palette.label}
+                  </span>
                   <span className="text-[11.5px] leading-snug text-ink-mute">{palette.note}</span>
                 </button>
               );
@@ -477,7 +486,8 @@ export function SettingsPanel({
             setTuningOpen((open) => !open);
           }}
           aria-expanded={tuningOpen}
-          className="ripple-host press flex w-full items-center justify-between px-5 py-4 text-left"
+          className="ripple-host press flex w-full items-center justify-between px-5 py-4 text-left
+                     transition-colors hover:bg-paper"
         >
           <span className="text-[14px] font-semibold tracking-tight">Penyesuaian</span>
           <span

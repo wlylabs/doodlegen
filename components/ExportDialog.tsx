@@ -84,7 +84,7 @@ function FieldRow({
   const over = field.kind === 'body' && guide.copy.bodyMax ? field.value.length > guide.copy.bodyMax : false;
 
   return (
-    <div className="rounded-xl border border-line bg-paper px-3 py-2.5">
+    <div className="rounded-xl border border-line bg-paper px-3.5 py-3">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <p className="field-label !normal-case !tracking-normal !text-[12px] !text-ink">{field.label}</p>
         <span className="pill !border-line !bg-surface !px-2 !py-0 !text-[10.5px] !text-ink-mute">
@@ -156,9 +156,9 @@ function StepBlock({
         ))}
       </div>
       {step.tips?.length ? (
-        <ul className="space-y-1.5 rounded-xl border border-accent/25 bg-accent-soft px-3 py-2.5">
+        <ul className="space-y-1.5 rounded-xl border border-accent-line bg-accent-soft px-3.5 py-3">
           {step.tips.map((tip) => (
-            <li key={tip} className="text-[12px] leading-relaxed text-accent-hover">
+            <li key={tip} className="text-[12px] leading-relaxed text-accent-ink">
               {tip}
             </li>
           ))}
@@ -232,7 +232,7 @@ export function ExportDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 p-0 backdrop-blur-[3px] sm:items-center sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-label="Kit marketplace"
@@ -240,7 +240,7 @@ export function ExportDialog({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[92vh] w-full max-w-3xl animate-pop-in flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-pop sm:rounded-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-3xl animate-pop-in flex-col overflow-hidden rounded-t-3xl border border-line bg-surface shadow-pop sm:rounded-3xl">
         <header className="flex shrink-0 items-center gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold tracking-tight">Kit marketplace</h2>
@@ -250,7 +250,7 @@ export function ExportDialog({
           </div>
           <button
             type="button"
-            className="btn-quiet ml-auto !px-2.5"
+            className="btn-quiet ml-auto !rounded-full !px-2.5"
             aria-label="Tutup"
             onClick={(event) => {
               ripple(event);
@@ -261,7 +261,7 @@ export function ExportDialog({
           </button>
         </header>
 
-        <div className="rail flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b border-line px-3 py-2">
+        <div className="rail flex shrink-0 gap-1.5 overflow-x-auto overflow-y-hidden border-b border-line bg-paper px-4 py-2.5">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -287,12 +287,12 @@ export function ExportDialog({
                   className="card-lift animate-pop-in overflow-hidden"
                   style={{ animationDelay: `${index * 60}ms` }}
                 >
-                  <div className="flex items-center justify-center bg-paper p-3">
+                  <div className="flex items-center justify-center bg-sunk p-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={image.url}
                       alt={`Pratinjau ${image.label}`}
-                      className="max-h-44 w-auto rounded-lg border border-line bg-white"
+                      className="max-h-44 w-auto rounded-lg border border-line bg-white shadow-xs"
                     />
                   </div>
                   <figcaption className="flex items-center gap-2 border-t border-line px-3 py-2.5">
@@ -304,7 +304,7 @@ export function ExportDialog({
                     </span>
                     <button
                       type="button"
-                      className="btn-quiet ml-auto !px-2.5"
+                      className="btn-quiet ml-auto !rounded-full !px-2.5"
                       aria-label={`Unduh ${image.label}`}
                       onClick={(event) => {
                         ripple(event);
@@ -320,7 +320,7 @@ export function ExportDialog({
           ) : guide ? (
             <div className="animate-fade-up space-y-5">
               <div className="space-y-2.5">
-                <div className="rounded-xl border border-line bg-paper px-3 py-2.5">
+                <div className="rounded-xl border border-line bg-paper px-3.5 py-3">
                   <div className="flex items-start gap-2">
                     <p className="text-[12.5px] leading-relaxed text-ink-soft">{guide.entry}</p>
                     {/* Listing happens on the phone that has the Shopee app on

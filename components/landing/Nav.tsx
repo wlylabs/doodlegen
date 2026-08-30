@@ -28,7 +28,7 @@ export function Nav() {
   return (
     <header
       className={`sticky top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ${
-        stuck ? 'border-line bg-surface/85 backdrop-blur-md' : 'border-transparent bg-transparent'
+        stuck ? 'border-line bg-surface/90 shadow-xs backdrop-blur-md' : 'border-transparent bg-transparent'
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">

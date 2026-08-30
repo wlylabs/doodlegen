@@ -154,7 +154,7 @@
   }
 
   .field-label {
-    @apply text-[10.5px] font-semibold uppercase tracking-[0.16em] text-ink-mute;
+    @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-mute;
   }
 
   /*
@@ -162,78 +162,116 @@
    * never competing with the thing it describes.
    */
   .spec {
-    @apply text-[11px] font-medium tabular-nums tracking-[0.04em] text-ink-mute;
-  }
-
-  /* The number that heads a step, in its own gutter down the left edge. */
-  .step-mark {
-    @apply inline-flex h-5 min-w-[1.35rem] items-center justify-center rounded-[5px] bg-accent-soft
-           px-1 text-[10.5px] font-bold tabular-nums tracking-[0.06em] text-accent;
-  }
-
-  .card {
-    @apply rounded-xl border border-line bg-surface;
+    @apply text-[11.5px] font-medium tabular-nums tracking-[0.02em] text-ink-mute;
   }
 
   /*
-   * Option tiles. The resting state is a hairline on white — no shadow, no
-   * second border — so a panel of them reads as one field rather than a wall
-   * of boxes. Selection is carried by an inset rule the full weight of the
-   * accent, which survives being printed, photographed or colour-blind.
+   * The number that heads a step. Grey, not accent: a step number is a label,
+   * and the accent is spent on the one thing on screen that acts.
+   */
+  .step-mark {
+    @apply inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-md bg-sunk px-1.5
+           text-[11px] font-bold tabular-nums text-ink-mute;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+
+  /*
+   * Option tiles. A hairline on white at rest, so a panel of them reads as
+   * one field rather than a wall of boxes; the hover raises it a step; the
+   * selection is an accent border doubled into a ring, which survives being
+   * printed, photographed or colour-blind. No inset bar, no second border —
+   * the ring is the whole signal.
    */
   .choice {
-    @apply ripple-host press relative flex w-full flex-col gap-1 rounded-[10px] border border-line bg-surface
-           px-3 py-3 text-left transition-[border-color,background-color,transform,box-shadow] duration-150
-           hover:border-line-strong hover:bg-paper;
+    @apply ripple-host press relative flex w-full flex-col gap-1 rounded-xl border border-line bg-surface
+           px-3.5 py-3 text-left transition-[border-color,background-color,box-shadow,transform] duration-150
+           hover:border-line-strong hover:shadow-xs;
   }
 
   .choice[data-active='true'] {
-    @apply border-accent-line bg-accent-soft;
-    box-shadow: inset 0 0 0 1px theme('colors.accent.line');
-    animation: dg-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    @apply border-accent bg-accent-soft pr-9 shadow-none;
+    animation: dg-pop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /*
+   * A ticked circle in the corner, the mark every marketplace uses for the
+   * option you picked. A tint alone says "different"; a tick says "chosen",
+   * and it still says it in greyscale.
+   */
+  .choice[data-active='true']::after {
+    content: '';
+    @apply absolute right-2.5 top-2.5 h-[18px] w-[18px] rounded-full bg-accent;
   }
 
   .choice[data-active='true']::before {
     content: '';
-    @apply absolute left-0 top-3 h-[calc(100%-1.5rem)] w-[2.5px] rounded-r bg-accent;
+    @apply absolute right-[15.5px] top-[12.5px] z-[1] h-[8px] w-[4px] rotate-45 border-white;
+    border-width: 0 1.7px 1.7px 0;
   }
 
+  /*
+   * Filter chips, the shape every marketplace facet has settled on. Round,
+   * so they never read as buttons that submit something.
+   */
   .chip {
-    @apply ripple-host press rounded-lg border border-line bg-surface px-3 py-2 text-[12.5px] font-medium
-           text-ink-soft transition-colors duration-150 hover:border-line-strong hover:text-ink;
+    @apply ripple-host press rounded-full border border-line bg-surface px-3.5 py-1.5 text-[13px] font-medium
+           text-ink-soft transition-[border-color,background-color,color,box-shadow] duration-150
+           hover:border-line-strong hover:text-ink;
   }
 
   .chip[data-active='true'] {
-    @apply border-accent-line bg-accent-soft text-accent-ink;
-    animation: dg-pop 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    @apply border-accent bg-accent-soft text-accent-ink;
+    box-shadow: 0 0 0 1px theme('colors.accent.DEFAULT');
+    animation: dg-pop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .btn-primary {
-    @apply ripple-host press-lift inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3
-           text-[15px] font-semibold text-white shadow-[0_10px_24px_-14px_rgba(194,65,12,0.9)]
+    @apply ripple-host press-lift inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5
+           text-[14.5px] font-semibold text-white shadow-[0_1px_2px_rgba(16,19,23,0.08),0_8px_20px_-10px_rgba(228,85,13,0.75)]
            transition-[background-color,transform,box-shadow] duration-150 hover:bg-accent-hover
-           disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-ink-mute
+           disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-mute
            disabled:shadow-none disabled:hover:translate-y-0;
   }
 
   .btn-quiet {
-    @apply ripple-host press inline-flex items-center justify-center gap-2 rounded-lg border border-line
-           bg-surface px-3 py-2 text-[13px] font-medium text-ink-soft transition-colors duration-150
-           hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-40;
+    @apply ripple-host press inline-flex items-center justify-center gap-2 rounded-xl border border-line
+           bg-surface px-3.5 py-2 text-[13.5px] font-medium text-ink-soft shadow-xs transition-colors duration-150
+           hover:border-line-strong hover:text-ink disabled:cursor-not-allowed disabled:opacity-40
+           disabled:shadow-none;
   }
 
   .btn-ghost {
-    @apply ripple-host press inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-[13px]
-           font-medium text-ink-soft transition-colors duration-150 hover:bg-accent-soft hover:text-accent;
+    @apply ripple-host press inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-[13.5px]
+           font-medium text-ink-soft transition-colors duration-150 hover:bg-sunk hover:text-ink;
   }
 
+  /*
+   * The card a marketplace grid is made of: a hairline, a soft shadow, and a
+   * lift under the cursor that says the whole tile is the target.
+   */
   .card-lift {
-    @apply press-lift rounded-2xl border border-line bg-surface;
+    @apply rounded-2xl border border-line bg-surface shadow-sheet transition-[transform,box-shadow,border-color]
+           duration-200 ease-out hover:-translate-y-0.5 hover:border-line-strong hover:shadow-lift
+           active:translate-y-0;
   }
 
   .pill {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1
            text-[12px] font-medium text-ink-soft;
+  }
+
+  /* One input, one shape: every text field, number and area answers the same. */
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[14px] text-ink shadow-xs
+           transition-[border-color,box-shadow] duration-150 placeholder:text-ink-mute
+           focus:border-accent focus:outline-none;
+  }
+
+  .input:focus {
+    box-shadow: 0 0 0 3px theme('colors.accent.soft');
   }
 
   /*
@@ -242,8 +280,8 @@
    */
   .bench {
     @apply bg-sunk;
-    background-image: radial-gradient(rgba(26, 22, 19, 0.07) 1px, transparent 1px);
-    background-size: 16px 16px;
+    background-image: radial-gradient(rgba(16, 19, 23, 0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
     background-position: -1px -1px;
   }
 
@@ -259,7 +297,7 @@
   .trim::before,
   .trim::after {
     content: '';
-    @apply pointer-events-none absolute h-3.5 w-3.5 border-ink-mute/45;
+    @apply pointer-events-none absolute h-3.5 w-3.5 border-ink-mute/40;
   }
 
   .trim::before {
@@ -273,7 +311,7 @@
   .trim > .trim-alt::before,
   .trim > .trim-alt::after {
     content: '';
-    @apply pointer-events-none absolute h-3.5 w-3.5 border-ink-mute/45;
+    @apply pointer-events-none absolute h-3.5 w-3.5 border-ink-mute/40;
   }
 
   .trim > .trim-alt::before {
@@ -291,6 +329,11 @@
 
   .rail::-webkit-scrollbar {
     display: none;
+  }
+
+  .rail-fade {
+    mask-image: linear-gradient(to right, black calc(100% - 40px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 40px), transparent 100%);
   }
 }
 

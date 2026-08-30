@@ -63,13 +63,16 @@ export function PreviewDeck({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
-      <header className={`${compact ? 'hidden lg:flex' : 'flex'} flex-wrap items-center gap-3 border-b border-line px-4 py-3 sm:px-6`}>
-        <div className="flex items-center gap-2.5">
+      <header
+        className={`${compact ? 'hidden lg:flex' : 'flex'} z-10 flex-wrap items-center gap-3 border-b border-line
+                    bg-surface px-4 py-2.5 sm:px-6`}
+      >
+        <div className="flex min-w-0 items-center gap-2.5">
           <span className="step-mark">05</span>
           <h2 className="text-[15px] font-semibold tracking-tight">Pratinjau</h2>
           {/* The slug a proof carries: what this sheet is, in the units a
               printer works in. */}
-          <p className="spec hidden truncate sm:block">
+          <p className="spec hidden truncate lg:block">
             {activePaper.label} · {activePaper.note} · {Math.round(activePaper.widthPt)} ×{' '}
             {Math.round(activePaper.heightPt)} pt
           </p>
@@ -77,20 +80,29 @@ export function PreviewDeck({
 
         <div className="ml-auto flex items-center gap-2">
           {papers.length > 1 ? (
-            <div role="radiogroup" aria-label="Ukuran kertas pratinjau" className="flex gap-1.5">
-              {papers.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={item.id === activePaper.id}
-                  data-active={item.id === activePaper.id}
-                  className="chip !px-2.5 !py-1.5 !text-[12px]"
-                  onClick={() => onPaperChange(item)}
-                >
-                  {item.label}
-                </button>
-              ))}
+            /* A segmented control, because the two papers are one choice. */
+            <div
+              role="radiogroup"
+              aria-label="Ukuran kertas pratinjau"
+              className="flex rounded-full border border-line bg-sunk p-0.5"
+            >
+              {papers.map((item) => {
+                const on = item.id === activePaper.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    className={`press rounded-full px-3 py-1 text-[12.5px] font-medium transition-colors duration-150 ${
+                      on ? 'bg-surface text-ink shadow-xs' : 'text-ink-mute hover:text-ink'
+                    }`}
+                    onClick={() => onPaperChange(item)}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
             </div>
           ) : null}
           <button
@@ -98,7 +110,7 @@ export function PreviewDeck({
             role="switch"
             aria-checked={showSafeArea}
             data-active={showSafeArea}
-            className="chip !px-2.5 !py-1.5 !text-[12px]"
+            className="chip !py-1 !text-[12.5px]"
             onClick={() => setShowSafeArea((value) => !value)}
           >
             Area aman
@@ -121,7 +133,7 @@ export function PreviewDeck({
         {plans.map((plan, position) => (
           <div
             key={`${plan.label}-${position}`}
-            className="flex h-full w-full shrink-0 items-center justify-center p-5 sm:p-7"
+            className="flex h-full w-full shrink-0 items-center justify-center p-6 sm:p-10"
           >
             <div
               className="trim h-full max-h-full bg-white shadow-proof"
@@ -143,11 +155,13 @@ export function PreviewDeck({
         ))}
       </div>
 
-      <footer className={`${compact ? 'hidden lg:block' : 'block'} min-w-0 border-t border-line px-4 py-3 sm:px-6`}>
-        <div className="flex items-center gap-3">
+      <footer
+        className={`${compact ? 'hidden lg:block' : 'block'} min-w-0 border-t border-line bg-surface px-4 py-2.5 sm:px-6`}
+      >
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className="btn-quiet !px-2.5"
+            className="btn-quiet !rounded-full !px-2.5"
             onClick={() => scrollTo(Math.max(current - 1, 0))}
             disabled={current === 0}
             aria-label="Halaman sebelumnya"
@@ -156,23 +170,46 @@ export function PreviewDeck({
           </button>
           <button
             type="button"
-            className="btn-quiet !px-2.5"
+            className="btn-quiet !rounded-full !px-2.5"
             onClick={() => scrollTo(Math.min(current + 1, total - 1))}
             disabled={current >= total - 1}
             aria-label="Halaman berikutnya"
           >
             <ChevronIcon direction="right" />
           </button>
-          <p className="text-[13px] tabular-nums text-ink-soft" aria-live="polite">
+          <p
+            className="ml-1 shrink-0 whitespace-nowrap text-[13px] tabular-nums text-ink-soft"
+            aria-live="polite"
+          >
             Halaman <span className="font-semibold text-ink">{current + 1}</span> dari {total}
-            <span className="text-ink-mute"> · {label}</span>
+            <span className="hidden text-ink-mute xl:inline"> · {label}</span>
           </p>
+
+          {/*
+           * The page strip is the one place a long set has to stay scannable,
+           * so it takes the width it needs and scrolls under the counter
+           * rather than wrapping into a second row of chrome.
+           */}
+          <div className="rail rail-fade ml-3 hidden min-w-0 flex-1 gap-1.5 overflow-x-auto sm:flex">
+            {plans.map((plan, position) => (
+              <button
+                key={`nav-${plan.label}-${position}`}
+                type="button"
+                data-active={position === current}
+                onClick={() => scrollTo(position)}
+                aria-label={`Ke halaman ${position + 1}, ${plan.label}`}
+                className="chip shrink-0 !px-2.5 !py-1 !text-[12px] tabular-nums"
+              >
+                {plan.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="rail mt-3 flex gap-1.5 overflow-x-auto pb-0.5">
+        <div className="rail rail-fade mt-2.5 flex gap-1.5 overflow-x-auto pb-0.5 sm:hidden">
           {plans.map((plan, position) => (
             <button
-              key={`nav-${plan.label}-${position}`}
+              key={`nav-sm-${plan.label}-${position}`}
               type="button"
               data-active={position === current}
               onClick={() => scrollTo(position)}

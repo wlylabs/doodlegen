@@ -16,21 +16,23 @@ export function Section({
 }) {
   return (
     <section className="border-t border-line px-5 py-6 first:border-t-0">
-      <header className="mb-4 flex gap-3">
-        <span className="step-mark mt-[1px]">{step}</span>
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold leading-tight">{title}</h2>
-          {hint ? <p className="mt-1 text-[12.5px] leading-snug text-ink-mute">{hint}</p> : null}
-        </div>
+      {/*
+       * The heading stays put while its own fields scroll under it, so a long
+       * panel always says which step the control under the cursor belongs to.
+       */}
+      <header className="sticky top-0 z-10 -mx-5 flex items-center gap-2.5 bg-surface/92 px-5 pb-2.5 backdrop-blur">
+        <span className="step-mark">{step}</span>
+        <h2 className="text-[15px] font-semibold leading-tight tracking-tight">{title}</h2>
       </header>
-      <div className="space-y-4">{children}</div>
+      {hint ? <p className="mb-4 text-[12.5px] leading-snug text-ink-mute">{hint}</p> : null}
+      <div className="space-y-5">{children}</div>
     </section>
   );
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <p className="field-label">{label}</p>
       {children}
     </div>
@@ -42,7 +44,7 @@ export function Note({ tone = 'muted', children }: { tone?: 'muted' | 'warn'; ch
   return (
     <p
       className={`animate-fade-up text-[12px] leading-snug ${
-        tone === 'warn' ? 'text-accent-hover' : 'text-ink-mute'
+        tone === 'warn' ? 'text-accent-ink' : 'text-ink-mute'
       }`}
     >
       {children}
@@ -89,8 +91,8 @@ export function ChoiceGrid<T extends string>({
               onChange(option.value);
             }}
           >
-            {option.art ? <span className="mb-1 block text-ink-soft">{option.art}</span> : null}
-            <span className="text-[14px] font-semibold leading-tight">{option.label}</span>
+            {option.art ? <span className="mb-1.5 block text-ink-soft">{option.art}</span> : null}
+            <span className="text-[14px] font-semibold leading-tight tracking-tight">{option.label}</span>
             {option.note ? (
               <span className="text-[12px] leading-snug text-ink-mute">{option.note}</span>
             ) : null}
@@ -160,7 +162,7 @@ export function Toggle({
         onChange(!checked);
       }}
       className="ripple-host press flex w-full items-center justify-between gap-4 rounded-xl border border-line
-                 bg-surface px-3 py-3 text-left transition-colors hover:border-line-strong"
+                 bg-surface px-3.5 py-3 text-left shadow-xs transition-colors hover:border-line-strong"
     >
       <span className="min-w-0">
         <span className="block text-[14px] font-medium leading-tight">{label}</span>
@@ -207,7 +209,7 @@ export function NumberField({
         <button
           type="button"
           aria-label={`Kurangi ${label.toLowerCase()}`}
-          className="btn-quiet !px-2.5 text-[16px] leading-none"
+          className="btn-quiet shrink-0 !px-3 text-[16px] leading-none"
           onClick={(event) => {
             ripple(event);
             step(-1);
@@ -223,13 +225,12 @@ export function NumberField({
           max={max}
           value={value}
           onChange={(event) => onChange(Number(event.target.value))}
-          className="w-full min-w-0 rounded-lg border border-line bg-surface px-3 py-2.5 text-center text-[15px]
-                     tabular-nums transition-colors focus:border-accent"
+          className="input min-w-0 text-center text-[15px] tabular-nums"
         />
         <button
           type="button"
           aria-label={`Tambah ${label.toLowerCase()}`}
-          className="btn-quiet !px-2.5 text-[16px] leading-none"
+          className="btn-quiet shrink-0 !px-3 text-[16px] leading-none"
           onClick={(event) => {
             ripple(event);
             step(1);
@@ -264,8 +265,7 @@ export function TextField({
         placeholder={placeholder}
         maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-[14px]
-                   transition-colors focus:border-accent"
+        className="input mt-2"
       />
     </label>
   );
@@ -294,8 +294,7 @@ export function TextArea({
         rows={rows}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-[14px]
-                   leading-relaxed transition-colors focus:border-accent"
+        className="input mt-2 resize-y leading-relaxed"
       />
       {hint ? <span className="mt-1.5 block text-[12px] text-ink-mute">{hint}</span> : null}
     </label>

@@ -5,32 +5,42 @@ const config: Config = {
   theme: {
     extend: {
       /*
-       * One warm scale, with a role per step rather than three greys picked by
-       * eye: app ground, raised surface, sunk well, two borders, three text
-       * levels. The roles are the ones Radix Colors argues for; the values are
-       * warmed by hand, because this product is about paper.
+       * One neutral scale, with a role per step rather than three greys picked
+       * by eye: app ground, raised surface, sunk well, two borders, three text
+       * levels. The roles are the ones Radix Colors argues for.
+       *
+       * The greys are neutral rather than warmed. A marketplace listing is
+       * judged next to a hundred other listings on a white page, and the tool
+       * that makes it should read the same way: the only colour on screen is
+       * the work itself and the one control that acts on it.
        */
       colors: {
-        paper: '#FAF7F3',
+        paper: '#F7F8FA',
         surface: '#FFFFFF',
         // The proofing bench the sheet sits on, and the wells inside panels.
-        sunk: '#F1EBE4',
+        sunk: '#EDEFF3',
         ink: {
-          DEFAULT: '#1A1613',
-          soft: '#4C443D',
-          mute: '#877C72',
+          DEFAULT: '#101317',
+          soft: '#48505B',
+          mute: '#79818E',
         },
         line: {
-          DEFAULT: '#E9E1D8',
-          strong: '#D3C7BA',
+          DEFAULT: '#E6E8EC',
+          strong: '#CFD4DC',
         },
+        /*
+         * One accent, spent on one thing at a time: the button that acts, and
+         * the option that is currently chosen. Brighter than the old burnt
+         * orange, because a muted warm tone that read as "ink" on cream reads
+         * as dirt on a white ground.
+         */
         accent: {
-          DEFAULT: '#C2410C',
-          hover: '#9A3412',
-          soft: '#FDF1E8',
-          line: '#EFCCB1',
-          ink: '#A83C0A',
-          ring: '#F0A47A',
+          DEFAULT: '#E4550D',
+          hover: '#C2410C',
+          soft: '#FFF4EC',
+          line: '#FBD1B3',
+          ink: '#B8430A',
+          ring: '#F9BC94',
         },
       },
       fontFamily: {
@@ -53,11 +63,17 @@ const config: Config = {
         tightest: '-0.03em',
       },
       boxShadow: {
-        sheet: '0 1px 2px rgba(26,22,19,0.05), 0 8px 24px -16px rgba(26,22,19,0.20)',
-        // A sheet lying on the bench: contact shadow, then a long soft one.
-        proof:
-          '0 1px 1px rgba(26,22,19,0.10), 0 2px 6px -2px rgba(26,22,19,0.10), 0 24px 48px -28px rgba(26,22,19,0.45)',
-        pop: '0 12px 40px -20px rgba(26,22,19,0.35)',
+        /*
+         * Four steps of one soft, neutral shadow, plus the two the sheet and
+         * the dialog need. Depth is what separates a card from the page here,
+         * because the borders are hairlines rather than frames.
+         */
+        xs: '0 1px 2px rgba(16,19,23,0.05)',
+        sheet: '0 1px 2px rgba(16,19,23,0.04), 0 4px 12px -4px rgba(16,19,23,0.08)',
+        lift: '0 2px 4px rgba(16,19,23,0.04), 0 14px 28px -10px rgba(16,19,23,0.14)',
+        // A sheet lying on the bench: a contact shadow, then a long soft one.
+        proof: '0 1px 2px rgba(16,19,23,0.10), 0 14px 36px -14px rgba(16,19,23,0.30)',
+        pop: '0 24px 64px -24px rgba(16,19,23,0.40)',
       },
       keyframes: {
         'fade-up': {
