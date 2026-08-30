@@ -5,6 +5,7 @@ import { CoverMark, LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diag
 import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
+import { isCoverDocEmpty } from '@/lib/coverDoc';
 import { BOOK_STYLES, COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
 import { WORD_LISTS, listToText } from '@/lib/wordlists';
@@ -368,6 +369,12 @@ export function SettingsPanel({
               </span>
             </span>
           </button>
+          {config.coverStyle === 'custom' && isCoverDocEmpty(config.coverCustom) ? (
+            <Note tone="warn">
+              Kanvas custom masih kosong — halaman sampul akan tercetak polos. Buka studio dan
+              tambahkan elemen, atau pilih salah satu contoh susunan di sana.
+            </Note>
+          ) : null}
 
           {/* A dozen compositions in one list is a wall. Split at the lines a
               seller actually shops along: does it look like a book, like a

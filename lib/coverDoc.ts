@@ -248,10 +248,54 @@ export const ELEMENT_SEEDS: {
   },
 ];
 
-export function makeElement(seedId: string): CoverElement | null {
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** How much of `a` is covered by `b`, as a fraction of `a`'s own area. */
+function overlapRatio(a: Rect, b: Rect): number {
+  const w = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const h = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  const area = a.w * a.h;
+  return area > 0 ? (w * h) / area : 0;
+}
+
+/**
+ * Where a new element should land so it does not drop on top of one already
+ * there. Only its own kind is avoided: a panel *under* a title is the whole
+ * point of the shapes, and shoving it aside would break the one arrangement
+ * every cover here is built on. Two headlines stacked exactly, on the other
+ * hand, is never what anybody meant.
+ */
+export function freePlacement(
+  elements: CoverElement[],
+  seed: Omit<CoverElement, 'id'>,
+): { x: number; y: number } {
+  const peers = elements.filter((element) => element.kind === seed.kind);
+  // A tenth is the line between "sits under the last one" and "lands clear
+  // of it": below that the two boxes only graze, and the type inside them —
+  // which is fitted to the box with its own breathing room — never touches.
+  const taken = (box: Rect) => peers.some((peer) => overlapRatio(box, peer) > 0.1);
+  let box: Rect = clampElement({ x: seed.x, y: seed.y, w: seed.w, h: seed.h });
+  for (let tries = 0; tries < 16 && taken(box); tries += 1) {
+    const next = box.y + 0.07;
+    // Down the page, and back to the head one step across when it runs out.
+    box =
+      next + box.h > 1
+        ? clampElement({ ...box, x: box.x + 0.12, y: 0.03 })
+        : clampElement({ ...box, y: next });
+  }
+  return { x: box.x, y: box.y };
+}
+
+export function makeElement(seedId: string, existing: CoverElement[] = []): CoverElement | null {
   const seed = ELEMENT_SEEDS.find((item) => item.id === seedId);
   if (!seed) return null;
-  return clampElement({ id: coverElementId(), ...seed.make() });
+  const made = seed.make();
+  return clampElement({ id: coverElementId(), ...made, ...freePlacement(existing, made) });
 }
 
 /**
@@ -348,9 +392,9 @@ export const COVER_TEMPLATES: CoverTemplate[] = [
     },
   },
   {
-    id: 'kosong',
-    label: 'Halaman kosong',
-    note: 'Mulai dari nol: hanya judul dan nama toko',
+    id: 'judul',
+    label: 'Judul saja',
+    note: 'Kertas polos dengan judul dan nama toko, sisanya diisi sendiri',
     doc: {
       ground: 'paper',
       confetti: false,
@@ -362,8 +406,23 @@ export const COVER_TEMPLATES: CoverTemplate[] = [
   },
 ];
 
+/**
+ * A custom cover starts as an empty page.
+ *
+ * Opening the studio on a finished composition looks helpful and is not: the
+ * page is already full, so the first element a seller adds lands on top of
+ * something, and it reads as though their own work is fighting a layout they
+ * never chose. Blank paper is the honest starting point — the ready-made
+ * layouts are one click away in the studio, and they replace the page rather
+ * than being buried under it.
+ */
 export function defaultCoverDoc(): CoverDoc {
-  return cloneCoverDoc(COVER_TEMPLATES[0].doc);
+  return { ground: 'paper', confetti: false, elements: [] };
+}
+
+/** True while the page has nothing on it, which the UI has to say out loud. */
+export function isCoverDocEmpty(doc: CoverDoc): boolean {
+  return doc.elements.length === 0;
 }
 
 export function cloneCoverDoc(doc: CoverDoc): CoverDoc {

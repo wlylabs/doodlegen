@@ -13,6 +13,7 @@ import {
   clampElement,
   cloneCoverDoc,
   coverElementId,
+  isCoverDocEmpty,
   makeElement,
   resolveCoverInk,
   type CoverAlign,
@@ -209,7 +210,9 @@ export function CoverStudio({
   const add = useCallback(
     (seedId: string) => {
       if (doc.elements.length >= MAX_ELEMENTS) return;
-      const element = makeElement(seedId);
+      // Placed clear of anything of its own kind already on the page, so a
+      // second title never lands exactly on the first.
+      const element = makeElement(seedId, doc.elements);
       if (!element) return;
       commit({ ...doc, elements: [...doc.elements, element] });
       setSelected(element.id);
@@ -556,6 +559,14 @@ export function CoverStudio({
                     }}
                   />
                 ))}
+                <Chip
+                  active={false}
+                  label="Kosongkan"
+                  onClick={() => {
+                    commit({ ...doc, elements: [] });
+                    setSelected(null);
+                  }}
+                />
               </div>
               <Note>Mengganti seluruh susunan. Tekan “Urungkan” kalau salah pilih.</Note>
             </Group>
@@ -657,8 +668,9 @@ export function CoverStudio({
               <>
                 <p className="field-label mb-1.5">Elemen</p>
                 <p className="text-[12.5px] leading-relaxed text-ink-soft">
-                  Klik salah satu elemen di halaman untuk mengubahnya. Panah menggeser, Shift+panah
-                  menggeser lebih jauh, Delete menghapus.
+                  {isCoverDocEmpty(doc)
+                    ? 'Halaman masih kosong. Tambahkan elemen dari panel kiri, atau mulai dari salah satu contoh — apa pun yang ditambahkan tidak akan menimpa yang sudah ada.'
+                    : 'Klik salah satu elemen di halaman untuk mengubahnya. Panah menggeser, Shift+panah menggeser lebih jauh, Delete menghapus.'}
                 </p>
                 <div className="mt-3 flex flex-col gap-1">
                   {[...doc.elements].reverse().map((element) => (

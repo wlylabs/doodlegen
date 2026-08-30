@@ -131,7 +131,17 @@ shop front and the file agree.
 **And a cover the seller lays out themselves.** `Custom` opens the cover
 studio: elements are dragged, resized and recoloured on the page, with the
 page under the handles drawn by `planCoverPage` — the very call the PDF makes,
-so there is no mock-up to drift out of sync. It stays a *print* editor in two
+so there is no mock-up to drift out of sync.
+
+It opens on blank paper, not on a finished composition. Opening on one looks
+helpful and is not: the page is already full, so the first element a seller
+adds lands on top of something, and it reads as though their own work is
+fighting a layout they never chose. The ready-made layouts are one click away
+and replace the page rather than being buried under it. For the same reason a
+new element is placed clear of anything of its own kind already there —
+stepping down the page until it lands free — while a shape may still come to
+rest under a title, because a panel behind type is the arrangement every cover
+here is built on. It stays a *print* editor in two
 ways. Geometry is stored as a fraction of the safe box rather than in pixels,
 so one document prints identically on A4 and US Letter and survives a change
 of margin; and colour is stored as a role in the palette — `headline`, `ink3`
