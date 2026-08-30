@@ -215,7 +215,7 @@ export const DEFAULT_CONFIG: Config = {
   brand: '',
   productTitle: '',
   language: 'en',
-  palette: 'crayon',
+  palette: 'sunset',
   svgFiles: true,
 };
 

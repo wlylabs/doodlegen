@@ -242,8 +242,8 @@ line work: crayon is translucent, so a printed ground swallows a child's own
 colour instead of adding to it, and colour on the inside would cost a second
 plate on press, muddy every photocopy and drain a home printer for nothing.
 
-**Colour, where it pays for itself.** Seven palettes — Krayon, Pop, Permen,
-Rimba, Pastel, Senja and Hitam Putih — colour the cover page and the listing
+**Colour, where it pays for itself.** Seven palettes — Senja, Krayon, Pop,
+Permen, Rimba, Pastel and Hitam Putih — colour the cover page and the listing
 images: a tinted card or a flooded ground, confetti in the border band a dot
 can never land on a word in, a headline spelled out one letter at a time in
 the palette's own ramp, and sample characters shown already coloured in, next

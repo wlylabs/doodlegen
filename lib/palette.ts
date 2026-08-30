@@ -231,12 +231,14 @@ export const PALETTES: Record<PaletteId, Palette> = {
 };
 
 export const PALETTE_ORDER: PaletteId[] = [
+  // The default leads the row: the first chip reads as the recommended one,
+  // and a default sitting sixth in the picker only looks like an accident.
+  'sunset',
   'crayon',
   'pop',
   'permen',
   'rimba',
   'pastel',
-  'sunset',
   'mono',
 ];
 
