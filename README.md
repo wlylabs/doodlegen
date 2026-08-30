@@ -67,6 +67,7 @@ the rest around it:
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
 | Listing images | 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 (Gumroad), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest), drawn from the same page plans. |
 | Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, already inside each channel's character and tag limits. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
+| Upload steps | Each channel's own add-product form, walked field by field: photo, product name, category, description, price, stock, SKU — and the weight, package size and courier Shopee and Tokopedia will not let a listing save without. Every blank says whether it is pasted, chosen or uploaded, and the pasted ones carry the copy above. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
 `Kit marketplace` builds all of it and hands back one ZIP:
@@ -77,10 +78,27 @@ doodlegen-<subject>-<style>-<layout>/
   02-LISTING-IMAGES/    the five listing canvases, PNG
   03-LISTING-COPY/      etsy.txt, tpt.txt, gumroad.txt, shopee.txt,
                         tokopedia.txt, pinterest.txt
-  04-SVG-EDITABLE/      one SVG per worksheet
+  04-UPLOAD-STEPS/      the same six channels, as add-product walkthroughs
+  05-SVG-EDITABLE/      one SVG per worksheet
   READ-ME-FIRST.txt
   FONT-LICENSE.txt
 ```
+
+**Copy is only half of a listing.** Knowing what to write is not the same as
+knowing where it goes, and the field that stops a first-time seller is never
+the description — it is `Berat`, which Shopee makes mandatory on a product
+with no parcel behind it, or Etsy's `Type`, which quietly replaces the whole
+shipping section once it is set to Digital. So each marketplace tab in the
+kit, and each file in `04-UPLOAD-STEPS`, is that marketplace's own form in its
+own order and its own interface language: 100 gram and the cheapest courier
+for Shopee, 70 characters and no phone number in the description for
+Tokopedia, quantity 999 and a five-file 20 MB ceiling for Etsy, the page count
+and grade band for TPT, a permalink and a refund policy for Gumroad, a
+destination link for Pinterest. The generated title, description and tags sit
+in the steps that ask for them, with their counters, so the whole listing is
+filled from one screen — and where a marketplace has no field at all for
+something, such as tags on Shopee and Tokopedia, the guide says so instead of
+pretending otherwise.
 
 **Why there is no Canva integration, and what replaces it.** The app is a
 static export with no server, so there is nowhere to keep the client secret an
@@ -329,7 +347,7 @@ browser offers an install, and that a new build waits to be let in.
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run samples` | Renders sample PDFs across layouts into `.samples/` |
 | `npm run verify` | Checks those PDFs against the table above |
-| `npm run verify:listing` | Checks every marketplace draft against that marketplace's title, description and tag limits |
+| `npm run verify:listing` | Checks every marketplace draft against that marketplace's title, description and tag limits, and every upload guide against the draft it pastes |
 | `npm run verify:pwa` | Checks the manifest's assets, the offline shell, the install offer and the update handshake |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |
 | `npm run icons` | Regenerates the logo, favicon, PWA icons and the social card |

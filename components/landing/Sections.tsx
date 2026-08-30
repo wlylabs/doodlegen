@@ -93,8 +93,8 @@ const FEATURES = [
     body: 'Lima kanvas untuk Etsy, TPT, Gumroad, Shopee/Tokopedia, dan Pinterest digambar dari halaman aslinya — ukuran dan bahasanya sudah sesuai aturan tiap marketplace.',
   },
   {
-    title: 'Draf judul, deskripsi, dan tag',
-    body: 'Teks listing enam kanal — Etsy, TPT, Gumroad, Shopee, Tokopedia, Pinterest — langsung terisi dari setelan yang dipakai, dengan batas karakter dan jumlah tag yang sudah dipatuhi.',
+    title: 'Teks listing dan langkah unggahnya',
+    body: 'Judul, deskripsi, dan tag enam kanal terisi dari setelan yang dipakai, lalu disusun mengikuti formulir tambah produk masing-masing: foto mana yang diunggah, kategori apa, sampai kolom berat dan kurir yang tetap diminta Shopee dan Tokopedia untuk berkas yang tidak dikirim.',
   },
   {
     title: 'SVG untuk Canva & Cricut',
@@ -208,7 +208,7 @@ const STEPS = [
   },
   {
     title: 'Ambil kit marketplace',
-    body: 'PDF A4 dan US Letter, gambar listing lima ukuran, draf deskripsi enam kanal, plus lisensi font — satu ZIP.',
+    body: 'PDF A4 dan US Letter, gambar listing lima ukuran, draf deskripsi dan langkah unggah enam kanal, plus lisensi font — satu ZIP.',
   },
 ];
 
@@ -265,8 +265,9 @@ export function KitShowcase() {
             </h2>
             <p className="mt-4 text-[14px] leading-relaxed text-ink-soft">
               Halaman cetak hanya setengah dari produk digital. Setengah lagi adalah gambar listing,
-              judul, deskripsi, tag, dan lembar ketentuan. DoodleGen menyiapkan semuanya dari setelan
-              yang sama, jadi angka di deskripsi selalu cocok dengan isi berkasnya.
+              judul, deskripsi, tag, lembar ketentuan — dan urutan mengisi formulir tambah produk di
+              lapaknya. DoodleGen menyiapkan semuanya dari setelan yang sama, jadi angka di deskripsi
+              selalu cocok dengan isi berkasnya.
             </p>
 
             {/* One ruled panel, matching the copy panel opposite it. */}
@@ -301,7 +302,7 @@ export function KitShowcase() {
                 <span className="text-accent">
                   <KitIcon />
                 </span>
-                <p className="text-[13px] font-semibold">Draf teks listing</p>
+                <p className="text-[13px] font-semibold">Teks listing & langkah unggah</p>
               </div>
               <div className="divide-y divide-line">
                 {MARKETS.map((market) => (
@@ -318,7 +319,9 @@ export function KitShowcase() {
                 <p className="text-[12px] leading-relaxed text-ink-mute">
                   Isi ZIP: <span className="text-ink-soft">01-PRINT-FILES</span>,{' '}
                   <span className="text-ink-soft">02-LISTING-IMAGES</span>,{' '}
-                  <span className="text-ink-soft">03-LISTING-COPY</span>, READ-ME-FIRST.txt, dan
+                  <span className="text-ink-soft">03-LISTING-COPY</span>,{' '}
+                  <span className="text-ink-soft">04-UPLOAD-STEPS</span>,{' '}
+                  <span className="text-ink-soft">05-SVG-EDITABLE</span>, READ-ME-FIRST.txt, dan
                   FONT-LICENSE.txt — dalam bahasa Indonesia bila paketnya berbahasa Indonesia.
                 </p>
               </div>

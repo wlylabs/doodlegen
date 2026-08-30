@@ -5,3 +5,4 @@ export { DEFAULT_CONFIG, FONTS, MARKETS, PAPERS, papersFor } from '../lib/preset
 export { FONT_FEATURES } from '../lib/fontStore';
 export { pageToSvg } from '../lib/svgdoc';
 export { buildListing } from '../lib/listing';
+export { buildUploadGuides, guideToText } from '../lib/upload';

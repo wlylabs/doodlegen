@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckIcon, CloseIcon, CopyIcon, DownloadIcon } from './diagrams';
 import { useCopy, useRipple } from './motion';
-import { buildListing } from '@/lib/listing';
+import { buildUploadGuides } from '@/lib/upload';
+import type { FieldKind, UploadField, UploadGuide, UploadStep } from '@/lib/upload';
 import { formatSize } from '@/lib/download';
 import type { GeneratedImage } from '@/lib/cover';
 import type { GeneratedFile } from '@/lib/pdf';
@@ -39,9 +40,140 @@ function CopyButton({
 }
 
 /**
- * Everything the pack needs on a marketplace, in the order a listing form
- * asks for it: the images first, then the copy, field by field, each one
- * ready to be pasted straight across.
+ * What the seller does with this field, in one word. A form has three kinds
+ * of blank in it — something to paste, something to choose, something to
+ * upload — and knowing which one is coming is most of the speed.
+ */
+const ACTION: Record<FieldKind, string> = {
+  title: 'tempel',
+  body: 'tempel',
+  tags: 'tempel',
+  text: 'tempel',
+  pick: 'pilih',
+  asset: 'unggah',
+};
+
+const PASTEABLE: FieldKind[] = ['title', 'body', 'tags', 'text'];
+
+function FieldRow({
+  field,
+  guide,
+  index,
+  copied,
+  onCopy,
+}: {
+  field: UploadField;
+  guide: UploadGuide;
+  index: string;
+  copied: string | null;
+  onCopy: (text: string, key: string) => void;
+}) {
+  const key = `${guide.market}-${index}`;
+  const counter =
+    field.kind === 'title'
+      ? `${field.value.length} karakter`
+      : field.kind === 'body'
+        ? guide.copy.bodyMax
+          ? `${field.value.length} / ${guide.copy.bodyMax} karakter`
+          : `${field.value.length} karakter`
+        : field.kind === 'tags'
+          ? `${guide.copy.tags.length} tag`
+          : null;
+  // Only the description can outrun its marketplace, and only there does the
+  // count need to shout rather than inform.
+  const over = field.kind === 'body' && guide.copy.bodyMax ? field.value.length > guide.copy.bodyMax : false;
+
+  return (
+    <div className="rounded-xl border border-line bg-paper px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="field-label !normal-case !tracking-normal !text-[12px] !text-ink">{field.label}</p>
+        <span className="pill !border-line !bg-surface !px-2 !py-0 !text-[10.5px] !text-ink-mute">
+          {ACTION[field.kind]}
+        </span>
+        <span className="ml-auto flex items-center gap-2">
+          {counter ? (
+            <span className={`text-[11px] tabular-nums ${over ? 'text-accent' : 'text-ink-mute'}`}>
+              {counter}
+            </span>
+          ) : null}
+          {PASTEABLE.includes(field.kind) && field.value ? (
+            <CopyButton text={field.value} copiedKey={key} active={copied === key} onCopy={onCopy} />
+          ) : null}
+        </span>
+      </div>
+
+      {field.kind === 'body' ? (
+        <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-surface px-2.5 py-2 font-sans text-[12.5px] leading-relaxed text-ink-soft">
+          {field.value}
+        </pre>
+      ) : field.kind === 'tags' ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {guide.copy.tags.map((tag) => (
+            <span key={tag} className="pill">
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : field.value ? (
+        <p className="mt-1.5 text-[13px] leading-snug text-ink">{field.value}</p>
+      ) : null}
+
+      {field.note ? <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-mute">{field.note}</p> : null}
+    </div>
+  );
+}
+
+function StepBlock({
+  step,
+  number,
+  guide,
+  copied,
+  onCopy,
+}: {
+  step: UploadStep;
+  number: number;
+  guide: UploadGuide;
+  copied: string | null;
+  onCopy: (text: string, key: string) => void;
+}) {
+  return (
+    <section className="space-y-2">
+      <div className="flex items-baseline gap-2">
+        <span className="step-mark">{String(number).padStart(2, '0')}</span>
+        <h3 className="text-[13.5px] font-semibold tracking-tight">{step.title}</h3>
+      </div>
+      {step.detail ? <p className="text-[12px] leading-relaxed text-ink-mute">{step.detail}</p> : null}
+      <div className="space-y-2">
+        {step.fields.map((field, index) => (
+          <FieldRow
+            key={field.label}
+            field={field}
+            guide={guide}
+            index={`${number}-${index}`}
+            copied={copied}
+            onCopy={onCopy}
+          />
+        ))}
+      </div>
+      {step.tips?.length ? (
+        <ul className="space-y-1.5 rounded-xl border border-accent/25 bg-accent-soft px-3 py-2.5">
+          {step.tips.map((tip) => (
+            <li key={tip} className="text-[12px] leading-relaxed text-accent-hover">
+              {tip}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * Everything the pack needs on a marketplace, in the order that marketplace's
+ * own form asks for it: the photo first, then the name, the category, the
+ * description — down to the weight Shopee will not let a listing save without.
+ * Each blank says whether it is pasted, chosen or uploaded, and the ones that
+ * are pasted carry the copy this pack generated, with its counter beside it.
  */
 export function ExportDialog({
   open,
@@ -67,9 +199,10 @@ export function ExportDialog({
   const [tab, setTab] = useState('images');
   const { copied, copy } = useCopy();
   const ripple = useRipple<HTMLButtonElement>();
+  const panel = useRef<HTMLDivElement>(null);
 
-  const listings = useMemo(
-    () => buildListing({ config, characters, pageCount: files[0]?.pages ?? characters.length }),
+  const guides = useMemo(
+    () => buildUploadGuides({ config, characters, pageCount: files[0]?.pages ?? characters.length }),
     [config, characters, files],
   );
 
@@ -82,14 +215,20 @@ export function ExportDialog({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  // A guide is long enough to scroll: a new tab has to start at step one
+  // rather than halfway down where the last one was left.
+  useEffect(() => {
+    panel.current?.scrollTo({ top: 0 });
+  }, [tab]);
+
   if (!open) return null;
 
   const tabs = [
     { id: 'images', label: `Gambar (${images.length})` },
-    ...listings.map((listing) => ({ id: listing.market, label: listing.label })),
+    ...guides.map((guide) => ({ id: guide.market, label: guide.label })),
   ];
 
-  const listing = listings.find((item) => item.market === tab);
+  const guide = guides.find((item) => item.market === tab);
 
   return (
     <div
@@ -106,7 +245,7 @@ export function ExportDialog({
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold tracking-tight">Kit marketplace</h2>
             <p className="truncate text-[12px] text-ink-mute">
-              {files.length} PDF · {images.length} gambar listing · {listings.length} draf deskripsi
+              {files.length} PDF · {images.length} gambar listing · {guides.length} panduan unggah
             </p>
           </div>
           <button
@@ -139,7 +278,7 @@ export function ExportDialog({
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div ref={panel} className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {tab === 'images' ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {images.map((image, index) => (
@@ -178,74 +317,36 @@ export function ExportDialog({
                 </figure>
               ))}
             </div>
-          ) : listing ? (
+          ) : guide ? (
             <div className="animate-fade-up space-y-5">
-              <p className="text-[12px] text-ink-mute">{listing.limits}</p>
+              <div className="rounded-xl border border-line bg-paper px-3 py-2.5">
+                <p className="text-[12.5px] leading-relaxed text-ink-soft">{guide.entry}</p>
+                <p className="mt-1 text-[11.5px] text-ink-mute">{guide.copy.limits}</p>
+              </div>
+
+              {guide.steps.map((step, index) => (
+                <StepBlock
+                  key={step.title}
+                  step={step}
+                  number={index + 1}
+                  guide={guide}
+                  copied={copied}
+                  onCopy={copy}
+                />
+              ))}
 
               <section className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <p className="field-label">Judul</p>
-                  <span className="ml-auto text-[11px] tabular-nums text-ink-mute">
-                    {listing.title.length} karakter
-                  </span>
-                  <CopyButton
-                    text={listing.title}
-                    copiedKey={`${listing.market}-title`}
-                    active={copied === `${listing.market}-title`}
-                    onCopy={copy}
-                  />
+                <div className="flex items-baseline gap-2">
+                  <span className="step-mark">✓</span>
+                  <h3 className="text-[13.5px] font-semibold tracking-tight">Sebelum terbit</h3>
                 </div>
-                <p className="rounded-xl border border-line bg-paper px-3 py-2.5 text-[13px] leading-snug">
-                  {listing.title}
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <p className="field-label">Deskripsi</p>
-                  <div className="ml-auto flex items-center gap-2">
-                    {listing.bodyMax ? (
-                      <span
-                        className={`text-[11px] tabular-nums ${
-                          listing.body.length > listing.bodyMax ? 'text-accent' : 'text-ink-mute'
-                        }`}
-                      >
-                        {listing.body.length} / {listing.bodyMax} karakter
-                      </span>
-                    ) : null}
-                    <CopyButton
-                      text={listing.body}
-                      copiedKey={`${listing.market}-body`}
-                      active={copied === `${listing.market}-body`}
-                      onCopy={copy}
-                    />
-                  </div>
-                </div>
-                <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-paper px-3 py-2.5 font-sans text-[13px] leading-relaxed text-ink-soft">
-                  {listing.body}
-                </pre>
-              </section>
-
-              <section className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <p className="field-label">Tag</p>
-                  <span className="ml-auto text-[11px] tabular-nums text-ink-mute">
-                    {listing.tags.length} tag
-                  </span>
-                  <CopyButton
-                    text={listing.tags.join(', ')}
-                    copiedKey={`${listing.market}-tags`}
-                    active={copied === `${listing.market}-tags`}
-                    onCopy={copy}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {listing.tags.map((tag) => (
-                    <span key={tag} className="pill">
-                      {tag}
-                    </span>
+                <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+                  {guide.checklist.map((item) => (
+                    <li key={item} className="px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
+                      {item}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </section>
             </div>
           ) : null}
@@ -254,7 +355,7 @@ export function ExportDialog({
         <footer className="flex shrink-0 items-center gap-3 border-t border-line px-5 py-3">
           <p className="hidden text-[12px] text-ink-mute sm:block">
             ZIP berisi file cetak{config.svgFiles ? ', SVG per halaman' : ''}, gambar listing, teks,
-            dan lisensi font.
+            langkah unggah, dan lisensi font.
           </p>
           <button
             type="button"
