@@ -1,3 +1,4 @@
+import { COVER_STYLES, coverSamples, sheetCount, type CoverStyle } from './covers';
 import { planDocument } from './geometry';
 import { brandName, packSlug, productTitle } from './naming';
 import { PALETTES, cmykToHex, type Palette } from './palette';
@@ -102,9 +103,11 @@ interface Skin {
   confetti: string[];
 }
 
-function skinOf(palette: Palette): Skin {
+function skinOf(palette: Palette, style: CoverStyle): Skin {
   return {
-    background: palette.card ? cmykToHex(palette.card) : PAPER,
+    // A style that prints on bare paper is shown on bare paper here too.
+    background:
+      palette.card && style.decoration !== 'none' ? cmykToHex(palette.card) : PAPER,
     headline: palette.card ? cmykToHex(palette.headline) : INK,
     brand: palette.card ? cmykToHex(palette.brand) : ACCENT,
     body: palette.card ? cmykToHex(palette.body) : MUTED,
@@ -374,6 +377,108 @@ interface Scene {
   font: LoadedFont;
   config: Config;
   skin: Skin;
+  /** The cover style the seller picked; the sheets follow it. */
+  style: CoverStyle;
+}
+
+/** A rectangle in canvas space, y growing downward. */
+interface Area {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Trim proportion of every page in the pack, height over width. */
+const SHEET_RATIO = 1.414;
+
+/**
+ * Lays the sheet mockups inside an area, in whichever arrangement the cover
+ * style asks for. The sheets are the same page plans the PDF prints, so the
+ * arrangement is the only thing the listing image gets to choose.
+ */
+function drawSheets(ctx: CanvasRenderingContext2D, scene: Scene, area: Area) {
+  const { plans } = scene;
+  if (!plans.length) return;
+  const place = (plan: PagePlan, x: number, y: number, width: number, rotation = 0) =>
+    drawSheetCard(ctx, scene.font, plan, scene.config, x, y, width, rotation);
+
+  if (scene.style.sheets === 'hero') {
+    // The single sheet is the coloured one: at thumbnail size, one page a
+    // buyer can actually read beats three they cannot.
+    const width = Math.min(area.w * 0.72, area.h / SHEET_RATIO);
+    place(
+      plans[plans.length - 1],
+      area.x + (area.w - width) / 2,
+      area.y + (area.h - width * SHEET_RATIO) / 2,
+      width,
+    );
+    return;
+  }
+
+  if (scene.style.sheets === 'grid') {
+    const picks = plans.slice(0, 4);
+    // A band far wider than it is tall takes one row: two rows there would
+    // shrink every sheet to a stamp nobody can read at listing size.
+    const cols = area.w / area.h > 1.6 || picks.length <= 2 ? picks.length : 2;
+    const rows = Math.ceil(picks.length / cols);
+    const gap = Math.min(area.w, area.h) * 0.05;
+    const width = Math.min(
+      (area.w - gap * (cols - 1)) / cols,
+      (area.h - gap * (rows - 1)) / rows / SHEET_RATIO,
+    );
+    const height = width * SHEET_RATIO;
+    const blockW = width * cols + gap * (cols - 1);
+    const blockH = height * rows + gap * (rows - 1);
+    picks.forEach((plan, index) =>
+      place(
+        plan,
+        area.x + (area.w - blockW) / 2 + (index % cols) * (width + gap),
+        area.y + (area.h - blockH) / 2 + Math.floor(index / cols) * (height + gap),
+        width,
+      ),
+    );
+    return;
+  }
+
+  if (scene.style.sheets === 'row') {
+    const picks = plans.slice(0, 3);
+    const gap = area.w * 0.035;
+    const width = Math.min(
+      (area.w - gap * (picks.length - 1)) / picks.length,
+      area.h / SHEET_RATIO,
+    );
+    const total = width * picks.length + gap * (picks.length - 1);
+    picks.forEach((plan, index) =>
+      place(
+        plan,
+        area.x + (area.w - total) / 2 + index * (width + gap),
+        area.y + (area.h - width * SHEET_RATIO) / 2,
+        width,
+      ),
+    );
+    return;
+  }
+
+  // fan: enough overlap to read as a stack, little enough that each sheet
+  // still shows the character it is teaching.
+  const picks = plans.slice(0, 3);
+  const overlap = 0.8;
+  const span = 1 + overlap * (picks.length - 1);
+  const stagger = area.h * 0.05;
+  const width = Math.min(area.w / span, (area.h - stagger) / SHEET_RATIO);
+  const left = area.x + (area.w - width * span) / 2;
+  const top = area.y + (area.h - width * SHEET_RATIO - stagger) / 2;
+  const centre = (picks.length - 1) / 2;
+  picks.forEach((plan, index) =>
+    place(
+      plan,
+      left + index * width * overlap,
+      top + Math.abs(index - centre) * stagger,
+      width,
+      (index - centre) * 7,
+    ),
+  );
 }
 
 /** Dots around the canvas edge, mirroring the cover page's border band. */
@@ -395,20 +500,22 @@ function drawConfetti(ctx: CanvasRenderingContext2D, W: number, H: number, color
 
 function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
   const { width: W, height: H } = spec;
-  const { skin } = scene;
+  const { skin, style } = scene;
   ctx.fillStyle = skin.background;
   ctx.fillRect(0, 0, W, H);
 
   // A soft wash in the palette's own colours keeps the sheets from floating
-  // on a flat ground.
-  const wash = ctx.createLinearGradient(0, 0, W, H);
-  const [first = ACCENT, second = ACCENT] = skin.confetti;
-  wash.addColorStop(0, `${first}22`);
-  wash.addColorStop(0.55, `${second}0D`);
-  wash.addColorStop(1, `${first}1F`);
-  ctx.fillStyle = wash;
-  ctx.fillRect(0, 0, W, H);
-  drawConfetti(ctx, W, H, skin.confetti);
+  // on a flat ground — unless the style asked for a plain one.
+  if (style.decoration !== 'none') {
+    const wash = ctx.createLinearGradient(0, 0, W, H);
+    const [first = ACCENT, second = ACCENT] = skin.confetti;
+    wash.addColorStop(0, `${first}22`);
+    wash.addColorStop(0.55, `${second}0D`);
+    wash.addColorStop(1, `${first}1F`);
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, 0, W, H);
+  }
+  if (style.decoration === 'full') drawConfetti(ctx, W, H, skin.confetti);
 
   const wide = W / H > 1.3;
   const tall = H / W > 1.3;
@@ -439,28 +546,15 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
 
     drawPills(ctx, scene.pills, null, pad, y - unit * 0.02, unit * 0.026, skin.brand);
 
-    // The fan is measured, not guessed: three overlapping sheets have to end
-    // up inside the right column, whatever the canvas is.
-    const sheets = scene.plans.slice(0, 3);
+    // The sheets are measured, not guessed: they have to end up inside the
+    // right column, whatever the canvas and whatever the arrangement.
     const columnLeft = W * 0.55;
     const columnRight = W - pad * 0.6;
-    // Enough overlap to read as a stack, little enough that each sheet still
-    // shows the character it is teaching.
-    const overlap = 0.8;
-    const span = 1 + overlap * (sheets.length - 1);
-    const sheetWidth = Math.min(W * 0.22, (columnRight - columnLeft) / span);
-    const startX = (columnLeft + columnRight) / 2 - (sheetWidth * span) / 2;
-    sheets.forEach((plan, index) => {
-      drawSheetCard(
-        ctx,
-        scene.font,
-        plan,
-        scene.config,
-        startX + index * sheetWidth * overlap,
-        H * 0.5 - (sheetWidth * 1.414) / 2 + (index % 2 === 1 ? H * 0.03 : 0),
-        sheetWidth,
-        index === 0 ? -7 : index === 1 ? 0 : 7,
-      );
+    drawSheets(ctx, scene, {
+      x: columnLeft,
+      y: H * 0.12,
+      w: columnRight - columnLeft,
+      h: H * 0.76,
     });
     return;
   }
@@ -491,26 +585,9 @@ function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
   const footY = H - unit * 0.055;
   const pillTop = footY - footSize * 1.4 - pillHeight;
   const bandTop = subtitleY + unit * 0.055;
-  const stagger = unit * 0.035;
-  const bandHeight = Math.max(unit * 0.2, pillTop - bandTop - unit * 0.03 - stagger);
-  const sheetWidth = Math.min(W * 0.34, bandHeight / 1.414);
-  // On a tall canvas the sheets cannot grow to fill the band, so they are
-  // centred in it rather than left hanging under the copy.
-  const sheetTop = bandTop + Math.max(0, (bandHeight - sheetWidth * 1.414 - stagger) / 2);
+  const bandHeight = Math.max(unit * 0.2, pillTop - bandTop - unit * 0.03);
 
-  scene.plans.slice(0, 3).forEach((plan, index) => {
-    const offset = (index - 1) * sheetWidth * 0.78;
-    drawSheetCard(
-      ctx,
-      scene.font,
-      plan,
-      scene.config,
-      W / 2 - sheetWidth / 2 + offset,
-      sheetTop + Math.abs(index - 1) * stagger,
-      sheetWidth,
-      (index - 1) * 7,
-    );
-  });
+  drawSheets(ctx, scene, { x: pad, y: bandTop, w: W - pad * 2, h: bandHeight });
 
   drawPills(ctx, scene.pills, W / 2, 0, pillTop, pillSize, skin.brand);
 
@@ -544,18 +621,16 @@ export async function renderListingImages({
   onProgress,
   signal,
 }: CoverInput): Promise<GeneratedImage[]> {
-  // The thumbnails show the first, middle and last page of the set, which is
-  // the honest way to preview what a buyer is getting.
-  const picks = [
-    characters[0],
-    characters[Math.floor(characters.length / 2)],
-    characters[characters.length - 1],
-  ].filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
+  // The thumbnails show pages spread evenly across the set, which is the
+  // honest way to preview what a buyer is getting. How many, and how they
+  // are arranged, is the cover style's call.
+  const style = COVER_STYLES[config.coverStyle] ?? COVER_STYLES.classic;
+  const picks = coverSamples(characters, sheetCount(style));
 
   const paper = papersFor(config.paper)[0] ?? PAPERS.a4;
   const previewConfig: Config = { ...config, coverPage: false, termsPage: false };
   const palette = PALETTES[config.palette];
-  const skin = skinOf(palette);
+  const skin = skinOf(palette, style);
   // The sheet nearest the viewer shows the page already coloured in; the ones
   // behind it stay as they print, so the pair reads as before and after.
   const plans = planDocument({ font, config: previewConfig, paper, characters: picks }).map(
@@ -582,6 +657,7 @@ export async function renderListingImages({
       font,
       config: previewConfig,
       skin,
+      style,
     },
     id: {
       title: title.id,
@@ -597,6 +673,7 @@ export async function renderListingImages({
       font,
       config: previewConfig,
       skin,
+      style,
     },
   };
 

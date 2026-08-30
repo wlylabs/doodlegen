@@ -1,6 +1,6 @@
 export type ContentType = 'letters' | 'numbers' | 'words';
 export type LetterCase = 'upper' | 'lower' | 'both';
-export type StyleId = 'outline' | 'dotted' | 'combo';
+export type StyleId = 'outline' | 'dotted' | 'combo' | 'progressive';
 export type LayoutId = 'single' | 'grid' | 'worksheet';
 export type GridId = '2x2' | '3x3' | '3x4' | '4x5';
 export type FontId = 'rounded' | 'boldsans' | 'playful' | 'school';
@@ -11,6 +11,8 @@ export type InkId = 'black' | 'soft';
 /** Language of everything the buyer reads: cover, licence, footer, read-me. */
 export type LanguageId = 'en' | 'id';
 export type PaletteId = 'mono' | 'crayon' | 'pastel' | 'sunset';
+/** Which composition the title page — and the listing mockups — are built on. */
+export type CoverStyleId = 'classic' | 'poster' | 'showcase' | 'minimal';
 
 /** Ink, as the press mixes it: cyan, magenta, yellow, key, each 0 to 1. */
 export type Cmyk = readonly [number, number, number, number];
@@ -37,6 +39,11 @@ export interface Config {
   pageNumbers: boolean;
   /** Branded title page in front of the worksheets. */
   coverPage: boolean;
+  /**
+   * Which cover composition to use. It also decides how the listing images
+   * arrange their sheet mockups, so the cover and the shop front match.
+   */
+  coverStyle: CoverStyleId;
   /** Licence and usage page at the back, standard for a paid download. */
   termsPage: boolean;
   /** Shop or brand name, printed on the cover, footer and licence page. */
@@ -80,6 +87,11 @@ export interface Placement {
   strokeWidth: number;
   /** Dot pitch in points; only meaningful when mode === 'dotted'. */
   dotGap: number;
+  /**
+   * K-only ink level for the contour, overriding the one the ink preset
+   * implies. Only the fading steps of a progressive sheet set it.
+   */
+  ink?: number;
   /** Colour poured inside the contour before it is stroked, cover pages only. */
   fill?: Cmyk;
 }

@@ -138,7 +138,7 @@ export function sheetShapes(font: LoadedFont, plan: PagePlan, config: Config): S
       ...glyphsFor(font, place.text, place.size, place.x, place.y, plan.heightPt, {
         strokeWidth: place.strokeWidth,
         dash: place.mode === 'dotted' ? place.dotGap : undefined,
-        color: inkColor(place.mode === 'dotted' ? ink.dotted : ink.solid),
+        color: inkColor(place.ink ?? (place.mode === 'dotted' ? ink.dotted : ink.solid)),
         filled: false,
       }),
     );

@@ -89,6 +89,29 @@ const cases = [
     },
   },
   {
+    name: 'worksheet-progressive-school',
+    patch: { layout: 'worksheet', style: 'progressive', font: 'school', paper: 'a4', guides: true },
+  },
+  {
+    name: 'grid-progressive-rounded',
+    patch: { layout: 'grid', style: 'progressive', font: 'rounded', grid: '3x3', paper: 'a4' },
+  },
+  // One case per cover style: the cover is the only page a buyer sees before
+  // paying, so every composition gets dumped as its own SVG to look at.
+  ...['classic', 'poster', 'showcase', 'minimal'].map((coverStyle) => ({
+    name: `cover-${coverStyle}`,
+    patch: {
+      layout: 'single',
+      style: 'outline',
+      font: 'rounded',
+      paper: 'a4',
+      coverPage: true,
+      coverStyle,
+      brand: 'Studio Cerdas',
+      productTitle: 'Alfabet A-Z Trace and Color',
+    },
+  })),
+  {
     name: 'words-worksheet',
     patch: {
       content: 'words',

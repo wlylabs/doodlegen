@@ -5,7 +5,42 @@
  */
 const stroke = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round' } as const;
 
-export function StyleMark({ kind }: { kind: 'outline' | 'dotted' | 'combo' }) {
+export function StyleMark({
+  kind,
+}: {
+  kind: 'outline' | 'dotted' | 'combo' | 'progressive';
+}) {
+  if (kind === 'progressive') {
+    // The ladder itself: solid, dotted, faded, and a cell with nothing but
+    // the line the child writes on.
+    return (
+      <svg viewBox="0 0 44 22" className="h-6 w-[52px]" aria-hidden="true">
+        <rect x="1" y="3" width="9.5" height="16" rx="3" {...stroke} strokeWidth="1.6" />
+        <rect
+          x="12.5"
+          y="3"
+          width="9.5"
+          height="16"
+          rx="3"
+          {...stroke}
+          strokeWidth="1.6"
+          strokeDasharray="0.01 2.8"
+        />
+        <rect
+          x="24"
+          y="3"
+          width="9.5"
+          height="16"
+          rx="3"
+          {...stroke}
+          strokeWidth="1.6"
+          strokeDasharray="0.01 2.8"
+          opacity="0.35"
+        />
+        <line x1="35.5" x2="43" y1="19" y2="19" {...stroke} strokeWidth="1.4" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 44 22" className="h-6 w-[52px]" aria-hidden="true">
       {kind !== 'combo' ? (
@@ -75,6 +110,76 @@ export function LayoutMark({ kind }: { kind: 'single' | 'grid' | 'worksheet' }) 
               strokeDasharray="0.01 2.6"
             />
           ))}
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+/**
+ * The four cover compositions, as page furniture: where the type sits, and
+ * how many characters are on show.
+ */
+export function CoverMark({ kind }: { kind: 'classic' | 'poster' | 'showcase' | 'minimal' }) {
+  const line = (key: string, x: number, y: number, w: number, weight = 1.2) => (
+    <line key={key} x1={x} x2={x + w} y1={y} y2={y} {...stroke} strokeWidth={weight} />
+  );
+  return (
+    <svg viewBox="0 0 32 44" className="h-9 w-[26px]" aria-hidden="true">
+      <rect x="0.7" y="0.7" width="30.6" height="42.6" rx="2.5" {...stroke} strokeWidth="1.2" />
+      {kind === 'classic' ? (
+        <>
+          {line('brand', 11, 7, 10, 1)}
+          {line('title', 7, 13, 18, 2.2)}
+          {[0, 1, 2].map((index) => (
+            <rect
+              key={index}
+              x={5.5 + index * 7.4}
+              y="20"
+              width="5.6"
+              height="9"
+              rx="1.4"
+              {...stroke}
+              strokeWidth="1.2"
+            />
+          ))}
+          {line('foot', 8, 36, 16, 1)}
+        </>
+      ) : null}
+      {kind === 'poster' ? (
+        <>
+          {line('brand', 11, 6, 10, 1)}
+          <rect x="6" y="10" width="20" height="19" rx="3" {...stroke} strokeWidth="1.6" />
+          {line('title', 6, 34, 20, 2.4)}
+          {line('foot', 9, 39, 14, 1)}
+        </>
+      ) : null}
+      {kind === 'showcase' ? (
+        <>
+          {[0, 1].flatMap((row) =>
+            [0, 1].map((col) => (
+              <rect
+                key={`${row}-${col}`}
+                x={6 + col * 11}
+                y={7 + row * 11.5}
+                width="9"
+                height="9.5"
+                rx="1.6"
+                {...stroke}
+                strokeWidth="1.2"
+              />
+            )),
+          )}
+          {line('title', 6, 34, 17, 2.2)}
+          {line('foot', 6, 39, 11, 1)}
+        </>
+      ) : null}
+      {kind === 'minimal' ? (
+        <>
+          {line('rule-top', 9, 15, 14, 1)}
+          {line('title', 7, 21, 18, 2.2)}
+          {line('sub', 10, 26, 12, 1)}
+          {line('rule-bottom', 9, 31, 14, 1)}
         </>
       ) : null}
     </svg>
