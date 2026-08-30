@@ -223,16 +223,28 @@ export function Steps() {
           </h2>
         </Reveal>
 
-        <ol className="mt-10 grid gap-4 md:grid-cols-3">
+        {/*
+         * Three steps in sequence, laid along a rule with a tick above each
+         * one — a process reads as a line, not as three parked boxes.
+         */}
+        <ol className="mt-10 grid md:grid-cols-3">
           {STEPS.map((step, index) => (
-            <Reveal key={step.title} delay={index * 90} as="li">
-              <div className="card-lift h-full p-5">
-                <span className="font-brand text-[28px] leading-none tracking-tightest text-accent">
-                  0{index + 1}
-                </span>
-                <h3 className="mt-3 text-[16px] font-semibold tracking-tight">{step.title}</h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">{step.body}</p>
-              </div>
+            <Reveal
+              key={step.title}
+              delay={index * 90}
+              as="li"
+              className="relative border-t border-line pt-6 md:pr-8
+                         md:[&:not(:first-child)]:border-l md:[&:not(:first-child)]:pl-8"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute left-0 top-0 h-[2px] w-10 bg-accent md:top-[-1px]"
+              />
+              <span className="font-brand text-[26px] leading-none tracking-tightest text-accent">
+                0{index + 1}
+              </span>
+              <h3 className="mt-3 text-[15.5px] font-semibold">{step.title}</h3>
+              <p className="mt-2 max-w-[38ch] text-[13px] leading-relaxed text-ink-soft">{step.body}</p>
             </Reveal>
           ))}
         </ol>
