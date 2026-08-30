@@ -159,6 +159,17 @@ export const INKS: Record<InkId, { label: string; note: string; solid: number; d
   },
 };
 
+/** Default page-title wording per pack language, offered when it is switched. */
+export const TITLE_TEMPLATES: Record<Config['language'], string> = {
+  en: 'Trace and color — {char}',
+  id: 'Tebalkan dan warnai — {char}',
+};
+
+export const LANGUAGES: { id: Config['language']; label: string; note: string }[] = [
+  { id: 'en', label: 'English', note: 'Etsy, Gumroad, TPT, pembeli luar negeri' },
+  { id: 'id', label: 'Indonesia', note: 'Shopee, Tokopedia, pembeli dalam negeri' },
+];
+
 export const MARGIN_OPTIONS = [0.5, 0.625, 0.75];
 
 /** Hard floor from the print spec: never let art approach the trim edge. */
@@ -188,6 +199,9 @@ export const DEFAULT_CONFIG: Config = {
   termsPage: false,
   brand: '',
   productTitle: '',
+  language: 'en',
+  palette: 'crayon',
+  svgFiles: true,
 };
 
 /**
@@ -219,6 +233,7 @@ export const STARTER_PRESETS: StarterPreset[] = [
       coverPage: true,
       termsPage: true,
       pageNumbers: true,
+      language: 'en',
     },
   },
   {
@@ -239,6 +254,7 @@ export const STARTER_PRESETS: StarterPreset[] = [
       coverPage: true,
       termsPage: true,
       pageNumbers: true,
+      language: 'en',
     },
   },
   {
@@ -258,6 +274,7 @@ export const STARTER_PRESETS: StarterPreset[] = [
       coverPage: true,
       termsPage: true,
       pageNumbers: true,
+      language: 'id',
     },
   },
   {
@@ -276,6 +293,7 @@ export const STARTER_PRESETS: StarterPreset[] = [
       coverPage: true,
       termsPage: true,
       pageNumbers: true,
+      language: 'id',
     },
   },
 ];

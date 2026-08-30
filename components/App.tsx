@@ -14,7 +14,7 @@ import { renderListingImages, type GeneratedImage } from '@/lib/cover';
 import { downloadBlob, downloadFile, downloadZip } from '@/lib/download';
 import { loadFont, prefetchFont } from '@/lib/fontStore';
 import { pageCountOf, planDocument } from '@/lib/geometry';
-import { productTitle } from '@/lib/naming';
+import { printedTitle } from '@/lib/naming';
 import type { GeneratedFile } from '@/lib/pdf';
 import {
   DEFAULT_CONFIG,
@@ -234,18 +234,18 @@ export function App() {
   }, [files]);
 
   const onDownloadBundle = useCallback(async () => {
-    if (!files.length) return;
+    if (!files.length || !font) return;
     setBundling(true);
     try {
       const { buildBundle } = await import('@/lib/bundle');
-      const bundle = await buildBundle({ config, characters, files, images });
+      const bundle = await buildBundle({ config, characters, files, images, font });
       downloadBlob(bundle.blob, bundle.name);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Gagal menyiapkan ZIP.');
     } finally {
       setBundling(false);
     }
-  }, [config, characters, files, images]);
+  }, [config, characters, files, images, font]);
 
   const onShare = useCallback(() => {
     void copy(shareUrl(config), 'share');
@@ -274,7 +274,7 @@ export function App() {
             <Logo />
           </Link>
           <span className="hidden text-[12px] text-ink-mute sm:inline">
-            {productTitle(config, characters).id}
+            {printedTitle(config, characters)}
           </span>
 
           <button

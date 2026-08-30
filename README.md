@@ -61,26 +61,57 @@ the rest around it:
 
 | Part | What it is |
 | --- | --- |
-| Cover page | Brand line, product title, page count, three real sample characters, print specs. Vector, like every other page. |
+| Cover page | Brand line, product title, page count, three real sample characters, print specs. Vector like every other page — and the only page allowed to carry colour. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
-| Terms page | What a buyer may and may not do, in Indonesian and English, plus printing tips and the font licence. |
+| Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
+| Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
 | Listing images | 2000×2000 (Etsy), 1280×720 (Gumroad), 1200×1200 (Shopee), 1000×1500 (Pinterest), drawn from the same page plans. |
 | Listing copy | Title, description and tags for Etsy, Gumroad and Shopee, already inside each marketplace's character and tag limits. |
-| Paperwork | `BACA-DULU.txt` for the buyer and the full SIL OFL text of the embedded face. |
+| Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
 `Kit marketplace` builds all of it and hands back one ZIP:
 
 ```
 doodlegen-<subject>-<style>-<layout>/
-  01-FILE-CETAK/        A4 and US Letter PDFs
-  02-GAMBAR-LISTING/    the four listing canvases, PNG
-  03-TEKS-LISTING/      etsy.txt, gumroad.txt, shopee.txt
-  BACA-DULU.txt
-  LISENSI-FONT.txt
+  01-PRINT-FILES/       A4 and US Letter PDFs
+  02-LISTING-IMAGES/    the four listing canvases, PNG
+  03-LISTING-COPY/      etsy.txt, gumroad.txt, shopee.txt
+  04-SVG-EDITABLE/      one SVG per worksheet
+  READ-ME-FIRST.txt
+  FONT-LICENSE.txt
 ```
 
+**Why there is no Canva integration, and what replaces it.** The app is a
+static export with no server, so there is nowhere to keep the client secret an
+OAuth integration needs; and third-party artwork, Canva's included, almost
+never carries the resale rights a seller needs for a paid download. So the
+bridge runs the other way: every worksheet also exports as an SVG at trim
+size, which Canva, Figma, Illustrator, Inkscape and Cricut Design Space all
+open, so a seller can add their own art on top of pages that are already
+correct. Material that ships in the repo is material whose licence is settled:
+OFL faces, and word lists that are public domain or plain vocabulary.
+
+**Colour, where it pays for itself.** Four palettes — Krayon, Pastel, Senja
+and Hitam Putih — tint the cover page and the listing images: a tinted card,
+confetti in the border band a dot can never land on a word in, a coloured
+headline, and sample characters shown already coloured in, next to one still
+empty. That last pair is the whole product in one picture: what the child
+starts with, and what they end up with. Worksheets stay K-only whatever is
+picked, because colour there would cost a second plate on press, muddy every
+photocopy and drain a home printer for nothing.
+
+**Language follows the market.** Everything a buyer reads — cover, licence
+page, page footer, read-me, and the folder names above — is written in the
+pack's language, English by default and Indonesian on request. The listing
+images are not the seller's call: the Etsy, Gumroad and Pinterest canvases are
+always English, the Shopee canvas always Indonesian, because that is who reads
+them. The listing copy has always worked that way.
+
 Content is not limited to A–Z and 0–9: the `Kata & Nama` mode takes a list of
-words, one per line, which is what a custom name-tracing order actually is.
+words, one per line, which is what a custom name-tracing order actually is —
+and sixteen ready-made lists come with it, in both languages: Dolch sight
+words, CVC families, colours, numbers, animals, family, days, fruit, body
+parts, school things.
 
 ## Output guarantees
 
@@ -93,7 +124,7 @@ one mechanically:
 | Vector characters | Text is drawn in PDF render mode 1 (stroke), which strokes the real glyph outlines. |
 | Embedded font | The complete face is embedded as a `CIDFontType2` program. Because the shipped faces are pre-trimmed to ASCII (17–37 KB), there is no need to subset at generation time. |
 | 0.5 inch safe margin | Enforced as a hard floor, and measured: `verify` rasterises pages and fails if a single non-white pixel lands in the border band. |
-| Print-safe colour | K-only CMYK (`0 0 0 K`). One plate on press, no registration drift, clean photocopies. |
+| Print-safe colour | Every worksheet is K-only CMYK (`0 0 0 K`): one plate on press, no registration drift, clean photocopies. Colour is confined to the one optional cover page, and `verify` fails if it reaches a second. |
 | Clean white background | An explicit 0 % ink rectangle: white on screen, no ink on paper. |
 | No watermark | There is none, anywhere. |
 | Small files | A 26-page A–Z set lands around 20 KB. |
@@ -188,6 +219,9 @@ lib/
   fontStore.ts      Font loading, parsing and caching
   presets.ts        Papers, faces, styles, layouts, inks, starter packs
   charset.ts        Character set construction and validation
+  wordlists.ts      Ready-made word sets for the word mode
+  svgdoc.ts         Plan to a standalone SVG file, for Canva and Cricut
+  palette.ts        The four CMYK palettes
 scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts
 ```

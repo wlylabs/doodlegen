@@ -5,28 +5,34 @@ import { LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diagrams';
 import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
+import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
+import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
   FONTS,
   FONT_ORDER,
   GRIDS,
   GRID_ORDER,
   INKS,
+  LANGUAGES,
   LAYOUTS,
   MARGIN_OPTIONS,
   STARTER_PRESETS,
   STROKES,
   STROKE_ORDER,
   STYLES,
+  TITLE_TEMPLATES,
 } from '@/lib/presets';
 import type {
   Config,
   ContentType,
   FontId,
+  LanguageId,
   GridId,
   InkId,
   LayoutId,
   LetterCase,
   LoadedFont,
+  PaletteId,
   PaperChoice,
   StrokeId,
   StyleId,
@@ -39,12 +45,7 @@ const NUMBER_PRESETS: { label: string; from: number; to: number }[] = [
   { label: '1–100', from: 1, to: 100 },
 ];
 
-const WORD_IDEAS: { label: string; words: string }[] = [
-  { label: 'Keluarga', words: 'Ayah\nBunda\nAdik\nKakak\nNenek\nKakek' },
-  { label: 'Warna', words: 'Merah\nBiru\nHijau\nKuning\nUngu\nJingga' },
-  { label: 'Hewan', words: 'Kucing\nAnjing\nSapi\nAyam\nIkan\nBebek' },
-  { label: 'Sight words', words: 'the\nand\nsee\nlike\ncan\ngo' },
-];
+
 
 /** The starter packs, offered before any decision has to be made. */
 export function PresetRail({
@@ -172,22 +173,34 @@ export function SettingsPanel({
               hint={`Satu kata per baris atau dipisah koma. ${words.length} halaman akan dibuat.`}
               onChange={(value) => update({ words: value })}
             />
-            <div className="flex flex-wrap gap-2">
-              {WORD_IDEAS.map((idea) => (
-                <button
-                  key={idea.label}
-                  type="button"
-                  data-active={config.words.trim() === idea.words}
-                  className="chip"
-                  onClick={(event) => {
-                    ripple(event);
-                    update({ words: idea.words });
-                  }}
-                >
-                  {idea.label}
-                </button>
-              ))}
-            </div>
+            {(['id', 'en'] as const).map((language) => (
+              <Field
+                key={language}
+                label={language === 'id' ? 'Daftar siap pakai — Indonesia' : 'Daftar siap pakai — English'}
+              >
+                <div className="flex flex-wrap gap-2">
+                  {WORD_LISTS.filter((list) => list.language === language).map((list) => {
+                    const text = listToText(list);
+                    return (
+                      <button
+                        key={list.id}
+                        type="button"
+                        title={list.note}
+                        data-active={config.words.trim() === text}
+                        className="chip"
+                        onClick={(event) => {
+                          ripple(event);
+                          update({ words: text });
+                        }}
+                      >
+                        {list.label}
+                        <span className="ml-1 text-ink-mute">{list.words.length}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+            ))}
           </div>
         )}
       </Section>
@@ -274,6 +287,27 @@ export function SettingsPanel({
         title="Merek & Paket"
         hint="Bagian yang membuat berkas terlihat seperti produk, bukan draf."
       >
+        <Field label="Bahasa berkas">
+          <ChipRow<LanguageId>
+            label="Bahasa berkas"
+            value={config.language}
+            onChange={(language) => {
+              // Swapping the language should carry the page title with it,
+              // but never overwrite wording the seller typed themselves.
+              const other = TITLE_TEMPLATES[config.language];
+              const patch: Partial<Config> = { language };
+              if (config.titleTemplate.trim() === other) patch.titleTemplate = TITLE_TEMPLATES[language];
+              update(patch);
+            }}
+            options={LANGUAGES.map((item) => ({ value: item.id, label: item.label }))}
+          />
+          <Note>
+            Sampul, halaman lisensi, kaki halaman, dan panduan cetak untuk pembeli —{' '}
+            {LANGUAGES.find((item) => item.id === config.language)?.note}. Gambar listing selalu
+            mengikuti pasarnya: Etsy, Gumroad, dan Pinterest dalam bahasa Inggris, Shopee dalam
+            bahasa Indonesia.
+          </Note>
+        </Field>
         <TextField
           label="Nama toko / merek"
           value={config.brand}
@@ -294,6 +328,44 @@ export function SettingsPanel({
           checked={config.coverPage}
           onChange={(coverPage) => update({ coverPage })}
         />
+        <Field label="Palet warna">
+          <div role="radiogroup" aria-label="Palet warna" className="grid grid-cols-2 gap-2">
+            {PALETTE_ORDER.map((id) => {
+              const palette = PALETTES[id];
+              const active = id === config.palette;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  data-active={active}
+                  className="choice !py-2.5"
+                  onClick={(event) => {
+                    ripple(event);
+                    update({ palette: id as PaletteId });
+                  }}
+                >
+                  <span className="flex gap-1" aria-hidden="true">
+                    {swatches(id).map((color, index) => (
+                      <span
+                        key={index}
+                        className="h-4 w-4 rounded-full border border-black/5 transition-transform duration-200"
+                        style={{ background: color, transitionDelay: `${index * 40}ms` }}
+                      />
+                    ))}
+                  </span>
+                  <span className="mt-1 text-[13.5px] font-semibold leading-tight">{palette.label}</span>
+                  <span className="text-[11.5px] leading-snug text-ink-mute">{palette.note}</span>
+                </button>
+              );
+            })}
+          </div>
+          <Note>
+            Warna hanya dipakai pada halaman sampul dan gambar listing. Semua lembar latihan tetap
+            hitam K100 — satu plat cetak, bersih saat difotokopi, hemat tinta.
+          </Note>
+        </Field>
         <Toggle
           label="Halaman lisensi"
           hint="Ketentuan pemakaian dua bahasa di halaman terakhir."
@@ -305,6 +377,12 @@ export function SettingsPanel({
           hint="Nomor dan nama merek di kaki setiap lembar latihan."
           checked={config.pageNumbers}
           onChange={(pageNumbers) => update({ pageNumbers })}
+        />
+        <Toggle
+          label="Berkas SVG"
+          hint="Satu SVG per halaman di dalam ZIP — bisa dibuka di Canva, Figma, Illustrator, dan Cricut."
+          checked={config.svgFiles}
+          onChange={(svgFiles) => update({ svgFiles })}
         />
       </Section>
 
@@ -369,7 +447,7 @@ export function SettingsPanel({
                   <TextField
                     label="Teks judul"
                     value={config.titleTemplate}
-                    placeholder="Trace and color — {char}"
+                    placeholder={TITLE_TEMPLATES[config.language]}
                     onChange={(titleTemplate) => update({ titleTemplate })}
                   />
                   <Note>{'{char}'} diganti dengan karakter halaman itu.</Note>

@@ -1,5 +1,6 @@
+import { cmykToHex } from './palette';
 import { INKS } from './presets';
-import type { Config, LoadedFont, PagePlan } from './types';
+import type { Cmyk, Config, LoadedFont, PagePlan } from './types';
 
 /**
  * The preview draws the very same glyph outlines the PDF strokes, pulled
@@ -31,7 +32,19 @@ export interface GuideShape {
   dash?: string;
 }
 
+/** A flat area of colour behind everything else: the cover's card and dots. */
+export interface AreaShape {
+  kind: 'rect' | 'ellipse';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  r: number;
+  color: string;
+}
+
 export interface SheetShapes {
+  areas: AreaShape[];
   glyphs: GlyphShape[];
   guides: GuideShape[];
 }
@@ -90,11 +103,37 @@ function glyphsFor(
   return shapes;
 }
 
+/** Palette colour where the plan carries one, K-only grey otherwise. */
+function tone(color: Cmyk | undefined, fallbackK: number): string {
+  return color ? cmykToHex(color) : inkColor(fallbackK);
+}
+
 export function sheetShapes(font: LoadedFont, plan: PagePlan, config: Config): SheetShapes {
   const ink = INKS[config.ink];
   const glyphs: GlyphShape[] = [];
 
+  // Colour is laid down first, the way the page prints: card, dots, then the
+  // filled sample, then its contour on top.
+  const areas: AreaShape[] = plan.shapes.map((shape) => ({
+    kind: shape.kind,
+    x: round(shape.x),
+    y: round(plan.heightPt - shape.y - shape.h),
+    w: round(shape.w),
+    h: round(shape.h),
+    r: round(shape.r ?? 0),
+    color: cmykToHex(shape.color),
+  }));
+
   for (const place of plan.placements) {
+    if (place.fill) {
+      glyphs.push(
+        ...glyphsFor(font, place.text, place.size, place.x, place.y, plan.heightPt, {
+          strokeWidth: 0,
+          color: cmykToHex(place.fill),
+          filled: true,
+        }),
+      );
+    }
     glyphs.push(
       ...glyphsFor(font, place.text, place.size, place.x, place.y, plan.heightPt, {
         strokeWidth: place.strokeWidth,
@@ -111,7 +150,7 @@ export function sheetShapes(font: LoadedFont, plan: PagePlan, config: Config): S
     glyphs.push(
       ...glyphsFor(font, text.text, text.size, text.x, text.y, plan.heightPt, {
         strokeWidth: 0,
-        color: inkColor(text.ink),
+        color: tone(text.color, text.ink),
         filled: true,
       }),
     );
@@ -134,9 +173,9 @@ export function sheetShapes(font: LoadedFont, plan: PagePlan, config: Config): S
       y1: round(plan.heightPt - rule.y),
       y2: round(plan.heightPt - rule.y),
       width: rule.width,
-      color: inkColor(rule.ink),
+      color: tone(rule.color, rule.ink),
     });
   }
 
-  return { glyphs, guides };
+  return { areas, glyphs, guides };
 }

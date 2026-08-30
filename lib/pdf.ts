@@ -5,10 +5,16 @@ import {
   PDFFont,
   PDFPage,
   TextRenderingMode,
+  appendBezierCurve,
+  closePath,
   cmyk,
+  fill,
+  lineTo,
+  moveTo,
   popGraphicsState,
   pushGraphicsState,
   setDashPattern,
+  setFillingColor,
   setLineCap,
   setLineJoin,
   setLineWidth,
@@ -19,10 +25,19 @@ import fontkit from '@pdf-lib/fontkit';
 import { FONT_FEATURES } from './fontStore';
 import { pageCountOf, planDocument } from './geometry';
 import { subjectOf } from './charset';
-import { autoTitle, brandName, packSlug, productTitle } from './naming';
+import { autoTitle, brandName, packSlug, printedTitle } from './naming';
 import { FONTS, INKS, PAPERS, papersFor } from './presets';
 import type { PaperSpec } from './presets';
-import type { Config, GuideLine, LoadedFont, PagePlan, Placement, RuleDraw } from './types';
+import type {
+  Cmyk,
+  Config,
+  GuideLine,
+  LoadedFont,
+  PagePlan,
+  Placement,
+  RuleDraw,
+  ShapeDraw,
+} from './types';
 
 /**
  * Round dots are drawn as zero-length dashes with a round cap. A hair of
@@ -34,6 +49,60 @@ const DOT_DASH = 0.01;
 function ink(k: number) {
   // K-only: one plate on press, no registration drift, clean photocopies.
   return cmyk(0, 0, 0, k);
+}
+
+/** Palette colour where a plan carries one, K-only everywhere else. */
+function paint(color: Cmyk | undefined, fallbackK: number) {
+  return color ? cmyk(color[0], color[1], color[2], color[3]) : ink(fallbackK);
+}
+
+/**
+ * Rounded rectangles are not in pdf-lib's drawing API, so the cover's card is
+ * built from the path operators directly. Kappa is the usual circle-to-bezier
+ * constant: it puts the control points where an arc's would be.
+ */
+const KAPPA = 0.5523;
+
+function drawRoundRect(page: PDFPage, shape: ShapeDraw) {
+  const r = Math.min(shape.r ?? 0, shape.w / 2, shape.h / 2);
+  const { x, y, w, h } = shape;
+  if (r <= 0) {
+    page.drawRectangle({ x, y, width: w, height: h, color: paint(shape.color, 0) });
+    return;
+  }
+  const c = r * KAPPA;
+  page.pushOperators(
+    pushGraphicsState(),
+    setFillingColor(paint(shape.color, 0)),
+    moveTo(x + r, y),
+    lineTo(x + w - r, y),
+    appendBezierCurve(x + w - r + c, y, x + w, y + r - c, x + w, y + r),
+    lineTo(x + w, y + h - r),
+    appendBezierCurve(x + w, y + h - r + c, x + w - r + c, y + h, x + w - r, y + h),
+    lineTo(x + r, y + h),
+    appendBezierCurve(x + r - c, y + h, x, y + h - r + c, x, y + h - r),
+    lineTo(x, y + r),
+    appendBezierCurve(x, y + r - c, x + r - c, y, x + r, y),
+    closePath(),
+    fill(),
+    popGraphicsState(),
+  );
+}
+
+function drawShapes(page: PDFPage, shapes: ShapeDraw[]) {
+  for (const shape of shapes) {
+    if (shape.kind === 'ellipse') {
+      page.drawEllipse({
+        x: shape.x + shape.w / 2,
+        y: shape.y + shape.h / 2,
+        xScale: shape.w / 2,
+        yScale: shape.h / 2,
+        color: paint(shape.color, 0),
+      });
+    } else {
+      drawRoundRect(page, shape);
+    }
+  }
 }
 
 function drawGuides(page: PDFPage, guides: GuideLine[], config: Config) {
@@ -57,7 +126,7 @@ function drawRules(page: PDFPage, rules: RuleDraw[]) {
       start: { x: rule.x1, y: rule.y },
       end: { x: rule.x2, y: rule.y },
       thickness: rule.width,
-      color: ink(rule.ink),
+      color: paint(rule.color, rule.ink),
       lineCap: LineCapStyle.Butt,
     });
   }
@@ -65,6 +134,23 @@ function drawRules(page: PDFPage, rules: RuleDraw[]) {
 
 function drawPlacement(page: PDFPage, font: PDFFont, place: Placement, config: Config) {
   const level = place.mode === 'dotted' ? INKS[config.ink].dotted : INKS[config.ink].solid;
+
+  // A filled sample is drawn colour-first, contour second, exactly the order a
+  // child works in — and the order that keeps the outline crisp on top.
+  if (place.fill) {
+    // drawText writes its own filling colour, so the colour goes through the
+    // option rather than an operator that it would immediately overwrite.
+    page.pushOperators(pushGraphicsState(), setTextRenderingMode(TextRenderingMode.Fill));
+    page.drawText(place.text, {
+      x: place.x,
+      y: place.y,
+      size: place.size,
+      font,
+      color: paint(place.fill, 0),
+    });
+    page.pushOperators(popGraphicsState());
+  }
+
   page.pushOperators(
     pushGraphicsState(),
     setLineWidth(place.strokeWidth),
@@ -93,6 +179,7 @@ function drawPage(doc: PDFDocument, font: PDFFont, plan: PagePlan, config: Confi
     height: plan.heightPt,
     color: cmyk(0, 0, 0, 0),
   });
+  drawShapes(page, plan.shapes);
   drawGuides(page, plan.guides, config);
   drawRules(page, plan.rules);
   for (const place of plan.placements) drawPlacement(page, font, place, config);
@@ -102,7 +189,7 @@ function drawPage(doc: PDFDocument, font: PDFFont, plan: PagePlan, config: Confi
       y: text.y,
       size: text.size,
       font,
-      color: ink(text.ink),
+      color: paint(text.color, text.ink),
     });
   }
 }
@@ -185,7 +272,7 @@ async function buildOne(
   const bytes = await doc.save({ useObjectStreams: true });
   return {
     name: fileName(config, paper, characters),
-    title: productTitle(config, characters).id,
+    title: printedTitle(config, characters),
     paperId: paper.id,
     paperLabel: paper.label,
     pages: plans.length,

@@ -81,16 +81,24 @@ const FEATURES = [
     body: 'Pratinjau dan PDF menggambar kontur glyph yang sama persis dari file font yang sama. Tidak ada perkiraan, tidak ada kejutan waktu dicetak.',
   },
   {
-    title: 'Sampul & lisensi otomatis',
-    body: 'Halaman sampul bermerek di depan, halaman ketentuan pemakaian dua bahasa di belakang, nomor halaman di setiap lembar — persis seperti paket digital berbayar.',
+    title: 'Sampul berwarna & lisensi otomatis',
+    body: 'Sampul bermerek dengan palet warna pilihan, halaman ketentuan di belakang, nomor halaman di setiap lembar — persis seperti paket digital berbayar.',
+  },
+  {
+    title: 'Bahasa mengikuti pasarnya',
+    body: 'Satu klik memindahkan sampul, lisensi, dan panduan cetak ke bahasa Inggris untuk Etsy dan Gumroad, atau bahasa Indonesia untuk Shopee. Gambar listing selalu ikut pasarnya sendiri.',
   },
   {
     title: 'Gambar listing siap unggah',
-    body: 'Empat kanvas untuk Etsy, Gumroad, Shopee, dan Pinterest digambar dari halaman aslinya. Ukurannya sudah sesuai aturan tiap marketplace.',
+    body: 'Empat kanvas untuk Etsy, Gumroad, Shopee, dan Pinterest digambar dari halaman aslinya — ukuran dan bahasanya sudah sesuai aturan tiap marketplace.',
   },
   {
     title: 'Draf judul, deskripsi, dan tag',
     body: 'Teks listing tiga marketplace langsung terisi dari setelan yang dipakai — dengan batas karakter dan jumlah tag yang sudah dipatuhi.',
+  },
+  {
+    title: 'SVG untuk Canva & Cricut',
+    body: 'Setiap lembar juga keluar sebagai SVG seukuran kertas aslinya, siap dibuka di Canva, Figma, Illustrator, atau Cricut — jadi Anda bisa menambahkan gambar sendiri di atas halaman yang sudah benar.',
   },
   {
     title: 'Jalan sepenuhnya di browser',
@@ -131,7 +139,7 @@ const STANDARDS = [
   { label: '300 DPI atau lebih', body: 'Tidak ada satu piksel pun. Huruf adalah kontur glyph, garis bantu adalah garis vektor.' },
   { label: 'Font tersemat penuh', body: 'Seluruh face ditanam sebagai CIDFontType2, yang dicari preflight percetakan.' },
   { label: 'Margin aman 0.5 inci', body: 'Batas keras, lalu diukur ulang: halaman dirender dan gagal bila ada satu piksel masuk pita tepi.' },
-  { label: 'Tinta hitam K-only', body: 'Satu plat di mesin cetak, tidak ada geser registrasi, fotokopi tetap bersih.' },
+  { label: 'Tinta hitam K-only', body: 'Setiap lembar latihan satu plat cetak, fotokopi tetap bersih. Warna hanya boleh ada di halaman sampul.' },
   { label: 'Latar putih bersih', body: 'Kotak 0% tinta: putih di layar, tanpa tinta di kertas.' },
   { label: 'Tanpa watermark', body: 'Tidak ada, di mana pun, termasuk pada berkas gratis.' },
 ];
@@ -280,10 +288,10 @@ export function KitShowcase() {
               </div>
               <div className="border-t border-line bg-paper px-4 py-3">
                 <p className="text-[12px] leading-relaxed text-ink-mute">
-                  Isi ZIP: <span className="text-ink-soft">01-FILE-CETAK</span>,{' '}
-                  <span className="text-ink-soft">02-GAMBAR-LISTING</span>,{' '}
-                  <span className="text-ink-soft">03-TEKS-LISTING</span>, BACA-DULU.txt, dan
-                  LISENSI-FONT.txt.
+                  Isi ZIP: <span className="text-ink-soft">01-PRINT-FILES</span>,{' '}
+                  <span className="text-ink-soft">02-LISTING-IMAGES</span>,{' '}
+                  <span className="text-ink-soft">03-LISTING-COPY</span>, READ-ME-FIRST.txt, dan
+                  FONT-LICENSE.txt — dalam bahasa Indonesia bila paketnya berbahasa Indonesia.
                 </p>
               </div>
             </div>
@@ -354,6 +362,21 @@ const FAQ = [
     question: 'Berapa halaman maksimal dalam satu berkas?',
     answer:
       'Dua ratus halaman per berkas, cukup untuk rentang angka 1–200 atau daftar kata yang panjang. Satu set A–Z 26 halaman biasanya berukuran sekitar 20 KB karena tidak ada gambar raster di dalamnya.',
+  },
+  {
+    question: 'Bisa diedit di Canva atau Cricut?',
+    answer:
+      'Bisa. Selain PDF, setiap lembar latihan ikut sebagai berkas SVG seukuran kertas aslinya — Canva, Figma, Illustrator, Inkscape, dan Cricut Design Space semuanya membukanya, dan isinya bentuk yang sama persis dengan yang dicetak PDF-nya. DoodleGen sendiri tidak menyambung ke akun Canva: aplikasinya jalan tanpa server dan tanpa login, dan gambar pihak ketiga hampir tidak pernah membawa hak jual ulang yang Anda butuhkan.',
+  },
+  {
+    question: 'Kenapa lembar latihannya tidak berwarna?',
+    answer:
+      'Karena warnanya datang dari anak yang mewarnai. Di luar itu, warna pada lembar latihan berarti plat cetak tambahan di percetakan, hasil fotokopi yang kotor, dan tinta printer rumahan yang habis lebih cepat. Warna dipakai di tempat yang memang menjual: halaman sampul dan gambar listing — dengan empat palet, dan sampul yang menampilkan huruf sudah diwarnai di sebelah huruf yang masih kosong.',
+  },
+  {
+    question: 'Kalau saya jual ke pembeli luar negeri?',
+    answer:
+      'Pilih bahasa berkas "English" di langkah 05. Halaman sampul, halaman ketentuan, kaki halaman, dan panduan cetak untuk pembeli ikut berbahasa Inggris, dan nama folder di dalam ZIP juga. Gambar listing tidak perlu diatur: kanvas Etsy, Gumroad, dan Pinterest selalu berbahasa Inggris, kanvas Shopee selalu berbahasa Indonesia.',
   },
   {
     question: 'Bisa pakai nama anak atau kata pesanan pelanggan?',

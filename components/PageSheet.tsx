@@ -37,6 +37,29 @@ export function PageSheet({
     >
       <rect x="0" y="0" width={plan.widthPt} height={plan.heightPt} fill="#FFFFFF" />
 
+      {shapes.areas.map((area, index) =>
+        area.kind === 'ellipse' ? (
+          <ellipse
+            key={`area-${index}`}
+            cx={area.x + area.w / 2}
+            cy={area.y + area.h / 2}
+            rx={area.w / 2}
+            ry={area.h / 2}
+            fill={area.color}
+          />
+        ) : (
+          <rect
+            key={`area-${index}`}
+            x={area.x}
+            y={area.y}
+            width={area.w}
+            height={area.h}
+            rx={area.r || undefined}
+            fill={area.color}
+          />
+        ),
+      )}
+
       {showSafeArea ? (
         <rect
           x={safe.x}

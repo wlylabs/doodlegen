@@ -1,4 +1,5 @@
 import { clampNumber } from './charset';
+import { PALETTE_ORDER } from './palette';
 import { DEFAULT_CONFIG, FONTS, GRIDS, INKS, LAYOUTS, MARGIN_OPTIONS, STROKES, STYLES } from './presets';
 import type { Config } from './types';
 
@@ -15,9 +16,18 @@ const ONE_OF = {
   paper: ['a4', 'letter', 'both'],
   stroke: Object.keys(STROKES),
   ink: Object.keys(INKS),
+  language: ['en', 'id'],
+  palette: PALETTE_ORDER,
 } as const;
 
-const BOOLEANS = ['guides', 'showTitle', 'pageNumbers', 'coverPage', 'termsPage'] as const;
+const BOOLEANS = [
+  'guides',
+  'showTitle',
+  'pageNumbers',
+  'coverPage',
+  'termsPage',
+  'svgFiles',
+] as const;
 const STRINGS = ['words', 'titleTemplate', 'brand', 'productTitle'] as const;
 
 /** Longest value accepted from a shared link, so a URL cannot bloat the app. */

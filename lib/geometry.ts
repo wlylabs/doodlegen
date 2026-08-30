@@ -1,15 +1,18 @@
 import { renderTitle, subjectOf } from './charset';
+import { PALETTES, type Palette } from './palette';
 import { FONTS, GRIDS, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
-import { brandName, productTitle } from './naming';
+import { brandName, printedTitle } from './naming';
 import type {
   Box,
   Config,
   GuideLine,
+  LanguageId,
   LoadedFont,
   Mode,
   PagePlan,
   Placement,
   RuleDraw,
+  ShapeDraw,
   TextDraw,
 } from './types';
 import type { PaperSpec } from './presets';
@@ -434,6 +437,171 @@ interface MatterInput {
 }
 
 /**
+ * Everything a buyer reads is written twice: a pack sold on Etsy or Gumroad
+ * with an Indonesian licence page reads as unfinished, and so does a Shopee
+ * pack with an English one. The seller picks; the marketplace canvases pick
+ * for themselves.
+ */
+const COVER_COPY: Record<
+  LanguageId,
+  { subtitle: (pages: number, papers: string) => string; specs: string[] }
+> = {
+  en: {
+    subtitle: (pages, papers) => `${pages} print-ready pages — ${papers}`,
+    specs: [
+      'Vector 300 DPI — 0.5 inch safe margin — single-plate black ink',
+      'Print as many copies as you need for personal and classroom use',
+    ],
+  },
+  id: {
+    subtitle: (pages, papers) => `${pages} halaman siap cetak — ${papers}`,
+    specs: [
+      'Vector 300 DPI — margin aman 0.5 inci — tinta hitam K100',
+      'Cetak ulang sebanyak yang dibutuhkan untuk pemakaian pribadi dan kelas',
+    ],
+  },
+};
+
+interface TermsCopy {
+  title: string;
+  footer: string;
+  contents: (pages: number, papers: string) => string;
+  papers: (both: boolean, label: string) => string;
+  sections: (contents: string, fontFamily: string, owner: string) => TermsSection[];
+}
+
+const TERMS_COPY: Record<LanguageId, TermsCopy> = {
+  en: {
+    title: 'Terms of Use',
+    footer: 'Made with DoodleGen — print-ready coloring and tracing pages',
+    contents: (pages, papers) =>
+      `${pages} practice pages as a PDF, ${papers}, ready to print again and again.`,
+    papers: (both, label) => (both ? 'A4 and US Letter' : label),
+    sections: (contents, fontFamily, owner) => [
+      { heading: 'What is inside', body: [contents] },
+      {
+        heading: 'Printing tips',
+        body: [
+          'Print at 100% scale with page scaling turned off, on 80-120 gsm paper, in black and white or greyscale.',
+        ],
+      },
+      {
+        heading: 'What you may do',
+        body: ['Print an unlimited number of copies for personal, family, classroom or library use.'],
+      },
+      {
+        heading: 'What you may not do',
+        body: [
+          'Resell, share, or re-upload this PDF file, in whole or in part, and do not claim it as your own work.',
+        ],
+      },
+      {
+        heading: 'Fonts and licence',
+        body: [
+          `The typeface in this file is ${fontFamily}, licensed under the SIL Open Font License 1.1.`,
+        ],
+      },
+      {
+        heading: 'Copyright',
+        body: [`This file and its contents belong to ${owner}. All rights reserved.`],
+      },
+    ],
+  },
+  id: {
+    title: 'Ketentuan Penggunaan',
+    footer: 'Dibuat dengan DoodleGen — halaman mewarnai dan tracing siap cetak',
+    contents: (pages, papers) =>
+      `${pages} halaman latihan dalam format PDF, ${papers}, siap cetak berulang kali.`,
+    papers: (both, label) => (both ? 'A4 dan US Letter' : label),
+    sections: (contents, fontFamily, owner) => [
+      { heading: 'Isi paket', body: [contents] },
+      {
+        heading: 'Tips mencetak',
+        body: [
+          'Cetak pada ukuran asli 100% tanpa "fit to page", pakai kertas 80-120 gsm agar krayon tidak tembus.',
+        ],
+      },
+      {
+        heading: 'Yang boleh dilakukan',
+        body: ['Cetak ulang tanpa batas untuk pemakaian pribadi, keluarga, kelas, atau perpustakaan.'],
+      },
+      {
+        heading: 'Yang tidak boleh',
+        body: [
+          'Menjual kembali, membagikan, atau mengunggah ulang berkas PDF ini, baik utuh maupun sebagian.',
+        ],
+      },
+      {
+        heading: 'Font & lisensi',
+        body: [
+          `Huruf pada berkas ini memakai ${fontFamily}, dilisensikan di bawah SIL Open Font License 1.1.`,
+        ],
+      },
+      {
+        heading: 'Hak cipta',
+        body: [`Isi berkas ini adalah milik ${owner}. Semua hak dilindungi.`],
+      },
+    ],
+  },
+};
+
+/**
+ * Confetti sits in the band between the card's edge and the type, so a dot
+ * can never land on a word. Positions are fixed rather than random: a plan
+ * has to come out identical every time, or the preview and the PDF would
+ * disagree about where the dots are.
+ */
+const CONFETTI: { side: 'top' | 'bottom' | 'left' | 'right'; t: number; r: number }[] = [
+  { side: 'top', t: 0.12, r: 0.85 },
+  { side: 'top', t: 0.46, r: 0.5 },
+  { side: 'top', t: 0.86, r: 1.1 },
+  { side: 'bottom', t: 0.16, r: 1.05 },
+  { side: 'bottom', t: 0.55, r: 0.6 },
+  { side: 'bottom', t: 0.88, r: 0.8 },
+  { side: 'left', t: 0.28, r: 0.7 },
+  { side: 'left', t: 0.68, r: 1 },
+  { side: 'right', t: 0.34, r: 0.95 },
+  { side: 'right', t: 0.74, r: 0.65 },
+];
+
+/** The cover's tinted card and the dots around its border, in points. */
+function coverDecoration(art: Box, inner: Box, palette: Palette): ShapeDraw[] {
+  if (!palette.card || !palette.confetti.length) {
+    return palette.card
+      ? [{ kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: palette.card }]
+      : [];
+  }
+
+  const shapes: ShapeDraw[] = [
+    { kind: 'rect', x: art.x, y: art.y, w: art.w, h: art.h, r: 18, color: palette.card },
+  ];
+
+  const band = inner.y - art.y;
+  const unit = band * 0.28;
+  CONFETTI.forEach((dot, index) => {
+    const radius = unit * dot.r;
+    const centre =
+      dot.side === 'top'
+        ? { x: inner.x + inner.w * dot.t, y: art.y + art.h - band / 2 }
+        : dot.side === 'bottom'
+          ? { x: inner.x + inner.w * dot.t, y: art.y + band / 2 }
+          : dot.side === 'left'
+            ? { x: art.x + band / 2, y: inner.y + inner.h * dot.t }
+            : { x: art.x + art.w - band / 2, y: inner.y + inner.h * dot.t };
+    shapes.push({
+      kind: 'ellipse',
+      x: centre.x - radius,
+      y: centre.y - radius,
+      w: radius * 2,
+      h: radius * 2,
+      color: palette.confetti[index % palette.confetti.length],
+    });
+  });
+
+  return shapes;
+}
+
+/**
  * The title page a paid download is expected to open with: who made it, what
  * is inside, and what it prints as. Built from the same glyph outlines as the
  * worksheets, so the cover is vector too.
@@ -454,37 +622,50 @@ function planCover({
     w: paper.widthPt - margin * 2,
     h: paper.heightPt - margin * 2,
   };
+  const palette = PALETTES[config.palette];
   const texts: TextDraw[] = [];
   const rules: RuleDraw[] = [];
   const placements: Placement[] = [];
+  // Inside the tinted card, type keeps clear of the rounded corners — and
+  // that same band is where the confetti lives.
+  const inner = palette.card ? inset(art, Math.min(art.w, art.h) * 0.06) : art;
+  const shapes = coverDecoration(art, inner, palette);
 
-  let cursor = art.y + art.h; // walking down from the top of the safe area
+  let cursor = inner.y + inner.h; // walking down from the top of the safe area
 
   const brandLine = safeLine(font, (brand || 'DoodleGen').toUpperCase());
   if (brandLine) {
     const size = 10;
     cursor -= size;
-    texts.push(centred(font, brandLine, size, art, cursor, 0.45));
+    texts.push({ ...centred(font, brandLine, size, inner, cursor, 0.45), color: palette.brand });
     cursor -= size * 0.9;
-    rules.push({ x1: art.x, x2: art.x + art.w, y: cursor, width: 0.6, ink: 0.22 });
+    rules.push({
+      x1: inner.x,
+      x2: inner.x + inner.w,
+      y: cursor,
+      width: 0.6,
+      ink: 0.22,
+      color: palette.rule,
+    });
   }
 
-  cursor -= art.h * 0.06;
+  cursor -= inner.h * 0.06;
 
-  const titleLines = wrapText(font, safeLine(font, title) || 'Worksheets', 30, art.w * 0.94).slice(0, 3);
-  const titleSize = Math.min(30, ...titleLines.map((line) => fitLine(font, line, 30, art.w * 0.94)));
+  const titleLines = wrapText(font, safeLine(font, title) || 'Worksheets', 30, inner.w * 0.94).slice(0, 3);
+  const titleSize = Math.min(30, ...titleLines.map((line) => fitLine(font, line, 30, inner.w * 0.94)));
   for (const line of titleLines) {
     cursor -= titleSize;
-    texts.push(centred(font, line, titleSize, art, cursor, 1));
+    texts.push({ ...centred(font, line, titleSize, inner, cursor, 1), color: palette.headline });
     cursor -= titleSize * 0.28;
   }
 
   const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
-  const subtitle = safeLine(font, `${worksheetCount} halaman siap cetak — ${papers}`);
+  const copy = COVER_COPY[config.language];
+  const subtitle = safeLine(font, copy.subtitle(worksheetCount, papers));
   if (subtitle) {
     const size = 12;
     cursor -= size * 1.4;
-    texts.push(centred(font, subtitle, size, art, cursor, 0.5));
+    texts.push({ ...centred(font, subtitle, size, inner, cursor, 0.5), color: palette.body });
   }
 
   // A strip of real sample characters, drawn exactly as the pages draw them.
@@ -494,45 +675,56 @@ function planCover({
     characters[characters.length - 1],
   ].filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
 
-  const specLines = [
-    safeLine(font, 'Vector 300 DPI — margin aman 0.5 inci — tinta hitam K100'),
-    safeLine(font, 'Cetak ulang sebanyak yang dibutuhkan untuk pemakaian pribadi dan kelas'),
-  ].filter(Boolean);
+  const specLines = copy.specs.map((line) => safeLine(font, line)).filter(Boolean);
 
   const specSize = 10;
   const specBlock = specLines.length * specSize * 1.9 + specSize * 2;
-  const stripTop = cursor - art.h * 0.04;
-  const stripBottom = art.y + specBlock + art.h * 0.04;
+  const stripTop = cursor - inner.h * 0.04;
+  const stripBottom = inner.y + specBlock + inner.h * 0.04;
   const free = stripTop - stripBottom;
   // The samples sit in the middle of whatever the copy left, capped so three
   // letters never grow into a second cover of their own.
-  const stripH = Math.min(free, art.h * 0.42);
+  const stripH = Math.min(free, inner.h * 0.5);
 
   if (sampleTexts.length && stripH > 20) {
     const top = stripTop - (free - stripH) / 2;
-    const boxes = strip({ x: art.x, y: top - stripH, w: art.w, h: stripH }, sampleTexts.length, 0.04);
+    const boxes = strip({ x: inner.x, y: top - stripH, w: inner.w, h: stripH }, sampleTexts.length, 0.04);
     const strokeBase = STROKES[config.stroke].base;
     sampleTexts.forEach((text, index) => {
       const box = boxes[index];
       const size = fitWithStroke(font, text, box, { w: 0.82, h: 0.82 }, strokeBase, 'fill', bandFor(font, [text]));
+      const dotted = index === sampleTexts.length - 1;
+      const place = placeFill(font, text, box, size, dotted ? 'dotted' : 'solid', strokeBase);
+      // The last sample stays an empty outline: the cover shows both what the
+      // child starts with and what they end up with.
       placements.push(
-        placeFill(font, text, box, size, index === sampleTexts.length - 1 ? 'dotted' : 'solid', strokeBase),
+        dotted || !palette.letters.length
+          ? place
+          : { ...place, fill: palette.letters[index % palette.letters.length] },
       );
     });
   }
 
-  let bottom = art.y + specSize * 0.4;
+  let bottom = inner.y + specSize * 0.4;
   for (let i = specLines.length - 1; i >= 0; i -= 1) {
-    texts.push(centred(font, specLines[i], specSize, art, bottom, 0.45));
+    texts.push({ ...centred(font, specLines[i], specSize, inner, bottom, 0.45), color: palette.body });
     bottom += specSize * 1.9;
   }
-  rules.push({ x1: art.x, x2: art.x + art.w, y: bottom - specSize * 0.6, width: 0.6, ink: 0.22 });
+  rules.push({
+    x1: inner.x,
+    x2: inner.x + inner.w,
+    y: bottom - specSize * 0.6,
+    width: 0.6,
+    ink: 0.22,
+    color: palette.rule,
+  });
 
   return {
     kind: 'cover',
     label: 'Sampul',
     widthPt: paper.widthPt,
     heightPt: paper.heightPt,
+    shapes,
     placements,
     guides: [],
     texts,
@@ -543,55 +735,6 @@ function planCover({
 interface TermsSection {
   heading: string;
   body: string[];
-}
-
-function termsSections(
-  brand: string,
-  fontFamily: string,
-  contents: string,
-): TermsSection[] {
-  const owner = brand || 'the seller';
-  return [
-    {
-      heading: 'Isi paket / What is inside',
-      body: [contents],
-    },
-    {
-      heading: 'Tips mencetak / Printing tips',
-      body: [
-        'Cetak pada ukuran asli 100% tanpa "fit to page", pakai kertas 80-120 gsm agar krayon tidak tembus.',
-        'Print at 100% scale with page scaling off, on 80-120 gsm paper, in black and white or greyscale.',
-      ],
-    },
-    {
-      heading: 'Yang boleh dilakukan / What you may do',
-      body: [
-        'Cetak ulang tanpa batas untuk pemakaian pribadi, keluarga, kelas, atau perpustakaan.',
-        'Print an unlimited number of copies for personal, family, classroom or library use.',
-      ],
-    },
-    {
-      heading: 'Yang tidak boleh / What you may not do',
-      body: [
-        'Menjual kembali, membagikan, atau mengunggah ulang berkas PDF ini, baik utuh maupun sebagian.',
-        'Resell, share, or re-upload this PDF file, in whole or in part, and do not claim it as your own work.',
-      ],
-    },
-    {
-      heading: 'Font & lisensi / Fonts and licence',
-      body: [
-        `Huruf pada berkas ini memakai ${fontFamily}, dilisensikan di bawah SIL Open Font License 1.1.`,
-        'The embedded typeface is licensed under the SIL Open Font License 1.1, which permits this use.',
-      ],
-    },
-    {
-      heading: 'Hak cipta / Copyright',
-      body: [
-        `Isi berkas ini adalah milik ${owner}. Semua hak dilindungi.`,
-        `This file and its contents belong to ${owner}. All rights reserved.`,
-      ],
-    },
-  ];
 }
 
 /** The licence page a marketplace buyer expects to find at the back. */
@@ -608,13 +751,14 @@ function planTerms(
   };
   const texts: TextDraw[] = [];
   const rules: RuleDraw[] = [];
+  const copy = TERMS_COPY[config.language];
 
   let cursor = art.y + art.h;
 
   const titleSize = 20;
   cursor -= titleSize;
   texts.push({
-    text: safeLine(font, 'Ketentuan Penggunaan / Terms of Use'),
+    text: safeLine(font, copy.title),
     size: titleSize,
     x: art.x,
     y: cursor,
@@ -626,9 +770,10 @@ function planTerms(
 
   const headingSize = 12;
   const bodySize = 10.5;
-  const papers = config.paper === 'both' ? 'A4 dan US Letter' : paper.label;
-  const contents = `${worksheetCount} halaman latihan dalam format PDF, ${papers}, siap cetak berulang kali.`;
-  for (const section of termsSections(brand, fontFamily, contents)) {
+  const papers = copy.papers(config.paper === 'both', paper.label);
+  const contents = copy.contents(worksheetCount, papers);
+  const owner = brand || (config.language === 'id' ? 'penjual' : 'the seller');
+  for (const section of copy.sections(contents, fontFamily, owner)) {
     cursor -= headingSize;
     texts.push({ text: safeLine(font, section.heading), size: headingSize, x: art.x, y: cursor, ink: 0.85 });
     cursor -= headingSize * 0.7;
@@ -642,7 +787,7 @@ function planTerms(
     cursor -= headingSize * 0.9;
   }
 
-  const footer = safeLine(font, 'Dibuat dengan DoodleGen — halaman mewarnai dan tracing siap cetak');
+  const footer = safeLine(font, copy.footer);
   texts.push(centred(font, footer, 9.5, art, art.y + 4, 0.4));
   rules.push({ x1: art.x, x2: art.x + art.w, y: art.y + 18, width: 0.6, ink: 0.2 });
 
@@ -651,6 +796,7 @@ function planTerms(
     label: 'Lisensi',
     widthPt: paper.widthPt,
     heightPt: paper.heightPt,
+    shapes: [],
     placements: [],
     guides: [],
     texts,
@@ -667,7 +813,7 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
   const art = frame.art;
   const strokeBase = STROKES[config.stroke].base;
   const band = bandFor(font, characters);
-  const title = productTitle(config, characters).id;
+  const title = printedTitle(config, characters);
   const brand = brandName(config);
 
   const heroRatio = config.layout === 'single' ? HERO_RATIO : WORKSHEET_HERO_RATIO;
@@ -741,6 +887,8 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
       label: text,
       widthPt: paper.widthPt,
       heightPt: paper.heightPt,
+      // Worksheets carry no colour: one plate, clean photocopies, cheap ink.
+      shapes: [],
       placements,
       guides,
       texts,
@@ -761,7 +909,8 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
   return [
     ...(config.coverPage ? [planCover(matter)] : []),
     ...worksheets,
-    ...(config.termsPage ? [planTerms(matter, FONTS[config.font].family)] : []),
+    // The face's provenance note belongs in FONTS.md, not on a buyer's page.
+    ...(config.termsPage ? [planTerms(matter, FONTS[config.font].family.replace(/\s*\(.*\)$/, ''))] : []),
   ];
 }
 
