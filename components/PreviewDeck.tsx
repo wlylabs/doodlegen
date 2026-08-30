@@ -136,7 +136,7 @@ export function PreviewDeck({
             className="flex h-full w-full shrink-0 items-center justify-center p-6 sm:p-10"
           >
             <div
-              className="trim h-full max-h-full bg-white shadow-proof"
+              className="trim h-full max-h-full bg-sheet shadow-proof"
               style={{ aspectRatio: `${paper.widthPt} / ${paper.heightPt}` }}
             >
               <span className="trim-alt" aria-hidden="true" />

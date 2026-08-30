@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { InstallButton } from '../InstallPrompt';
 import { Logo } from '../Logo';
+import { ThemeToggle } from '../Theme';
 import { useRipple } from '../motion';
 
 const LINKS = [
@@ -47,6 +48,7 @@ export function Nav() {
         <div className="ml-auto flex items-center gap-2">
           {/* Only renders where an install is actually on offer. */}
           <InstallButton className="hidden sm:inline-flex" />
+          <ThemeToggle className="hidden sm:inline-flex" />
           <Link href="/studio" className="btn-primary !px-4 !py-2 !text-[14px]">
             Buka Studio
           </Link>
@@ -99,6 +101,9 @@ export function Nav() {
               </a>
             ))}
             <InstallButton className="mt-1 !justify-start sm:hidden" />
+            {/* On a phone the strip goes in the drawer rather than the bar,
+                where three more targets would crowd the one that matters. */}
+            <ThemeToggle className="mt-2 self-start sm:hidden" />
           </div>
         </nav>
       </div>

@@ -1,5 +1,14 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * Every colour here is a CSS custom property holding space-separated RGB
+ * channels, wrapped so Tailwind can still fold an opacity modifier into it
+ * (`bg-surface/90`). The values themselves live in `app/globals.css`, once
+ * per theme, which is what lets the whole interface change ground without a
+ * single utility class in the markup having to know that it did.
+ */
+const channel = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
   theme: {
@@ -13,34 +22,71 @@ const config: Config = {
        * judged next to a hundred other listings on a white page, and the tool
        * that makes it should read the same way: the only colour on screen is
        * the work itself and the one control that acts on it.
+       *
+       * Each role holds its meaning in both themes — `sunk` is always the well
+       * cut into the ground and `surface` is always the thing raised off it —
+       * so a dark theme is a different set of values for the same six roles,
+       * not a second set of classes.
        */
       colors: {
-        paper: '#F7F8FA',
-        surface: '#FFFFFF',
+        paper: channel('paper'),
+        surface: channel('surface'),
         // The proofing bench the sheet sits on, and the wells inside panels.
-        sunk: '#EDEFF3',
+        sunk: channel('sunk'),
+        /*
+         * The printed page, which is not part of the theme.
+         *
+         * A worksheet is white because it is going to be printed on white
+         * paper, and a proof that darkens with the interface around it is
+         * lying about what comes out of the printer. This one value stays put
+         * while everything behind it moves.
+         */
+        sheet: '#FFFFFF',
+        /*
+         * The scrim under a dialog. A fixed dark wash rather than `ink` at low
+         * alpha: `ink` is near-black in one theme and near-white in the other,
+         * so the same class would dim the page in daylight and bleach it at
+         * night.
+         */
+        overlay: 'var(--overlay)',
         ink: {
-          DEFAULT: '#101317',
-          soft: '#48505B',
-          mute: '#79818E',
+          DEFAULT: channel('ink'),
+          soft: channel('ink-soft'),
+          mute: channel('ink-mute'),
         },
         line: {
-          DEFAULT: '#E6E8EC',
-          strong: '#CFD4DC',
+          DEFAULT: channel('line'),
+          strong: channel('line-strong'),
+        },
+        /*
+         * The closing panel on the landing page: the one slab that is darker
+         * than everything around it. It carries its own ink because it is a
+         * fixed ground rather than a themed one — inverting it in dark mode
+         * would put a floodlit white block at the bottom of a night page.
+         */
+        band: {
+          DEFAULT: channel('band'),
+          ink: channel('band-ink'),
         },
         /*
          * One accent, spent on one thing at a time: the button that acts, and
          * the option that is currently chosen. Brighter than the old burnt
          * orange, because a muted warm tone that read as "ink" on cream reads
          * as dirt on a white ground.
+         *
+         * `on` is the text that sits on top of a filled accent. It is a token
+         * rather than a literal `white` because the dark theme lifts the
+         * accent until white on top of it stops being readable, and the fix
+         * there is dark text, not a dimmer button.
          */
         accent: {
-          DEFAULT: '#E4550D',
-          hover: '#C2410C',
-          soft: '#FFF4EC',
-          line: '#FBD1B3',
-          ink: '#B8430A',
-          ring: '#F9BC94',
+          DEFAULT: channel('accent'),
+          hover: channel('accent-hover'),
+          soft: channel('accent-soft'),
+          line: channel('accent-line'),
+          ink: channel('accent-ink'),
+          ring: channel('accent-ring'),
+          on: channel('accent-on'),
         },
       },
       fontFamily: {
@@ -67,13 +113,18 @@ const config: Config = {
          * Four steps of one soft, neutral shadow, plus the two the sheet and
          * the dialog need. Depth is what separates a card from the page here,
          * because the borders are hairlines rather than frames.
+         *
+         * The values are variables because a shadow is a light effect, and a
+         * dark ground needs a different one: a wash tuned to darken white by a
+         * few percent is simply invisible over near-black, so the dark theme
+         * deepens every step rather than reusing these.
          */
-        xs: '0 1px 2px rgba(16,19,23,0.05)',
-        sheet: '0 1px 2px rgba(16,19,23,0.04), 0 4px 12px -4px rgba(16,19,23,0.08)',
-        lift: '0 2px 4px rgba(16,19,23,0.04), 0 14px 28px -10px rgba(16,19,23,0.14)',
+        xs: 'var(--shadow-xs)',
+        sheet: 'var(--shadow-sheet)',
+        lift: 'var(--shadow-lift)',
         // A sheet lying on the bench: a contact shadow, then a long soft one.
-        proof: '0 1px 2px rgba(16,19,23,0.10), 0 14px 36px -14px rgba(16,19,23,0.30)',
-        pop: '0 24px 64px -24px rgba(16,19,23,0.40)',
+        proof: 'var(--shadow-proof)',
+        pop: 'var(--shadow-pop)',
       },
       keyframes: {
         'fade-up': {

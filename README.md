@@ -438,6 +438,7 @@ components/
   GenerateBar.tsx   Progress, cancel, downloads
   InstallPrompt.tsx The install button, and Safari's two taps
   ServiceWorkerRegistrar.tsx  Worker registration and the update bar
+  Theme.tsx         Light / dark / system, and the pre-paint script
   motion.tsx        Ripple, reveal, count-up, copy-to-clipboard
   landing/          Hero, live demo, sections
 lib/
@@ -477,3 +478,24 @@ Every interactive surface answers the click — a press-in, a ripple from the
 pointer, a settle — and every one of those is switched off under
 `prefers-reduced-motion`, including the reveal-on-scroll, which is scoped to a
 class the document only gets when scripting runs.
+
+## Light and dark
+
+The palette is a set of roles, not a set of values: `paper` is the ground,
+`surface` is what is raised off it, `sunk` is a well cut into it, and there are
+three ink levels and two line weights. Each role is a CSS custom property in
+`app/globals.css`, stated once for light and once for dark, and
+`tailwind.config.ts` wraps it so `bg-surface/90` still folds its opacity in.
+Nothing in the markup knows which theme is running.
+
+The choice is light, dark, or follow the device, and it survives a reload: the
+explicit ones write `data-theme` on the document, and a tiny script inlined in
+the head applies it before the first paint, so a dark-set device never gets a
+white flash. The dark palette lifts the accent until it clears 4.5:1 on a
+near-black ground and turns the text on top of a filled accent dark, because
+white on a lifted orange is the one pairing that stops being readable.
+
+Two things stay put in both themes. The sheet is white, because it is going to
+be printed on white paper and a proof that dims with the interface is lying
+about what comes out of the printer; and the scrim under a dialog is a fixed
+dark wash, so a modal dims the page at both ends of the day.

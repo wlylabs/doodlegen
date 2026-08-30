@@ -265,7 +265,7 @@ export function Steps() {
           {STEPS.map((step, index) => (
             <Reveal key={step.title} delay={index * 90} as="li" className="h-full">
               <div className="card flex h-full flex-col p-6">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[13px] font-bold tabular-nums text-white">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[13px] font-bold tabular-nums text-accent-on">
                   {index + 1}
                 </span>
                 <h3 className="mt-4 text-[16px] font-semibold tracking-tight">{step.title}</h3>
@@ -511,7 +511,7 @@ export function Cta() {
          * ground with everything above it does not close anything; this one
          * stops the scroll on its own.
          */}
-        <div className="relative overflow-hidden rounded-3xl bg-ink px-6 py-14 text-center sm:px-12 lg:py-20">
+        <div className="relative overflow-hidden rounded-3xl border border-line bg-band px-6 py-14 text-center sm:px-12 lg:py-20">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 opacity-[0.35]"
@@ -524,10 +524,10 @@ export function Cta() {
             }}
           />
           <div className="relative">
-            <h2 className="text-balance font-brand text-[30px] leading-tight tracking-tightest text-white sm:text-[42px]">
+            <h2 className="text-balance font-brand text-[30px] leading-tight tracking-tightest text-band-ink sm:text-[42px]">
               Paket pertama Anda tinggal satu klik
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/70">
+            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-band-ink/70">
               Tanpa akun, tanpa langganan, tanpa watermark. Buka studio, pilih satu preset, dan
               unduh berkas yang siap diunggah hari ini juga.
             </p>
@@ -537,8 +537,8 @@ export function Cta() {
               </Link>
               <a
                 href="#fitur"
-                className="press inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3
-                           text-[15px] font-medium text-white transition-colors hover:bg-white/10"
+                className="press inline-flex items-center justify-center rounded-xl border border-band-ink/20 px-6 py-3
+                           text-[15px] font-medium text-band-ink transition-colors hover:bg-band-ink/10"
               >
                 Lihat fiturnya dulu
               </a>

@@ -117,7 +117,7 @@ export function LiveDemo() {
           onMouseLeave={() => setPaused(false)}
         >
           <div
-            className="trim w-full max-w-[290px] bg-white shadow-proof"
+            className="trim w-full max-w-[290px] bg-sheet shadow-proof"
             style={{ aspectRatio: `${PAPERS.a4.widthPt} / ${PAPERS.a4.heightPt}` }}
           >
             <span className="trim-alt" aria-hidden="true" />
