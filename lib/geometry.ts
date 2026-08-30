@@ -19,7 +19,17 @@ import {
   tapePath,
 } from './doodles';
 import { PALETTES, readableInks, type Palette } from './palette';
-import { FADED_INK, FONTS, GRIDS, INKS, MIN_FADED_INK, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
+import {
+  DECORS,
+  FADED_INK,
+  FONTS,
+  GRIDS,
+  INKS,
+  MIN_FADED_INK,
+  MIN_MARGIN_IN,
+  PT_PER_INCH,
+  STROKES,
+} from './presets';
 import { brandName, printedTitle } from './naming';
 import type {
   Box,
@@ -222,8 +232,6 @@ interface Frame {
  * Wide enough that a doodle is worth a crayon, narrow enough that the
  * writing rows barely give anything up for it.
  */
-const DECOR_BAND_RATIO = 0.07;
-
 function frameFor(paper: PaperSpec, config: Config, hasTitle: boolean, hasFooter: boolean): Frame {
   const margin = Math.max(config.marginIn, MIN_MARGIN_IN) * PT_PER_INCH;
   const safe: Box = {
@@ -236,8 +244,9 @@ function frameFor(paper: PaperSpec, config: Config, hasTitle: boolean, hasFooter
   // The border is taken off the top, before the title and the footer are
   // placed, so nothing the page prints can ever land in it.
   const motif = COVER_STYLES[config.coverStyle]?.motif ?? 'none';
-  const decorate = config.pageDecor && motif !== 'none';
-  const band = decorate ? Math.min(safe.w, safe.h) * DECOR_BAND_RATIO : 0;
+  const ratio = DECORS[config.pageDecor]?.ratio ?? 0;
+  const decorate = ratio > 0 && motif !== 'none';
+  const band = decorate ? Math.min(safe.w, safe.h) * ratio : 0;
   const full = decorate ? inset(safe, band) : safe;
 
   const frame: Frame = { art: full };
