@@ -1,6 +1,7 @@
 import { planDocument } from './geometry';
 import { buildListing, buyerReadme, copyToText, licenceNote, packFileNames } from './listing';
 import { packSlug, printedTitle } from './naming';
+import { buildUploadGuides, guideToText } from './upload';
 import { FONTS, papersFor } from './presets';
 import { svgFilesFor } from './svgdoc';
 import type { GeneratedImage } from './cover';
@@ -15,19 +16,21 @@ import type { Config, LoadedFont } from './types';
  */
 export const BUNDLE_FOLDERS: Record<
   Config['language'],
-  Record<'print' | 'images' | 'copy' | 'svg', string>
+  Record<'print' | 'images' | 'copy' | 'steps' | 'svg', string>
 > = {
   en: {
     print: '01-PRINT-FILES',
     images: '02-LISTING-IMAGES',
     copy: '03-LISTING-COPY',
-    svg: '04-SVG-EDITABLE',
+    steps: '04-UPLOAD-STEPS',
+    svg: '05-SVG-EDITABLE',
   },
   id: {
     print: '01-FILE-CETAK',
     images: '02-GAMBAR-LISTING',
     copy: '03-TEKS-LISTING',
-    svg: '04-SVG-BISA-DIEDIT',
+    steps: '04-LANGKAH-UNGGAH',
+    svg: '05-SVG-BISA-DIEDIT',
   },
 };
 
@@ -111,6 +114,16 @@ export async function buildBundle({
     const name = `${listing.market}.txt`;
     copyFolder?.file(name, copyToText(listing));
     entries.push(`${folders.copy}/${name}`);
+  }
+
+  // The copy is what to paste; this is where to paste it. One file per
+  // channel, walking that channel's own add-product form field by field, so
+  // the pack can be listed from a phone with the ZIP open beside the app.
+  const stepsFolder = root.folder(folders.steps);
+  for (const guide of buildUploadGuides({ config, characters, pageCount })) {
+    const name = `${guide.market}.txt`;
+    stepsFolder?.file(name, guideToText(guide));
+    entries.push(`${folders.steps}/${name}`);
   }
 
   // The read-me and the licence travel with the PDFs to the buyer, so they

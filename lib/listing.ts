@@ -1,7 +1,8 @@
 import { subjectOf } from './charset';
 import { brandName, layoutLabel, printedTitle, productTitle, styleLabel } from './naming';
-import { FONTS, MARKETS, PAPERS, papersFor } from './presets';
+import { FONTS, GRIDS, MARKETS, PAPERS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
+import { fitTags, joinWithin, keywordTail, keywordsFor, titleCase } from './seo';
 import type { Config } from './types';
 
 export interface ListingInput {
@@ -19,95 +20,117 @@ export interface ListingCopy {
   /** Ready to paste into the marketplace's description field. */
   body: string;
   tags: string[];
+  /**
+   * The one phrase this draft is written to win, in that marketplace's own
+   * language. It appears in the title, and in the opening of the description
+   * wherever that marketplace indexes descriptions.
+   */
+  focus: string;
+  /** Where those words actually rank on this marketplace, in one line. */
+  seo: string;
   /** Notes about the marketplace's own limits, shown next to the copy. */
   limits: string;
   /** Set only where the marketplace caps the description field. */
   bodyMax?: number;
 }
 
-const CONTENT_TAGS: Record<Config['content'], string[]> = {
-  letters: [
-    'alphabet worksheet',
-    'abc printable',
-    'letter tracing',
-    'alphabet coloring',
-    'learn to write',
-    'preschool alphabet',
-  ],
-  numbers: [
-    'number tracing',
-    'numbers 1 20',
-    'counting practice',
-    'math printable',
-    'preschool numbers',
-    'number worksheet',
-  ],
-  words: [
-    'name tracing',
-    'word tracing',
-    'sight words',
-    'custom worksheet',
-    'handwriting words',
-    'name practice',
-  ],
+/**
+ * Words that sell this shape of product but do not follow from the config:
+ * where the pages end up rather than what is on them. Everything else comes
+ * out of `keywordsFor`, so it changes when the pack changes.
+ */
+const EXTRA_TAGS: Record<Config['language'], string[]> = {
+  en: ['busy book pages', 'classroom resource', 'morning work', 'coloring book'],
+  id: ['buku aktivitas', 'tugas sekolah', 'mewarnai anak', 'belajar sambil main'],
 };
 
-const STYLE_TAGS: Record<Config['style'], string[]> = {
-  outline: ['coloring page', 'coloring book', 'color and learn'],
-  dotted: ['tracing worksheet', 'dotted letters', 'trace and write'],
-  combo: ['trace and color', 'tracing practice', 'write and color'],
-  progressive: ['trace and write', 'handwriting practice', 'learn to write'],
+/** Where the keywords are read on each marketplace, told to the seller once. */
+const SEO_NOTE: Record<MarketSpec['id'], string> = {
+  etsy: 'Etsy memeringkat dari tag dan judul, bukan dari deskripsi. Ketiga belas tag terpakai, dan tag teratas diulang persis di judul.',
+  tpt: 'Guru menyaring lewat Grade dan Subject dulu, kata kunci belakangan — isi ketiga filter itu, baru judulnya.',
+  gumroad: 'Discover berjalan dari kategori dan angka penjualan; nama produk yang pendek dan jelas lebih berguna daripada judul panjang.',
+  shopee: 'Nama produk adalah satu-satunya kolom yang dibaca mesin pencari Shopee — tidak ada kolom tag. Bagian sebelum tanda "|" ditulis untuk pembeli, sisanya untuk mesin.',
+  tokopedia: 'Nama produk dan deskripsi dua-duanya terbaca, jadi kata kunci utama diulang di paragraf pertama deskripsi.',
+  pinterest: 'Pinterest membaca judul, deskripsi, nama papan, dan alt text sebagai satu kesatuan — kalimat biasa, bukan tumpukan tagar.',
 };
-
-const BASE_TAGS = [
-  'printable pdf',
-  'homeschool',
-  'preschool',
-  'kindergarten',
-  'toddler activity',
-  'classroom resource',
-  'busy book pages',
-  'digital download',
-  'montessori',
-  'fine motor skills',
-];
-
-const ID_TAGS = [
-  'lembar kerja anak',
-  'belajar menulis',
-  'mewarnai anak',
-  'paud tk',
-  'printable anak',
-  'worksheet anak',
-  'belajar huruf',
-  'belajar angka',
-  'file pdf',
-  'download digital',
-];
-
-/** Trimmed to the marketplace's tag rules: length, count, no duplicates. */
-function fitTags(pool: string[], market: MarketSpec): string[] {
-  const out: string[] = [];
-  for (const raw of pool) {
-    const tag = raw.trim().toLowerCase();
-    if (!tag || tag.length > market.tagMax || out.includes(tag)) continue;
-    out.push(tag);
-    if (out.length === market.tagCount) break;
-  }
-  return out;
-}
-
-function clampTitle(title: string, max: number): string {
-  if (title.length <= max) return title;
-  const cut = title.slice(0, max);
-  const space = cut.lastIndexOf(' ');
-  return (space > max * 0.6 ? cut.slice(0, space) : cut).trim();
-}
 
 function paperLine(config: Config): string {
   return papersFor(config.paper)
     .map((paper) => `${paper.label} (${paper.note})`)
     .join(' + ');
+}
+
+/**
+ * What is on the pages, said out loud.
+ *
+ * Two packs from this studio used to describe themselves identically while
+ * being genuinely different products: one drawn in strokes wide enough for a
+ * three-year-old's fist, the other ruled for a child already writing between
+ * lines. Everything here is read off the config, so a description differs
+ * from the next one for the same reason the file does — and a seller shipping
+ * editable SVGs stops giving them away without mentioning them.
+ */
+function sellingPoints(config: Config, characters: string[]): { id: string[]; en: string[] } {
+  const id: string[] = [];
+  const en: string[] = [];
+
+  if (config.style === 'progressive') {
+    id.push('Empat tahap dalam satu halaman: contoh, titik-titik, samar, lalu mandiri');
+    en.push('Four steps on one page: example, dotted, faded, then write it alone');
+  } else if (config.style === 'combo') {
+    id.push('Contoh utuh di atas, baris latihan titik-titik di bawahnya');
+    en.push('A solid example on top, dotted practice rows underneath');
+  } else if (config.style === 'dotted') {
+    id.push('Garis putus-putus untuk ditebalkan, bukan sekadar kontur');
+    en.push('Dotted guide strokes to trace over, not just an outline');
+  } else {
+    id.push('Kontur tebal dan tertutup, siap langsung diwarnai');
+    en.push('Bold, closed outlines ready to colour straight in');
+  }
+
+  if (config.guides) {
+    id.push('Garis bantu tiga baris, tinggi huruf sama seperti buku tulis sekolah');
+    en.push('Three-line handwriting guides, the way school teaches letter height');
+  }
+
+  if (config.layout === 'grid') {
+    const grid = GRIDS[config.grid];
+    id.push(`Grid ${grid.label}: ${grid.cols * grid.rows} kotak latihan per halaman`);
+    en.push(`A ${grid.label} grid: ${grid.cols * grid.rows} practice boxes per page`);
+  }
+
+  if (config.stroke === 'thick') {
+    id.push('Garis tebal, pas untuk genggaman crayon anak 3–4 tahun');
+    en.push('Thick strokes, sized for a three-year-old holding a fat crayon');
+  } else if (config.stroke === 'thin') {
+    id.push('Garis tipis untuk pensil, cocok untuk anak yang sudah lebih terlatih');
+    en.push('Fine strokes for pencil work, for a child already writing');
+  }
+
+  if (config.content === 'letters' && config.letterCase === 'both') {
+    id.push('Huruf besar dan huruf kecil dilatih berpasangan');
+    en.push('Uppercase and lowercase practised as a pair');
+  }
+
+  if (config.content === 'words') {
+    const shown = characters.slice(0, 6).join(', ');
+    const more = characters.length > 6 ? `, dan ${characters.length - 6} lainnya` : '';
+    const moreEn = characters.length > 6 ? `, and ${characters.length - 6} more` : '';
+    id.push(`Kata yang dilatih: ${shown}${more}`);
+    en.push(`Words in this pack: ${shown}${moreEn}`);
+  }
+
+  if (config.ink === 'soft') {
+    id.push('Titik-titik dicetak lebih ringan dari kontur, jadi hasil tulisan anak yang menonjol');
+    en.push("Dotted strokes print lighter than the outline, so the child's own line stands out");
+  }
+
+  if (config.svgFiles) {
+    id.push('Bonus: satu file SVG per halaman — bisa dibuka di Canva, Cricut, Figma, Illustrator');
+    en.push('Bonus: one editable SVG per page, opens in Canva, Cricut, Figma and Illustrator');
+  }
+
+  return { id, en };
 }
 
 /**
@@ -124,48 +147,84 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   const family = FONTS[config.font].family.replace(/\s*\(.*\)$/, '');
   const worksheets = characters.length;
   const shortPapers = config.paper === 'both' ? 'A4 & US Letter' : PAPERS[config.paper].label;
+  /** English counts a single page differently; Indonesian does not. */
+  const countEn = (noun: string) => `${worksheets} ${worksheets === 1 ? noun : `${noun}s`}`;
   const spec = Object.fromEntries(MARKETS.map((market) => [market.id, market])) as Record<
     MarketSpec['id'],
     MarketSpec
   >;
 
-  const tagPool = [
-    ...CONTENT_TAGS[config.content],
-    ...STYLE_TAGS[config.style],
-    ...BASE_TAGS,
-  ];
+  // Two keyword sets, because two languages are two different searches: an
+  // Etsy buyer types "alphabet tracing worksheets", a Shopee buyer types
+  // "belajar menulis huruf", and neither translates into the other's ranking.
+  const words = {
+    en: keywordsFor(config, characters, 'en'),
+    id: keywordsFor(config, characters, 'id'),
+  };
+  const tagsFor = (market: MarketSpec, language: 'en' | 'id') =>
+    fitTags(words[language], market, EXTRA_TAGS[language]);
 
   const extras = [config.coverPage ? 'sampul' : '', config.termsPage ? 'lisensi' : ''].filter(Boolean);
   const extrasEn = [config.coverPage ? 'a cover page' : '', config.termsPage ? 'a terms of use page' : '']
     .filter(Boolean)
     .join(' and ');
 
+  const points = sellingPoints(config, characters);
+
+  /*
+   * The tagline is the one line in the whole pack the seller wrote
+   * themselves, and until now only the cover carried it. It goes into the
+   * listings written in the language they wrote it in — a sentence in
+   * Indonesian under an Etsy description would read as a mistake, not as a
+   * voice.
+   */
+  const tagline = config.coverTagline.trim();
+  const taglineFor = (language: MarketSpec['language']): string[] =>
+    tagline && config.language === language ? [tagline, ''] : [];
+
   const included = [
     `${worksheets} halaman latihan${extras.length ? `, plus halaman ${extras.join(' dan ')}` : ''}`,
     `Format PDF, ${papers}`,
+    ...points.id,
     'Vector 300 DPI, garis hitam bersih, tanpa watermark',
   ];
 
   const includedEn = [
-    `${worksheets} practice pages${extrasEn ? `, plus ${extrasEn}` : ''}`,
+    `${countEn('practice page')}${extrasEn ? `, plus ${extrasEn}` : ''}`,
     `PDF format, ${papers}`,
+    ...points.en,
     'Vector artwork at 300 DPI or better, clean black lines, no watermark',
   ];
 
-  // Etsy ranks on the whole title string, so each segment adds a different
-  // search phrase rather than repeating the one already in the product name.
-  const etsyTitle = clampTitle(
+  const tags = {
+    etsy: tagsFor(spec.etsy, 'en'),
+    tpt: tagsFor(spec.tpt, 'en'),
+    gumroad: tagsFor(spec.gumroad, 'en'),
+    shopee: tagsFor(spec.shopee, 'id'),
+    tokopedia: tagsFor(spec.tokopedia, 'id'),
+    pinterest: tagsFor(spec.pinterest, 'en'),
+  };
+
+  // Etsy matches a query against tags and title together, and a phrase that
+  // sits in both is the one that ranks. So the title is assembled from the
+  // tags that survived fitting, rather than written beside them and hoping.
+  const etsyTitle = joinWithin(
     [
       title.en,
-      `${worksheets} Printable Worksheets`,
-      'Instant Download PDF for Preschool and Kindergarten',
-    ].join(' | '),
+      titleCase(words.en.focus),
+      ...tags.etsy.slice(0, 3).map(titleCase),
+      titleCase(countEn('printable page')),
+      'Instant Download PDF',
+    ],
     spec.etsy.titleMax,
   );
 
   const etsyBody = [
-    `${title.en} — instant download, print at home as many times as you like.`,
+    // Etsy does not rank on the description, but Google does, and the first
+    // ~160 characters are what it quotes: the phrase goes there.
+    `${title.en} — ${countEn('printable page')} of ${words.en.focus} for preschool and kindergarten. Instant download, print at home as many times as you like.`,
     '',
+    ...taglineFor('en'),
     'WHAT YOU GET',
     ...includedEn.map((line) => `- ${line}`),
     `- ${layout.en} layout, drawn in ${family}`,
@@ -189,7 +248,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   // parent browsing: the copy leads with how the pages are used in a room
   // full of children, and states the licence a school actually asks about.
   const tptBody = [
-    `${title.en} — ${worksheets} print-and-go pages for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
+    `${title.en} — ${countEn('print-and-go page')} of ${words.en.focus} for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
     '',
     'WHAT IS INCLUDED',
     ...includedEn.map((line) => `- ${line}`),
@@ -213,7 +272,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   const gumroadBody = [
     `# ${title.en}`,
     '',
-    `${worksheets} print-ready worksheets for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
+    `${countEn('print-ready worksheet')} for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
     '',
     '## What is inside',
     ...includedEn.map((line) => `- ${line}`),
@@ -239,6 +298,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     [
       opening,
       '',
+      ...taglineFor('id'),
       'ISI PAKET',
       ...included.map((line) => `- ${line}`),
       `- Susunan ${layout.id.toLowerCase()}, huruf ${family}`,
@@ -258,64 +318,110 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
       .filter((line): line is string => line !== null)
       .join('\n');
 
+  // Both lapak read the description, Tokopedia especially, so the phrase a
+  // buyer types opens the paragraph instead of waiting until the terms.
   const shopeeBody = indonesianBody(
-    `${title.id} — file PDF siap cetak, langsung bisa diunduh setelah pembayaran.`,
+    `${title.id} — ${words.id.focus} untuk anak TK dan PAUD. File PDF siap cetak, langsung bisa diunduh setelah pembayaran.`,
     '- Unduh file PDF dari chat/pesanan, simpan di HP atau laptop.',
   );
 
   const tokopediaBody = indonesianBody(
-    `${title.id} — produk digital, file PDF dikirim lewat chat setelah pesanan diproses.`,
+    `${title.id} — ${words.id.focus} untuk anak TK dan PAUD, berisi ${worksheets} lembar kerja. Produk digital, file PDF dikirim lewat chat setelah pesanan diproses.`,
     '- Simpan file PDF dari chat Tokopedia ke HP atau laptop.',
   );
 
   // A pin is not a listing: it has one job, which is to send the reader to
   // the shop. Short lines, the hook first, hashtags where Pinterest reads
   // them — and every word of it inside the 500 characters Pinterest allows.
-  const pinterestTags = fitTags(tagPool, spec.pinterest);
+  const pinterestTags = tags.pinterest;
   const pinterestBody = [
-    `${title.en} — ${worksheets} printable pages kids can trace and colour.`,
+    `${titleCase(words.en.focus)} — ${countEn('printable page')} kids can trace and colour.`,
+    points.en[0],
     `Print at home as often as you like: ${shortPapers}, 300 DPI vector lines, 0.5 inch safe margin, no watermark.`,
-    'Perfect for preschool, kindergarten, homeschool and busy books.',
+    `Perfect for ${words.en.audience.slice(0, 4).join(', ')} and busy books.`,
     '',
-    pinterestTags.map((tag) => `#${tag.replace(/\s+/g, '')}`).join(' '),
+    // Pinterest reads the sentences above far more than the tags below, and
+    // a wall of hashtags is spend that buys nothing: four, then stop.
+    pinterestTags
+      .slice(0, 4)
+      .map((tag) => `#${tag.replace(/\s+/g, '')}`)
+      .join(' '),
   ].join('\n');
+
+  /*
+   * Shopee reads the product name and nothing else — no tag field, and the
+   * description does not rank. So the name is built in two halves: a head a
+   * buyer can read on a phone card, then the phrases the head did not already
+   * use, stopping at the target rather than at the 255 the form allows.
+   */
+  const shopeeHead = joinWithin(
+    [
+      // Shopee's own guidance is Merek + Jenis Produk + Spesifikasi, so the
+      // brand and the pack's name are one unit: the thing being sold. The
+      // phrase buyers type comes next, and the spec only if it does not end
+      // up repeating a number the name already carries.
+      brand ? `${brand} - ${title.id}` : title.id,
+      titleCase(words.id.focus),
+      `${worksheets} Lembar Kerja PDF ${shortPapers}`,
+    ],
+    100,
+    ' - ',
+  );
+  const shopeeTitle = [
+    shopeeHead,
+    ...keywordTail(
+      shopeeHead,
+      words.id,
+      (spec.shopee.titleTarget ?? spec.shopee.titleMax) - shopeeHead.length,
+    ).map(titleCase),
+  ]
+    .join(' | ')
+    .slice(0, spec.shopee.titleMax);
 
   const drafts: Record<MarketSpec['id'], { title: string; body: string; tags: string[] }> = {
     etsy: {
       title: etsyTitle,
       body: etsyBody,
-      tags: fitTags(tagPool, spec.etsy),
+      tags: tags.etsy,
     },
     tpt: {
-      title: clampTitle(
-        `${title.en} — ${worksheets} Printable Worksheets for Preschool and Kindergarten`,
+      title: joinWithin(
+        [title.en, titleCase(words.en.focus), 'Preschool and Kindergarten'],
         spec.tpt.titleMax,
       ),
       body: tptBody,
-      tags: fitTags(tagPool, spec.tpt),
+      tags: tags.tpt,
     },
     gumroad: {
-      title: clampTitle(`${title.en} — ${worksheets} Printable Worksheets`, spec.gumroad.titleMax),
+      // Discover ranks on category and sales, so the name is kept short and
+      // legible rather than loaded: the phrase once, the page count, done.
+      title: joinWithin(
+        [title.en, titleCase(words.en.focus), titleCase(countEn('printable page'))],
+        spec.gumroad.titleMax,
+      ),
       body: gumroadBody,
-      tags: fitTags(tagPool, spec.gumroad),
+      tags: tags.gumroad,
     },
     shopee: {
-      title: clampTitle(
-        `${title.id} | ${worksheets} Lembar Kerja PDF Siap Cetak ${shortPapers}`,
-        spec.shopee.titleMax,
-      ),
+      title: shopeeTitle,
       body: shopeeBody,
-      tags: fitTags([...ID_TAGS, ...tagPool], spec.shopee),
+      tags: tags.shopee,
     },
     tokopedia: {
-      // Tokopedia stops the product name at 70 characters, so the paper sizes
-      // are left to the description and the name keeps the words buyers type.
-      title: clampTitle(`${title.id} | ${worksheets} Lembar Kerja PDF`, spec.tokopedia.titleMax),
+      // Seventy characters is not room to be clever: the phrase buyers type,
+      // the pack's own name, and the format. Paper sizes go to the body.
+      title: joinWithin(
+        [title.id, titleCase(words.id.focus), `PDF ${worksheets} Halaman`],
+        spec.tokopedia.titleMax,
+      ),
       body: tokopediaBody,
-      tags: fitTags([...ID_TAGS, ...tagPool], spec.tokopedia),
+      tags: tags.tokopedia,
     },
     pinterest: {
-      title: clampTitle(`${title.en} | Printable Worksheets for Kids`, spec.pinterest.titleMax),
+      title: joinWithin(
+        [titleCase(words.en.focus), titleCase(countEn('printable page')), 'Preschool and Homeschool'],
+        spec.pinterest.titleMax,
+      ),
       body: pinterestBody,
       tags: pinterestTags,
     },
@@ -329,6 +435,8 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     language: market.language,
     limits: market.note,
     bodyMax: market.bodyMax,
+    focus: words[market.language].focus,
+    seo: SEO_NOTE[market.id],
     ...drafts[market.id],
   }));
 }
@@ -413,6 +521,10 @@ export function licenceNote(config: Config, family: string, licence: string | nu
 export function copyToText(copy: ListingCopy): string {
   return [
     `${copy.label.toUpperCase()} — ${copy.limits}`,
+    '',
+    'KATA KUNCI UTAMA / FOCUS KEYWORD',
+    copy.focus,
+    copy.seo,
     '',
     'JUDUL / TITLE',
     copy.title,

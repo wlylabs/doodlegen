@@ -12,10 +12,28 @@ import type { Cmyk, Config, LanguageId, LoadedFont, PagePlan } from './types';
  * outlines, same layout engine — so the picture cannot promise something the
  * file does not contain.
  */
+/**
+ * A listing needs a set, not a picture.
+ *
+ * One cover sells the idea; the rest answer the questions that stop a
+ * digital sale. `grid` proves every page exists, which is the thing a buyer
+ * of a 26-page PDF cannot check before paying. `mockup` shows the sheets as
+ * paper on a table, because a flat PDF thumbnail reads as a file rather than
+ * as something a child will hold. `steps` says out loud that nothing is
+ * shipped and how the file arrives — the question Indonesian sellers answer
+ * in chat all day.
+ *
+ * All of it is drawn from the same page plans as the PDF, in vector, with no
+ * stock photography: a mockup with someone else's photo in it carries
+ * someone else's licence into a seller's shop.
+ */
+export type ImageKind = 'cover' | 'grid' | 'mockup' | 'steps';
+
 export interface ImageSpec {
   id: string;
   label: string;
   note: string;
+  kind: ImageKind;
   width: number;
   height: number;
   /** Which marketplace asks for this canvas. */
@@ -33,6 +51,37 @@ export const IMAGE_SPECS: ImageSpec[] = [
     id: 'etsy',
     label: 'Etsy 2000 × 2000',
     note: 'Gambar utama listing, rasio 1:1',
+    kind: 'cover',
+    width: 2000,
+    height: 2000,
+    market: 'Etsy',
+    language: 'en',
+  },
+  {
+    id: 'etsy-inside',
+    label: 'Etsy — isi lengkap',
+    note: 'Semua halaman dalam satu kisi, bukti isi paket',
+    kind: 'grid',
+    width: 2000,
+    height: 2000,
+    market: 'Etsy',
+    language: 'en',
+  },
+  {
+    id: 'etsy-mockup',
+    label: 'Etsy — mockup kertas',
+    note: 'Lembaran seperti sudah dicetak dan tergeletak di meja',
+    kind: 'mockup',
+    width: 2000,
+    height: 2000,
+    market: 'Etsy',
+    language: 'en',
+  },
+  {
+    id: 'etsy-steps',
+    label: 'Etsy — cara kerja',
+    note: 'Tiga langkah: beli, unduh, cetak',
+    kind: 'steps',
     width: 2000,
     height: 2000,
     market: 'Etsy',
@@ -42,6 +91,17 @@ export const IMAGE_SPECS: ImageSpec[] = [
     id: 'tpt',
     label: 'TPT 1200 × 1600',
     note: 'Sampul produk, rasio 3:4',
+    kind: 'cover',
+    width: 1200,
+    height: 1600,
+    market: 'Teachers Pay Teachers',
+    language: 'en',
+  },
+  {
+    id: 'tpt-inside',
+    label: 'TPT — isi lengkap',
+    note: 'Kisi semua halaman untuk halaman preview',
+    kind: 'grid',
     width: 1200,
     height: 1600,
     market: 'Teachers Pay Teachers',
@@ -51,8 +111,19 @@ export const IMAGE_SPECS: ImageSpec[] = [
     id: 'gumroad',
     label: 'Gumroad 1280 × 720',
     note: 'Sampul produk, rasio 16:9',
+    kind: 'cover',
     width: 1280,
     height: 720,
+    market: 'Gumroad',
+    language: 'en',
+  },
+  {
+    id: 'gumroad-thumb',
+    label: 'Gumroad 600 × 600',
+    note: 'Thumbnail persegi untuk kartu produk',
+    kind: 'cover',
+    width: 600,
+    height: 600,
     market: 'Gumroad',
     language: 'en',
   },
@@ -60,6 +131,27 @@ export const IMAGE_SPECS: ImageSpec[] = [
     id: 'shopee',
     label: 'Shopee 1200 × 1200',
     note: 'Foto produk utama, rasio 1:1',
+    kind: 'cover',
+    width: 1200,
+    height: 1200,
+    market: 'Shopee / Tokopedia',
+    language: 'id',
+  },
+  {
+    id: 'shopee-inside',
+    label: 'Shopee — isi lengkap',
+    note: 'Foto kedua: semua halaman dalam satu kisi',
+    kind: 'grid',
+    width: 1200,
+    height: 1200,
+    market: 'Shopee / Tokopedia',
+    language: 'id',
+  },
+  {
+    id: 'shopee-steps',
+    label: 'Shopee — cara kerja',
+    note: 'Foto ketiga: file digital, tidak ada barang dikirim',
+    kind: 'steps',
     width: 1200,
     height: 1200,
     market: 'Shopee / Tokopedia',
@@ -69,6 +161,7 @@ export const IMAGE_SPECS: ImageSpec[] = [
     id: 'pinterest',
     label: 'Pinterest 1000 × 1500',
     note: 'Pin promosi, rasio 2:3',
+    kind: 'cover',
     width: 1000,
     height: 1500,
     market: 'Pinterest',
@@ -453,11 +546,25 @@ interface Scene {
   pills: string[];
   bullets: string[];
   plans: PagePlan[];
+  /** Every worksheet, for the canvas whose job is to prove they exist. */
+  pages: PagePlan[];
+  /** How many pages the pack really has, when `pages` had to be sampled. */
+  pageCount: number;
   font: LoadedFont;
   config: Config;
   skin: Skin;
   /** The cover style the seller picked; the sheets follow it. */
   style: CoverStyle;
+  /** Copy for the canvases that are not the cover. */
+  extras: {
+    inside: string;
+    insideNote: string;
+    table: string;
+    tableNote: string;
+    how: string;
+    steps: [string, string, string];
+    note: string;
+  };
 }
 
 /** A rectangle in canvas space, y growing downward. */
@@ -577,7 +684,284 @@ function drawConfetti(ctx: CanvasRenderingContext2D, W: number, H: number, color
   });
 }
 
+
+/**
+ * Proof of contents: every page in the pack, small but legible, in one
+ * picture. A buyer of a printable cannot open the file before paying, and
+ * this is the canvas that answers what they are actually getting — the one
+ * a shop with a refund policy needs most.
+ */
+function paintGrid(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
+  const { width: W, height: H } = spec;
+  const { skin, pages } = scene;
+  const unit = Math.min(W, H);
+  const pad = W * 0.055;
+
+  ctx.fillStyle = skin.background;
+  ctx.fillRect(0, 0, W, H);
+
+  drawBrandLine(ctx, scene.brand, W / 2, H * 0.075, unit * 0.024, 'center', skin.brand);
+
+  const headline = fitHeadline(ctx, scene.extras.inside, W - pad * 2, 1, unit * 0.072, unit * 0.044);
+  ctx.textAlign = 'center';
+  const headY = H * 0.145;
+  drawHeadlineLine(ctx, skin, headline.lines[0] ?? '', W / 2, headY, headline.size);
+
+  const noteSize = unit * 0.03;
+  ctx.font = `500 ${noteSize}px ${TEXT_STACK}`;
+  ctx.fillStyle = skin.body;
+  ctx.fillText(scene.extras.insideNote, W / 2, headY + noteSize * 1.9);
+
+  const top = headY + noteSize * 3.4;
+  const footSize = unit * 0.026;
+  const footY = H - unit * 0.05;
+  const areaH = footY - footSize * 2.2 - top;
+  const areaW = W - pad * 2;
+  const count = pages.length;
+  if (!count) return;
+
+  // Columns are chosen, not fixed: the arrangement that makes the sheets as
+  // large as the area allows is the one a buyer can actually read.
+  let best = { cols: 1, size: 0 };
+  for (let cols = 2; cols <= 8; cols += 1) {
+    const rows = Math.ceil(count / cols);
+    const gap = areaW * 0.018;
+    const byWidth = (areaW - gap * (cols - 1)) / cols;
+    const byHeight = (areaH - gap * (rows - 1)) / rows / SHEET_RATIO;
+    const size = Math.min(byWidth, byHeight);
+    if (size > best.size) best = { cols, size };
+  }
+
+  const gap = areaW * 0.018;
+  const rows = Math.ceil(count / best.cols);
+  const gridW = best.size * best.cols + gap * (best.cols - 1);
+  const gridH = best.size * SHEET_RATIO * rows + gap * (rows - 1);
+  const startX = (W - gridW) / 2;
+  const startY = top + Math.max(0, (areaH - gridH) / 2);
+
+  pages.forEach((plan, index) => {
+    const column = index % best.cols;
+    const row = Math.floor(index / best.cols);
+    drawSheetCard(
+      ctx,
+      scene.font,
+      plan,
+      scene.config,
+      startX + column * (best.size + gap),
+      startY + row * (best.size * SHEET_RATIO + gap),
+      best.size,
+    );
+  });
+
+  ctx.font = `500 ${footSize}px ${TEXT_STACK}`;
+  ctx.fillStyle = skin.body;
+  ctx.textAlign = 'center';
+  ctx.fillText(scene.bullets[1] ?? scene.subtitle, W / 2, footY);
+}
+
+/** A crayon, drawn rather than photographed, so nothing carries a licence. */
+function drawCrayon(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  length: number,
+  colour: string,
+  rotation: number,
+) {
+  const width = length * 0.17;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((rotation * Math.PI) / 180);
+  ctx.strokeStyle = 'rgba(28,25,23,0.30)';
+  ctx.lineWidth = Math.max(1, width * 0.06);
+  ctx.fillStyle = colour;
+  roundRect(ctx, -width / 2, -length / 2, width, length * 0.82, width * 0.35);
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-width / 2, length * 0.32);
+  ctx.lineTo(width / 2, length * 0.32);
+  ctx.lineTo(0, length * 0.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // The paper band, which is what makes it read as a crayon and not a stick.
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillRect(-width / 2, -length * 0.12, width, length * 0.16);
+  ctx.restore();
+}
+
+/**
+ * The same sheets, as paper. A PDF thumbnail reads as a file; a printed
+ * sheet lying on a table with a crayon next to it reads as the afternoon the
+ * buyer is actually shopping for.
+ */
+function paintMockup(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
+  const { width: W, height: H } = spec;
+  const { skin, plans } = scene;
+  const unit = Math.min(W, H);
+
+  // A desk, in the palette's own warmth rather than a photograph of one.
+  ctx.fillStyle = skin.background;
+  ctx.fillRect(0, 0, W, H);
+  const wash = ctx.createLinearGradient(0, 0, 0, H);
+  const [first = ACCENT, second = ACCENT] = skin.confetti;
+  wash.addColorStop(0, `${first}18`);
+  wash.addColorStop(1, `${second}33`);
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, W, H);
+
+  drawBrandLine(ctx, scene.brand, W / 2, H * 0.08, unit * 0.024, 'center', skin.brand);
+
+  const captionSize = unit * 0.038;
+  const noteSize = unit * 0.028;
+  const captionY = H * 0.155;
+  const noteY = captionY + noteSize * 1.9;
+
+  // Everything below the caption belongs to the paper, crayons included, so
+  // the stack is measured into what is left rather than centred over it.
+  const areaTop = noteY + unit * 0.05;
+  const areaBottom = H - unit * 0.05;
+  const crayonRoom = (areaBottom - areaTop) * 0.16;
+  const sheetWidth = Math.min(W * 0.44, (areaBottom - areaTop - crayonRoom) / SHEET_RATIO);
+  const centreX = W / 2 - sheetWidth / 2;
+  const centreY = areaTop + (areaBottom - areaTop - crayonRoom - sheetWidth * SHEET_RATIO) / 2;
+
+  // The shadow the stack casts, before any of it is drawn.
+  ctx.save();
+  ctx.fillStyle = 'rgba(28,25,23,0.16)';
+  ctx.filter = 'blur(1px)';
+  ctx.beginPath();
+  ctx.ellipse(W / 2, centreY + sheetWidth * SHEET_RATIO * 0.99, sheetWidth * 0.72, sheetWidth * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const back = plans[0] ?? plans[plans.length - 1];
+  const middle = plans[1] ?? back;
+  const front = plans[plans.length - 1];
+  drawSheetCard(ctx, scene.font, back, scene.config, centreX - sheetWidth * 0.36, centreY + sheetWidth * 0.05, sheetWidth * 0.86, -8);
+  drawSheetCard(ctx, scene.font, middle, scene.config, centreX + sheetWidth * 0.4, centreY + sheetWidth * 0.02, sheetWidth * 0.86, 7);
+  drawSheetCard(ctx, scene.font, front, scene.config, centreX, centreY, sheetWidth, -1.5);
+
+  const crayonLength = sheetWidth * 0.42;
+  const crayons = skin.confetti.slice(0, 3);
+  crayons.forEach((colour, index) => {
+    drawCrayon(
+      ctx,
+      W * 0.5 + (index - 1) * crayonLength * 0.28,
+      centreY + sheetWidth * SHEET_RATIO + crayonLength * 0.42,
+      crayonLength,
+      colour,
+      -68 + index * 12,
+    );
+  });
+
+  ctx.font = `700 ${captionSize}px ${TEXT_STACK}`;
+  ctx.fillStyle = skin.headline;
+  ctx.textAlign = 'center';
+  ctx.fillText(scene.extras.table, W / 2, captionY);
+
+  ctx.font = `500 ${noteSize}px ${TEXT_STACK}`;
+  ctx.fillStyle = skin.body;
+  ctx.fillText(scene.extras.tableNote, W / 2, noteY);
+}
+
+/**
+ * What happens after the buy button. Nothing is shipped, the file arrives
+ * immediately, and the buyer prints it — three sentences that are the whole
+ * difference between a digital listing and a parcel, and the questions a
+ * seller otherwise answers one chat at a time.
+ */
+function paintSteps(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
+  const { width: W, height: H } = spec;
+  const { skin } = scene;
+  const unit = Math.min(W, H);
+  const pad = W * 0.09;
+
+  ctx.fillStyle = skin.background;
+  ctx.fillRect(0, 0, W, H);
+  const wash = ctx.createLinearGradient(0, 0, W, H);
+  const [first = ACCENT, second = ACCENT] = skin.confetti;
+  wash.addColorStop(0, `${first}1F`);
+  wash.addColorStop(1, `${second}12`);
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, W, H);
+
+  drawBrandLine(ctx, scene.brand, W / 2, H * 0.11, unit * 0.024, 'center', skin.brand);
+
+  const headline = fitHeadline(ctx, scene.extras.how, W - pad * 2, 2, unit * 0.082, unit * 0.05);
+  ctx.textAlign = 'center';
+  let y = H * 0.2;
+  for (const line of headline.lines) {
+    drawHeadlineLine(ctx, skin, line, W / 2, y, headline.size);
+    y += headline.size * 1.14;
+  }
+
+  const cardTop = y + unit * 0.015;
+  const noteSize = unit * 0.03;
+  const noteY = H - unit * 0.085;
+  const cardsH = noteY - noteSize * 2.6 - cardTop;
+  const gap = cardsH * 0.06;
+  const cardH = (cardsH - gap * 2) / 3;
+
+  // One size for all three cards, chosen so the longest step still fits in
+  // two lines: three cards set at three different sizes read as a mistake.
+  const textX = pad + cardH * 0.95;
+  const textW = W - pad - textX - cardH * 0.3;
+  let stepSize = cardH * 0.3;
+  while (stepSize > cardH * 0.15) {
+    ctx.font = `600 ${stepSize}px ${TEXT_STACK}`;
+    if (scene.extras.steps.every((step) => wrap(ctx, step, textW, 3).length <= 2)) break;
+    stepSize -= 1;
+  }
+
+  scene.extras.steps.forEach((step, index) => {
+    const top = cardTop + index * (cardH + gap);
+    ctx.save();
+    ctx.fillStyle = CARD;
+    ctx.shadowColor = 'rgba(28,25,23,0.10)';
+    ctx.shadowBlur = unit * 0.02;
+    ctx.shadowOffsetY = unit * 0.006;
+    roundRect(ctx, pad, top, W - pad * 2, cardH, cardH * 0.22);
+    ctx.fill();
+    ctx.restore();
+
+    const chip = cardH * 0.46;
+    ctx.fillStyle = skin.accent;
+    ctx.beginPath();
+    ctx.arc(pad + cardH * 0.5, top + cardH / 2, chip / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = CARD;
+    ctx.font = `800 ${chip * 0.58}px ${TEXT_STACK}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(index + 1), pad + cardH * 0.5, top + cardH / 2 + chip * 0.02);
+    ctx.textBaseline = 'alphabetic';
+
+    ctx.fillStyle = INK;
+    ctx.font = `600 ${stepSize}px ${TEXT_STACK}`;
+    ctx.textAlign = 'left';
+    const lines = wrap(ctx, step, textW, 2);
+    let lineY = top + cardH / 2 - (lines.length - 1) * stepSize * 0.6 + stepSize * 0.35;
+    for (const line of lines) {
+      ctx.fillText(line, textX, lineY);
+      lineY += stepSize * 1.25;
+    }
+  });
+
+  const fitted = fitLines(ctx, [scene.extras.note], W - pad * 2, noteSize, 600);
+  ctx.font = `600 ${fitted}px ${TEXT_STACK}`;
+  ctx.fillStyle = skin.headline;
+  ctx.textAlign = 'center';
+  ctx.fillText(scene.extras.note, W / 2, noteY);
+}
+
 function paint(ctx: CanvasRenderingContext2D, spec: ImageSpec, scene: Scene) {
+  if (spec.kind === 'grid') return paintGrid(ctx, spec, scene);
+  if (spec.kind === 'mockup') return paintMockup(ctx, spec, scene);
+  if (spec.kind === 'steps') return paintSteps(ctx, spec, scene);
+
   const { width: W, height: H } = spec;
   const { skin, style } = scene;
   ctx.fillStyle = skin.background;
@@ -714,10 +1098,18 @@ export async function renderListingImages({
     (plan, index, all) => (index === all.length - 1 ? colourised(plan, palette) : plan),
   );
 
+  // The contents canvas draws real pages rather than a promise of them. Past
+  // two dozen the thumbnails stop being legible, so a long pack is sampled
+  // evenly and says so rather than shrinking to a texture.
+  const GRID_MAX = 30;
+  const gridPicks = coverSamples(characters, Math.min(characters.length, GRID_MAX));
+  const pages = planDocument({ font, config: previewConfig, paper, characters: gridPicks });
+  const sampled = characters.length > GRID_MAX;
+
   const title = productTitle(config, characters);
   const brand = brandName(config) || 'DoodleGen';
   const papers = config.paper === 'both' ? 'A4 + US Letter' : paper.label;
-  const pages = characters.length;
+  const pageTotal = characters.length;
   // A seller who wrote their own line on the cover gets it here too, so the
   // shop front and the file open with the same sentence.
   const tagline = config.coverTagline.trim();
@@ -726,34 +1118,68 @@ export async function renderListingImages({
     en: {
       title: title.en,
       brand,
-      subtitle: tagline || `${pages} print-ready pages — ${papers}`,
-      pills: [`${pages} pages`, papers, 'PDF 300 DPI'],
+      subtitle: tagline || `${pageTotal} print-ready pages — ${papers}`,
+      pills: [`${pageTotal} pages`, papers, 'PDF 300 DPI'],
       bullets: [
         'Vector 300 DPI - clean lines, no watermark',
-        `${pages} print-ready pages - ${papers}`,
+        `${pageTotal} print-ready pages - ${papers}`,
         '0.5 inch safe margin, prints on any home printer',
       ],
       plans,
+      pages,
+      pageCount: pageTotal,
       font,
       config: previewConfig,
       skin,
       style,
+      extras: {
+        inside: 'Every page inside',
+        insideNote: sampled
+          ? `${pageTotal} printable pages — ${gridPicks.length} shown here`
+          : `${pageTotal} printable pages, ${papers}`,
+        table: 'Print it at home',
+        tableNote: `${papers} — clean black lines, no watermark`,
+        how: 'How it works',
+        steps: [
+          'Buy the listing — checkout as usual.',
+          'Download the PDF straight away. Nothing is posted to you.',
+          'Print at 100% scale, as many copies as you like.',
+        ],
+        note: 'Instant digital download — no physical item is shipped.',
+      },
     },
     id: {
       title: title.id,
       brand,
-      subtitle: tagline || `${pages} halaman siap cetak — ${papers}`,
-      pills: [`${pages} halaman`, papers, 'PDF 300 DPI'],
+      subtitle: tagline || `${pageTotal} halaman siap cetak — ${papers}`,
+      pills: [`${pageTotal} halaman`, papers, 'PDF 300 DPI'],
       bullets: [
         'Vector 300 DPI - garis bersih, tanpa watermark',
-        `${pages} halaman siap cetak - ${papers}`,
+        `${pageTotal} halaman siap cetak - ${papers}`,
         'Margin aman 0.5 inci, cocok untuk printer rumahan',
       ],
       plans,
+      pages,
+      pageCount: pageTotal,
       font,
       config: previewConfig,
       skin,
       style,
+      extras: {
+        inside: 'Isi lengkap paket',
+        insideNote: sampled
+          ? `${pageTotal} halaman siap cetak — ${gridPicks.length} ditampilkan di sini`
+          : `${pageTotal} halaman siap cetak, ${papers}`,
+        table: 'Tinggal cetak di rumah',
+        tableNote: `${papers} — garis hitam bersih, tanpa watermark`,
+        how: 'Cara kerjanya',
+        steps: [
+          'Pesan dan bayar seperti biasa.',
+          'File PDF dikirim lewat chat. Tidak ada paket yang dikirim.',
+          'Cetak sendiri ukuran 100%, sebanyak yang kamu mau.',
+        ],
+        note: 'Produk digital — tidak ada barang fisik yang dikirim.',
+      },
     },
   };
 

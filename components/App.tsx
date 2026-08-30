@@ -11,7 +11,7 @@ import { PresetRail, SettingsPanel } from './SettingsPanel';
 import { CheckIcon, ChevronIcon, LinkIcon, Spinner } from './diagrams';
 import { useCopy, useRipple } from './motion';
 import { buildCharacters, validate } from '@/lib/charset';
-import { renderListingImages, type GeneratedImage } from '@/lib/cover';
+import { IMAGE_SPECS, renderListingImages, type GeneratedImage } from '@/lib/cover';
 import { downloadBlob, downloadFile, downloadZip } from '@/lib/download';
 import { loadFont, prefetchFont } from '@/lib/fontStore';
 import { pageCountOf, planDocument } from '@/lib/geometry';
@@ -183,7 +183,7 @@ export function App() {
 
         if (!withKit) return { files: result, images: [] as GeneratedImage[] };
 
-        setProgress({ done: 0, total: 4, label: 'Menggambar listing' });
+        setProgress({ done: 0, total: IMAGE_SPECS.length, label: 'Menggambar listing' });
         const rendered = await renderListingImages({
           font,
           config,

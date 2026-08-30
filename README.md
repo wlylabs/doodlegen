@@ -65,8 +65,9 @@ the rest around it:
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
-| Listing images | 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 (Gumroad), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest), drawn from the same page plans. |
-| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, already inside each channel's character and tag limits. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
+| Listing images | Twelve canvases, not five: a cover for each channel at its own size — 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 and 600×600 (Gumroad cover and square thumbnail), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest) — plus, where a channel gives a listing more than one photo slot, a contents grid of every page, a paper mockup of the printed sheets, and a three-step "how it works" card. All drawn from the same page plans, in vector, with no stock photography. |
+| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The description says what is genuinely on the pages — stroke weight, handwriting guides, grid size, the words in a word pack, the editable SVGs — so two packs read as two products. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
+| Upload steps | Each channel's own add-product form, walked field by field: photo, product name, category, description, price, stock, SKU — and the weight, package size and courier Shopee and Tokopedia will not let a listing save without. Every blank says whether it is pasted, chosen or uploaded, and the pasted ones carry the copy above. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
 `Kit marketplace` builds all of it and hands back one ZIP:
@@ -74,13 +75,80 @@ the rest around it:
 ```
 doodlegen-<subject>-<style>-<layout>/
   01-PRINT-FILES/       A4 and US Letter PDFs
-  02-LISTING-IMAGES/    the five listing canvases, PNG
+  02-LISTING-IMAGES/    the twelve listing canvases, PNG
   03-LISTING-COPY/      etsy.txt, tpt.txt, gumroad.txt, shopee.txt,
                         tokopedia.txt, pinterest.txt
-  04-SVG-EDITABLE/      one SVG per worksheet
+  04-UPLOAD-STEPS/      the same six channels, as add-product walkthroughs
+  05-SVG-EDITABLE/      one SVG per worksheet
   READ-ME-FIRST.txt
   FONT-LICENSE.txt
 ```
+
+**A listing needs a set of pictures, not a picture.** A cover sells the
+idea; the rest answer the questions that stop a digital sale. The contents
+grid draws every page in the pack, because a buyer of a 26-page PDF cannot
+open it before paying and that is the thing they are actually asking. The
+mockup shows the sheets as paper with a crayon beside them, because a flat
+PDF thumbnail reads as a file rather than as the afternoon someone is
+shopping for. The steps card says nothing is shipped and how the file
+arrives — the question Indonesian sellers otherwise answer in chat all day.
+Past thirty pages the grid samples evenly and says so rather than shrinking
+the thumbnails into a texture.
+
+Everything is drawn on a canvas from the same page plans as the PDF, crayons
+included: a mockup built on someone else's stock photo would carry someone
+else's licence into the seller's shop.
+
+**Copy is only half of a listing.** Knowing what to write is not the same as
+knowing where it goes, and the field that stops a first-time seller is never
+the description — it is `Berat`, which Shopee makes mandatory on a product
+with no parcel behind it, or Etsy's `Type`, which quietly replaces the whole
+shipping section once it is set to Digital. So each marketplace tab in the
+kit, and each file in `04-UPLOAD-STEPS`, is that marketplace's own form in its
+own order and its own interface language: 100 gram and the cheapest courier
+for Shopee, 70 characters and no phone number in the description for
+Tokopedia, quantity 999 and a five-file 20 MB ceiling for Etsy, the page count
+and grade band for TPT, a permalink and a refund policy for Gumroad, a
+destination link for Pinterest. The generated title, description and tags sit
+in the steps that ask for them, with their counters, so the whole listing is
+filled from one screen — and where a marketplace has no field at all for
+something, such as tags on Shopee and Tokopedia, the guide says so instead of
+pretending otherwise.
+
+**The keywords come out of the config, and each channel gets them where it
+reads them.** A fixed keyword list would describe a fixed product, and this
+one is not: an outline pack is bought by someone searching for colouring
+pages, a progressive pack by someone searching for handwriting practice, and
+a numbers pack by someone who typed the range. So `lib/seo.ts` derives a
+focus phrase and a long-tail pool from the same config that drew the pages —
+which also stops two packs from one studio competing for the same phrase.
+
+Where those words are allowed to work is not the same on any two channels,
+and that is the whole reason the file exists apart from the copy:
+
+| Channel | What ranks | What the draft does about it |
+| --- | --- | --- |
+| Etsy | Tags and title, matched against the query together; descriptions do not rank | All 13 tag slots filled with two-word-and-up phrases, and the tags that fitted are repeated verbatim in the title. The phrase still opens the description, because Google quotes the first ~160 characters. |
+| TPT | Grade, subject and resource-type facets first, keywords second | The facets are answered from the character set in the upload guide; the title reads as a teacher would search. |
+| Gumroad | Category and sales; prose barely counts | A short, legible name. No keyword tail. |
+| Shopee | The product name, and nothing else — there is no tag field | A name in Shopee's own Merek + Jenis Produk + Spesifikasi order, then a keyword tail, stopping at ~165 of the 255 the form allows. |
+| Tokopedia | The name *and* the description | 70 characters of name carrying the phrase, and the phrase again in the first sentence of the body. |
+| Pinterest | Title, description, board name and alt text, as prose | Sentences, not a pile of hashtags. |
+
+The body is written off the config for the same reason: a pack drawn in
+strokes wide enough for a three-year-old's fist and one ruled for a child
+already writing between lines used to describe themselves identically. And
+the tagline the seller typed for the cover now opens the listings written in
+the language they typed it in — it is the one sentence in the whole pack in
+their own voice, and only the cover was using it.
+
+None of that is asserted, it is checked: `verify:listing` fails the build if
+the focus phrase is missing from a title, if fewer than two of Etsy's top
+tags reach its title, if a tag slot is left empty or two tags carry the same
+search, if a word appears in a title more than twice — that is stuffing, and
+every marketplace here ranks it down — if Shopee's name wastes the only
+field its search engine reads, or if the pack ships editable SVGs that no
+description mentions.
 
 **Why there is no Canva integration, and what replaces it.** The app is a
 static export with no server, so there is nowhere to keep the client secret an
@@ -174,8 +242,8 @@ line work: crayon is translucent, so a printed ground swallows a child's own
 colour instead of adding to it, and colour on the inside would cost a second
 plate on press, muddy every photocopy and drain a home printer for nothing.
 
-**Colour, where it pays for itself.** Seven palettes — Krayon, Pop, Permen,
-Rimba, Pastel, Senja and Hitam Putih — colour the cover page and the listing
+**Colour, where it pays for itself.** Seven palettes — Senja, Krayon, Pop,
+Permen, Rimba, Pastel and Hitam Putih — colour the cover page and the listing
 images: a tinted card or a flooded ground, confetti in the border band a dot
 can never land on a word in, a headline spelled out one letter at a time in
 the palette's own ramp, and sample characters shown already coloured in, next
@@ -329,7 +397,7 @@ browser offers an install, and that a new build waits to be let in.
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run samples` | Renders sample PDFs across layouts into `.samples/` |
 | `npm run verify` | Checks those PDFs against the table above |
-| `npm run verify:listing` | Checks every marketplace draft against that marketplace's title, description and tag limits |
+| `npm run verify:listing` | Checks every marketplace draft against that marketplace's limits and its ranking surface, and every upload guide against the draft it pastes |
 | `npm run verify:pwa` | Checks the manifest's assets, the offline shell, the install offer and the update handshake |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |
 | `npm run icons` | Regenerates the logo, favicon, PWA icons and the social card |
