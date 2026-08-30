@@ -14,33 +14,28 @@ export function StyleMark({
   kind: 'outline' | 'dotted' | 'combo' | 'progressive';
 }) {
   if (kind === 'progressive') {
-    // The ladder itself: solid, dotted, faded, and a cell with nothing but
-    // the line the child writes on.
+    /*
+     * The ladder: shown, traced, then written unaided. Three rungs, evenly
+     * spaced, all standing on one baseline. It used to carry a fourth rung
+     * at 35% opacity and a short rule floating beside it, which at icon size
+     * read as a half-rendered glyph next to a stray dash rather than as a
+     * sequence.
+     */
     return (
       <svg viewBox="0 0 44 22" className="h-6 w-[52px]" aria-hidden="true">
-        <rect x="1" y="3" width="9.5" height="16" rx="3" {...stroke} strokeWidth="1.6" />
+        <rect x="1.5" y="3" width="11" height="15" rx="3.4" {...stroke} strokeWidth="1.6" />
         <rect
-          x="12.5"
+          x="16.5"
           y="3"
-          width="9.5"
-          height="16"
-          rx="3"
+          width="11"
+          height="15"
+          rx="3.4"
           {...stroke}
           strokeWidth="1.6"
           strokeDasharray="0.01 2.8"
         />
-        <rect
-          x="24"
-          y="3"
-          width="9.5"
-          height="16"
-          rx="3"
-          {...stroke}
-          strokeWidth="1.6"
-          strokeDasharray="0.01 2.8"
-          opacity="0.35"
-        />
-        <line x1="35.5" x2="43" y1="19" y2="19" {...stroke} strokeWidth="1.4" />
+        {/* The last rung is the empty cell, named by the line it is written on. */}
+        <line x1="31.5" x2="42.5" y1="19.6" y2="19.6" {...stroke} strokeWidth="1.6" />
       </svg>
     );
   }
@@ -257,7 +252,10 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
             {...stroke}
             strokeWidth="1.1"
           />
-          {line('title', 10, 17, 12, 2)}
+          {/* The cloud the title is set on. Without it the title bar was drawn
+              straight across the rays, and the burst read as a broken shape. */}
+          <rect x="7.5" y="13.4" width="17" height="7.6" rx="3.8" {...stroke} fill="#FFF" strokeWidth="1.3" />
+          {line('title', 10, 17.4, 12, 2)}
           {[0, 1, 2, 3].map((index) => (
             <rect
               key={index}
@@ -276,10 +274,13 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
       {kind === 'banner' ? (
         <>
           {line('title', 7, 12, 18, 2.2)}
+          {/* Ends and stroke width chosen so the road's round caps land inside
+              the page rule. At width 4 from x=1 it crossed the border on both
+              sides, which reads as a mistake rather than as a bleed. */}
           <path
-            d="M1 27 C 7 18, 12 32, 16 26 C 20 20, 25 30, 31 23"
+            d="M3.6 27 C 8.5 19, 12.5 31, 16 26 C 19.5 21, 24 30, 28.4 23"
             {...stroke}
-            strokeWidth="4"
+            strokeWidth="3.2"
             strokeLinecap="round"
           />
           {imprint()}
@@ -287,12 +288,16 @@ export function CoverMark({ kind }: { kind: CoverStyle['page'] }) {
       ) : null}
       {kind === 'frame' ? (
         <>
-          {[6, 12, 18, 24, 30].flatMap((y) =>
+          {/* The pattern yields to the panel, exactly as the printed cover does:
+              a dot whose centre lands on the plate is simply not drawn. The
+              rows that used to straddle the panel edge left dots sliced in
+              half by it. */}
+          {[5.5, 10.5, 27.5, 32.5].flatMap((y) =>
             [6, 16, 26].map((x) => (
               <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" {...stroke} strokeWidth="1" />
             )),
           )}
-          <rect x="4" y="15" width="24" height="8" rx="3" {...stroke} fill="#fff" strokeWidth="1.3" />
+          <rect x="4" y="15" width="24" height="8" rx="3" {...stroke} fill="#FFF" strokeWidth="1.3" />
           {line('title', 8, 19, 16, 2)}
           {imprint()}
         </>

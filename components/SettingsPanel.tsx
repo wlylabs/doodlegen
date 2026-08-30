@@ -3,7 +3,18 @@
 import { useState } from 'react';
 import { CoverMark, LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diagrams';
 import { useRipple } from './motion';
-import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
+import {
+  ChipRow,
+  ChoiceGrid,
+  Field,
+  Note,
+  NumberField,
+  Section,
+  SelectedMark,
+  TextArea,
+  TextField,
+  Toggle,
+} from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
 import { BOOK_STYLES, COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
@@ -81,6 +92,7 @@ export function PresetRail({
               onApply(preset.id);
             }}
           >
+            {preset.id === activeId ? <SelectedMark /> : null}
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline gap-2">
                 <span className="min-w-0 truncate text-[14px] font-semibold leading-tight tracking-tight">
@@ -434,6 +446,7 @@ export function SettingsPanel({
                     update({ palette: id as PaletteId });
                   }}
                 >
+                  {active ? <SelectedMark /> : null}
                   <span className="flex gap-1" aria-hidden="true">
                     {swatches(id).map((color, index) => (
                       <span
