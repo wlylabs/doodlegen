@@ -1,11 +1,5 @@
 import { renderTitle, subjectOf } from './charset';
-import {
-  COLOURFUL_STYLES,
-  COVER_STYLES,
-  coverSamples,
-  type CoverStyle,
-  type PageMotif,
-} from './covers';
+import { COLOURFUL_STYLES, COVER_STYLES, coverSamples, type CoverStyle } from './covers';
 import {
   archPath,
   blobPath,
@@ -20,7 +14,6 @@ import {
 } from './doodles';
 import { PALETTES, readableInks, type Palette } from './palette';
 import {
-  DECORS,
   FADED_INK,
   FONTS,
   GRIDS,
@@ -223,14 +216,12 @@ interface Frame {
   art: Box;
   title?: { size: number; y: number; centerX: number };
   footer?: { size: number; y: number; left: number; right: number };
-  /** The ring the doodle border lives in, between the safe area and the work. */
-  decor?: { outer: Box; band: number };
 }
 
 /**
- * How much of the safe area a decorated worksheet hands to its border.
- * Wide enough that a doodle is worth a crayon, narrow enough that the
- * writing rows barely give anything up for it.
+ * The work area of a worksheet: the safe area, less whatever the title and
+ * the footer take. Nothing else is allowed to charge the page — a worksheet
+ * spends its whole surface on the characters.
  */
 function frameFor(paper: PaperSpec, config: Config, hasTitle: boolean, hasFooter: boolean): Frame {
   const margin = Math.max(config.marginIn, MIN_MARGIN_IN) * PT_PER_INCH;
@@ -241,22 +232,13 @@ function frameFor(paper: PaperSpec, config: Config, hasTitle: boolean, hasFooter
     h: paper.heightPt - margin * 2,
   };
 
-  // The border is taken off the top, before the title and the footer are
-  // placed, so nothing the page prints can ever land in it.
-  const motif = COVER_STYLES[config.coverStyle]?.motif ?? 'none';
-  const ratio = DECORS[config.pageDecor]?.ratio ?? 0;
-  const decorate = ratio > 0 && motif !== 'none';
-  const band = decorate ? Math.min(safe.w, safe.h) * ratio : 0;
-  const full = decorate ? inset(safe, band) : safe;
-
-  const frame: Frame = { art: full };
-  if (decorate) frame.decor = { outer: safe, band };
-  let art = full;
+  const frame: Frame = { art: safe };
+  let art = safe;
 
   if (hasTitle) {
-    const size = Math.min(16, full.w * 0.032);
+    const size = Math.min(16, safe.w * 0.032);
     const band = size * 2.6;
-    frame.title = { size, y: full.y + full.h - size, centerX: full.x + full.w / 2 };
+    frame.title = { size, y: safe.y + safe.h - size, centerX: safe.x + safe.w / 2 };
     art = { ...art, h: art.h - band };
   }
 
@@ -264,9 +246,9 @@ function frameFor(paper: PaperSpec, config: Config, hasTitle: boolean, hasFooter
   // number that creeps into the trim zone is the classic reason a print shop
   // sends a file back.
   if (hasFooter) {
-    const size = Math.min(9.5, full.w * 0.02);
+    const size = Math.min(9.5, safe.w * 0.02);
     const band = size * 2.6;
-    frame.footer = { size, y: full.y + size * 0.9, left: full.x, right: full.x + full.w };
+    frame.footer = { size, y: safe.y + size * 0.9, left: safe.x, right: safe.x + safe.w };
     art = { ...art, y: art.y + band, h: art.h - band };
   }
 
@@ -740,163 +722,6 @@ function coverSampleArt(
       ? place
       : { ...place, fill: palette.letters[index % palette.letters.length] };
   });
-}
-
-/**
- * The doodle border a worksheet wears.
- *
- * Two rules decide everything here. It is K-only, because a worksheet that
- * grew a colour would cost a second plate on press, muddy every photocopy
- * and drain a home printer for nothing. And it is drawn as an outline rather
- * than a filled shape, because the child is the one who colours this book —
- * a printed tint would swallow their crayon instead of adding to it, and a
- * border they can colour is play rather than decoration.
- *
- * Everything sits in the band the frame already set aside, so a doodle can
- * never reach a tracing row, and the marks rotate with the page number so a
- * pack does not read as the same sheet stamped twenty-six times.
- */
-function pageDecorShapes(
-  frame: Frame,
-  motif: PageMotif,
-  pageIndex: number,
-): ShapeDraw[] {
-  const ring = frame.decor;
-  if (!ring || motif === 'none') return [];
-
-  const { outer, band } = ring;
-  // Weight is the point: a hairline reads as a printing artefact, while a
-  // contour close to the worksheet's own says "this one is yours to colour".
-  const line = { color: [0, 0, 0, 0.72] as Cmyk, width: 1.5 };
-  const shapes: ShapeDraw[] = [];
-  // Centred in the band, and never more than half of it across, so no doodle
-  // reaches either the work area or the margin.
-  const radius = band * 0.44;
-  const mid = band / 2;
-
-  // Anchors in the band: the four corners, then along each side. Enough that
-  // the border reads as a border rather than as four stray marks.
-  const at = (u: number, v: number) => ({
-    x: outer.x + mid + (outer.w - band) * u,
-    y: outer.y + mid + (outer.h - band) * v,
-  });
-  const spots = [
-    at(0, 0),
-    at(1, 0),
-    at(0, 1),
-    at(1, 1),
-    at(0.5, 0),
-    at(0.5, 1),
-    at(0, 0.36),
-    at(1, 0.36),
-    at(0, 0.72),
-    at(1, 0.72),
-    at(0.22, 0),
-    at(0.78, 1),
-  ];
-
-  if (motif === 'road') {
-    // The road runs the width of the bottom band and nothing else competes
-    // with it, which is what makes it read as a road rather than as a squiggle.
-    // Inset on every side, because the spline through the sampled points
-    // overshoots them at each bend — and just past this box is the trim
-    // margin, which has to stay empty.
-    const pad = band * 0.22;
-    const lane: Box = {
-      x: outer.x + pad,
-      y: outer.y + pad,
-      w: outer.w - pad * 2,
-      h: band - pad * 2,
-    };
-    shapes.push(pathShape(ribbonPath(lane, 2.5, 0.44), undefined, line));
-    for (const spot of [spots[2], spots[3], spots[5]]) {
-      shapes.push(pathShape(starPath(spot, radius * 0.85), undefined, line));
-    }
-    for (const spot of [spots[6], spots[7], spots[8], spots[9]]) {
-      shapes.push(pathShape(sparklePath(spot, radius * 0.8), undefined, line));
-    }
-    return shapes;
-  }
-
-  if (motif === 'arch') {
-    // One rainbow in a bottom corner, alternating sides down the pack, with
-    // sparkles keeping the other three corners company.
-    const left = pageIndex % 2 === 0;
-    const foot = {
-      x: left ? outer.x + band * 2.2 : outer.x + outer.w - band * 2.2,
-      y: outer.y + mid * 0.4,
-    };
-    for (let index = 0; index < 3; index += 1) {
-      const bandOuter = radius * (2.1 - index * 0.5);
-      shapes.push(pathShape(archPath(foot, bandOuter, bandOuter - radius * 0.34), undefined, line));
-    }
-    for (const spot of [spots[2], spots[3], spots[4], spots[6], spots[7], spots[8], spots[9]]) {
-      shapes.push(pathShape(starPath(spot, radius * 0.8), undefined, line));
-    }
-    return shapes;
-  }
-
-  spots.forEach((spot, index) => {
-    const turn = (index + pageIndex) % 3;
-    if (motif === 'bubbles') {
-      shapes.push(
-        pathShape(
-          blobPath(spot, radius, radius * 0.82, { lobes: 7, wobble: 0.3, seed: index * 13 + 5 }),
-          undefined,
-          line,
-        ),
-      );
-      return;
-    }
-    if (motif === 'cards') {
-      const size = radius * 1.7;
-      shapes.push({
-        kind: 'rect',
-        x: spot.x - size / 2,
-        y: spot.y - size / 2,
-        w: size,
-        h: size,
-        r: size * 0.24,
-        stroke: line,
-      });
-      return;
-    }
-    if (motif === 'rays') {
-      shapes.push(
-        pathShape(
-          turn === 0
-            ? burstPath(spot, radius, radius * 0.5, 8)
-            : sparklePath(spot, radius * 0.9),
-          undefined,
-          line,
-        ),
-      );
-      return;
-    }
-    // stars: a star, a sparkle and a bubble in rotation, so no two neighbours
-    // and no two pages carry the same mark in the same place.
-    if (turn === 2) {
-      const dot = radius * 0.62;
-      shapes.push({
-        kind: 'ellipse',
-        x: spot.x - dot,
-        y: spot.y - dot,
-        w: dot * 2,
-        h: dot * 2,
-        stroke: line,
-      });
-      return;
-    }
-    shapes.push(
-      pathShape(
-        turn === 0 ? starPath(spot, radius) : sparklePath(spot, radius * 0.85),
-        undefined,
-        line,
-      ),
-    );
-  });
-
-  return shapes;
 }
 
 /** Everything one cover composition needs, and the marks it has drawn. */
@@ -2013,10 +1838,6 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
 
   const hasTitle = config.showTitle && config.titleTemplate.trim().length > 0;
   const frame = frameFor(paper, config, hasTitle, config.pageNumbers);
-  // The border follows the cover the seller picked, so a sheet pulled from
-  // the middle of the pack still belongs to it. `frameFor` has already
-  // decided whether there is a band to draw it in.
-  const motif = COVER_STYLES[config.coverStyle]?.motif ?? 'none';
   const art = frame.art;
   const strokeBase = STROKES[config.stroke].base;
   const band = bandFor(font, characters);
@@ -2097,9 +1918,9 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
       label: text,
       widthPt: paper.widthPt,
       heightPt: paper.heightPt,
-      // Worksheets carry no colour: one plate, clean photocopies, cheap ink.
-      // The border is K-only outlines, drawn in a band the work never enters.
-      shapes: pageDecorShapes(frame, motif, pageIndex),
+      // A worksheet draws no shape at all: no colour, and no ornament
+      // either. Everything decorative the pack has is on the cover.
+      shapes: [],
       placements,
       guides,
       texts,

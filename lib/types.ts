@@ -11,14 +11,6 @@ export type InkId = 'black' | 'soft';
 /** Language of everything the buyer reads: cover, licence, footer, read-me. */
 export type LanguageId = 'en' | 'id';
 export type PaletteId = 'mono' | 'crayon' | 'pastel' | 'sunset' | 'pop' | 'permen' | 'rimba';
-/**
- * How much of the worksheet the doodle border is allowed to take. It is a
- * width rather than a switch because the band is charged to the work area:
- * it is cut out of the safe area before the title, the footer or a single
- * tracing row is placed, so every point of border is a point the child does
- * not get to write in.
- */
-export type DecorId = 'none' | 'slim' | 'full';
 /** Which composition the title page — and the listing mockups — are built on. */
 export type CoverStyleId =
   | 'classic'
@@ -62,19 +54,6 @@ export interface Config {
    * arrange their sheet mockups, so the cover and the shop front match.
    */
   coverStyle: CoverStyleId;
-  /**
-   * A doodle border on every worksheet, in the shape the chosen cover style
-   * uses. Drawn as K-only outlines in a band the work area keeps clear, so
-   * the child can colour them in too — which is the point. A printed tint
-   * would do the opposite: crayon is translucent, so a coloured ground
-   * swallows the child's own colour instead of adding to it.
-   *
-   * The width is the seller's call because the two things it trades are both
-   * real: a border gives a child who finishes early something to do, and it
-   * costs the letters their size. The younger the hand, the more the size is
-   * worth — see `DECORS`.
-   */
-  pageDecor: DecorId;
   /** Licence and usage page at the back, standard for a paid download. */
   termsPage: boolean;
   /** Shop or brand name, printed on the cover, footer and licence page. */

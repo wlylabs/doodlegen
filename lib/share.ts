@@ -2,7 +2,6 @@ import { clampNumber } from './charset';
 import { COVER_STYLE_ORDER } from './covers';
 import { PALETTE_ORDER } from './palette';
 import {
-  DECOR_ORDER,
   DEFAULT_CONFIG,
   FONTS,
   GRIDS,
@@ -30,7 +29,6 @@ const ONE_OF = {
   language: ['en', 'id'],
   palette: PALETTE_ORDER,
   coverStyle: COVER_STYLE_ORDER,
-  pageDecor: DECOR_ORDER,
 } as const;
 
 const BOOLEANS = [
@@ -71,11 +69,6 @@ export function sanitizeConfig(raw: unknown): Partial<Config> {
     const value = input[key];
     if (typeof value === 'string') out[key] = value.slice(0, MAX_TEXT);
   }
-
-  // `pageDecor` was a switch before it was a width. Links and stored setups
-  // from then still say true or false, and the two map onto the ends of the
-  // scale exactly, so an old link reopens on the setup it was made from.
-  if (typeof input.pageDecor === 'boolean') out.pageDecor = input.pageDecor ? 'full' : 'none';
 
   if (typeof input.numberFrom === 'number') out.numberFrom = clampNumber(input.numberFrom);
   if (typeof input.numberTo === 'number') out.numberTo = clampNumber(input.numberTo);
