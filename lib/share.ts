@@ -1,4 +1,5 @@
 import { clampNumber } from './charset';
+import { sanitizeCoverDoc } from './coverDoc';
 import { COVER_STYLE_ORDER } from './covers';
 import { PALETTE_ORDER } from './palette';
 import {
@@ -39,7 +40,7 @@ const BOOLEANS = [
   'termsPage',
   'svgFiles',
 ] as const;
-const STRINGS = ['words', 'titleTemplate', 'brand', 'productTitle'] as const;
+const STRINGS = ['words', 'titleTemplate', 'brand', 'productTitle', 'coverTagline'] as const;
 
 /** Longest value accepted from a shared link, so a URL cannot bloat the app. */
 const MAX_TEXT = 600;
@@ -70,6 +71,11 @@ export function sanitizeConfig(raw: unknown): Partial<Config> {
     if (typeof value === 'string') out[key] = value.slice(0, MAX_TEXT);
   }
 
+  // The custom cover is a whole document rather than a scalar, so it brings
+  // its own checker; anything that fails it is dropped like any other field.
+  const doc = sanitizeCoverDoc(input.coverCustom);
+  if (doc) out.coverCustom = doc;
+
   if (typeof input.numberFrom === 'number') out.numberFrom = clampNumber(input.numberFrom);
   if (typeof input.numberTo === 'number') out.numberTo = clampNumber(input.numberTo);
   if (typeof input.marginIn === 'number' && MARGIN_OPTIONS.includes(input.marginIn)) {
@@ -83,7 +89,16 @@ export function sanitizeConfig(raw: unknown): Partial<Config> {
 function diffFromDefaults(config: Config): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(DEFAULT_CONFIG) as (keyof Config)[]) {
-    if (config[key] !== DEFAULT_CONFIG[key]) out[key] = config[key];
+    const value = config[key];
+    const fallback = DEFAULT_CONFIG[key];
+    // The custom cover is the one field that is an object. Compared by
+    // identity it would differ on every render and ride along in every link,
+    // so it is compared by what it says instead.
+    const same =
+      value !== null && typeof value === 'object'
+        ? JSON.stringify(value) === JSON.stringify(fallback)
+        : value === fallback;
+    if (!same) out[key] = value;
   }
   return out;
 }

@@ -109,6 +109,8 @@ const cases = [
     'frame',
     'sticker',
     'rainbow',
+    'book',
+    'workbook',
   ].map((coverStyle) => ({
     name: `cover-${coverStyle}`,
     patch: {
@@ -118,10 +120,65 @@ const cases = [
       paper: 'a4',
       coverPage: true,
       coverStyle,
+      coverTagline: 'Latihan menulis untuk usia 4-6 tahun',
       brand: 'Studio Cerdas',
       productTitle: 'Alfabet A-Z Trace and Color',
     },
   })),
+  // Every starting layout the cover studio offers, drawn the same way: a
+  // custom cover is written by the same planner as a stock one, so a broken
+  // element shows up here rather than in a seller's file.
+  ...lib.COVER_TEMPLATES.map((template) => ({
+    name: `cover-custom-${template.id}`,
+    patch: {
+      layout: 'single',
+      style: 'outline',
+      font: 'rounded',
+      paper: 'a4',
+      coverPage: true,
+      coverStyle: 'custom',
+      coverCustom: template.doc,
+      coverTagline: 'Latihan menulis untuk usia 4-6 tahun',
+      brand: 'Studio Cerdas',
+      productTitle: 'Alfabet A-Z Trace and Color',
+    },
+  })),
+  // The book family has to survive a palette with nothing to give it, a
+  // two-character set, and a shop with no name — the three things that empty
+  // out a cover built on panels.
+  ...['book', 'workbook'].flatMap((coverStyle) => [
+    {
+      name: `${coverStyle}-mono`,
+      patch: {
+        layout: 'single',
+        style: 'outline',
+        font: 'rounded',
+        paper: 'a4',
+        coverPage: true,
+        coverStyle,
+        palette: 'mono',
+        brand: 'Studio Cerdas',
+        productTitle: 'Alfabet A-Z Trace and Color',
+      },
+    },
+    {
+      name: `${coverStyle}-bare`,
+      patch: {
+        content: 'words',
+        words: 'Ayah, Bunda',
+        layout: 'worksheet',
+        style: 'combo',
+        font: 'school',
+        paper: 'letter',
+        coverPage: true,
+        coverStyle,
+        palette: 'permen',
+        brand: '',
+        productTitle: '',
+        language: 'id',
+      },
+    },
+  ]),
   // The loud compositions have to survive every palette, including the one
   // with no colour to give them: a cover that only works in "Krayon" is a
   // cover half the shop cannot use.

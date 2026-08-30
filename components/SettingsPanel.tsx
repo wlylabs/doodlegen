@@ -5,7 +5,7 @@ import { CoverMark, LayoutMark, PaperMark, StyleMark, ChevronIcon } from './diag
 import { useRipple } from './motion';
 import { ChipRow, ChoiceGrid, Field, Note, NumberField, Section, TextArea, TextField, Toggle } from './ui';
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
-import { COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
+import { BOOK_STYLES, COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
 import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
@@ -89,10 +89,13 @@ export function SettingsPanel({
   config,
   font,
   update,
+  onOpenCoverStudio,
 }: {
   config: Config;
   font: LoadedFont | null;
   update: (patch: Partial<Config>) => void;
+  /** Opens the cover studio; the panel only picks the style, it does not edit. */
+  onOpenCoverStudio: () => void;
 }) {
   const [tuningOpen, setTuningOpen] = useState(false);
   const ripple = useRipple<HTMLButtonElement>();
@@ -330,10 +333,61 @@ export function SettingsPanel({
           checked={config.coverPage}
           onChange={(coverPage) => update({ coverPage })}
         />
+        <TextField
+          label="Tagline sampul"
+          value={config.coverTagline}
+          maxLength={70}
+          placeholder="Kosongkan untuk sampul tanpa anak judul"
+          onChange={(coverTagline) => update({ coverTagline })}
+        />
         <Field label="Model sampul">
-          {/* Ten compositions in one list is a wall. Split at the line a
-              seller actually shops along: the loud ones and the plain ones. */}
-          <p className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
+          {/* The seller's own layout comes first: it is the only model that
+              can look like their shop rather than like this tool. */}
+          <button
+            type="button"
+            data-active={config.coverStyle === 'custom'}
+            className="choice !flex-row !items-center !gap-3"
+            onClick={(event) => {
+              ripple(event);
+              // A custom cover with no cover page is a page nobody would ever
+              // see, so opening the studio turns the cover page on.
+              update({ coverStyle: 'custom', coverPage: true });
+              onOpenCoverStudio();
+            }}
+          >
+            <CoverMark kind="custom" />
+            <span className="min-w-0 text-left">
+              <span className="block text-[13.5px] font-semibold leading-tight">
+                Custom — studio sampul
+              </span>
+              <span className="block text-[11.5px] leading-snug text-ink-mute">
+                {COVER_STYLES.custom.note}
+              </span>
+              <span className="mt-1 inline-block text-[11.5px] font-semibold text-accent">
+                {config.coverStyle === 'custom' ? 'Buka studio →' : 'Susun sendiri →'}
+              </span>
+            </span>
+          </button>
+
+          {/* A dozen compositions in one list is a wall. Split at the lines a
+              seller actually shops along: does it look like a book, like a
+              coloring book, or like neither. */}
+          <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
+            Standar buku
+          </p>
+          <ChoiceGrid<CoverStyleId>
+            label="Model sampul standar buku"
+            columns={2}
+            value={config.coverStyle}
+            onChange={(coverStyle) => update({ coverStyle })}
+            options={BOOK_STYLES.map((id) => ({
+              value: id,
+              label: COVER_STYLES[id].label,
+              note: COVER_STYLES[id].note,
+              art: <CoverMark kind={COVER_STYLES[id].page} />,
+            }))}
+          />
+          <p className="mb-1.5 mt-3 text-[11.5px] font-semibold uppercase tracking-wide text-ink-mute">
             Warna-warni
           </p>
           <ChoiceGrid<CoverStyleId>
@@ -356,13 +410,25 @@ export function SettingsPanel({
             columns={2}
             value={config.coverStyle}
             onChange={(coverStyle) => update({ coverStyle })}
-            options={COVER_STYLE_ORDER.filter((id) => !COLOURFUL_STYLES.includes(id)).map((id) => ({
+            options={COVER_STYLE_ORDER.filter(
+              (id) => id !== 'custom' && !COLOURFUL_STYLES.includes(id) && !BOOK_STYLES.includes(id),
+            ).map((id) => ({
               value: id,
               label: COVER_STYLES[id].label,
               note: COVER_STYLES[id].note,
               art: <CoverMark kind={COVER_STYLES[id].page} />,
             }))}
           />
+          <Note>
+            Model standar buku mengikuti susunan sampul buku terbitan: judul di panel kepala,
+            gambar di satu jendela, nama toko sendirian di kaki halaman di bawah garis — bukan di
+            atas seperti model lain.
+          </Note>
+          <Note>
+            Sampul tidak lagi mencetak jumlah halaman, DPI, atau syarat cetak ulang — itu urusan
+            deskripsi listing, bukan halaman judul yang sudah dibeli. Yang tercetak hanya judul,
+            merek, dan tagline di atas kalau diisi.
+          </Note>
           <Note>
             Dipakai halaman sampul sekaligus gambar listing: susunan lembar di sampul Etsy, TPT,
             Gumroad, Shopee, dan Pinterest mengikuti pilihan yang sama. Model warna-warni memakai
