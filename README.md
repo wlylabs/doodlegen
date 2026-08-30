@@ -254,6 +254,50 @@ Both fit twice: once to learn the stroke weight, then again inside a box shrunk
 by it, because the stroke straddles the path and would otherwise be the thing
 that crosses the margin.
 
+## Installing it as an app
+
+DoodleGen is a proper installable app, not a page with a manifest bolted on.
+Chrome, Edge and Android offer the install themselves; the header carries a
+**Pasang aplikasi** button that fires the same prompt, and it only appears when
+a browser has actually offered one — a button that cannot install is worse than
+no button. Safari never offers, so on iOS the button opens a sheet naming the
+two taps (Bagikan → Tambahkan ke Layar Utama) instead, and a declined
+invitation is remembered for a month rather than shown every visit.
+
+**It opens the tool, not the pitch.** `start_url` is `/studio/`: the landing
+page sells the thing, and an installed app should not have to be sold to
+again. `scope` stays at `/`, so the landing page is still part of the app when
+linked from inside it, and `handle_links` plus a `navigate-existing` launch
+handler mean a shared setup link opens in the window already running rather
+than a second copy of it.
+
+**Long-press shortcuts** go straight to the three packs worth starting from —
+alfabet, tracing, angka — using the same `#p=` links the landing page uses, so
+a shortcut and a link land on exactly the same setup.
+
+**Offline is the point, not a bonus.** Every PDF is built in the browser, so
+once the shell, the interface face and the worksheet face are cached there is
+nothing left to fetch. The worker serves the document that was asked for,
+falls back to the studio for a page never visited, and only shows a plain
+offline card if even the shell failed to cache. Navigation preload is on, so
+being offline-capable costs no latency when the network is there.
+
+**Updates are offered, never taken.** Nothing calls `skipWaiting()` on install:
+a new build installs quietly behind the running one, and the page shows a
+"Versi baru" bar. The reload happens when the user says so, because the studio
+holds unsaved settings and possibly a half-finished export. Hosts must serve
+`/sw.js` with `max-age=0, must-revalidate` — both `netlify.toml` and
+`vercel.json` already do — or clients pin an old shell forever.
+
+**What the install dialog shows** is the app itself: `npm run screenshots`
+drives a real browser over the built export and captures the wide and narrow
+shots the manifest lists, at exactly the pixel sizes it claims. Run it after
+`npm run build`, and `npm run icons` for the icon set, the maskable variants
+and the shortcut tiles. `npm run verify:pwa` then checks the lot in a real
+browser: that every declared asset is the size it claims, that the app still
+renders with the network cut, that the install button stays hidden until a
+browser offers an install, and that a new build waits to be let in.
+
 ## Commands
 
 | Command | What it does |
@@ -264,11 +308,15 @@ that crosses the margin.
 | `npm run samples` | Renders sample PDFs across layouts into `.samples/` |
 | `npm run verify` | Checks those PDFs against the table above |
 | `npm run verify:listing` | Checks every marketplace draft against that marketplace's title, description and tag limits |
+| `npm run verify:pwa` | Checks the manifest's assets, the offline shell, the install offer and the update handshake |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |
 | `npm run icons` | Regenerates the logo, favicon, PWA icons and the social card |
+| `npm run screenshots` | Recaptures the manifest's install-dialog screenshots from `out/` |
 
-`verify` drives a real browser. Either run `npx playwright install chromium`
-once, or point `CHROMIUM_PATH` at a browser you already have.
+`verify`, `verify:pwa` and `screenshots` drive a real browser. Either run
+`npx playwright install chromium` once, or point `CHROMIUM_PATH` at a browser
+you already have. `verify:pwa` and `screenshots` read the built
+export, so `npm run build` comes first.
 
 `fonts` needs Python with `fonttools` and `skia-pathops`
 (`pip install fonttools skia-pathops`). The built fonts are committed, so this
@@ -293,6 +341,8 @@ components/
   PreviewDeck.tsx   Page deck, PageSheet.tsx  One rendered page
   ExportDialog.tsx  Listing images and copy, ready to paste
   GenerateBar.tsx   Progress, cancel, downloads
+  InstallPrompt.tsx The install button, and Safari's two taps
+  ServiceWorkerRegistrar.tsx  Worker registration and the update bar
   motion.tsx        Ripple, reveal, count-up, copy-to-clipboard
   landing/          Hero, live demo, sections
 lib/
@@ -303,6 +353,7 @@ lib/
   listing.ts        Marketplace titles, descriptions and tags
   bundle.ts         The ZIP everything ships in
   share.ts          Config in a link, and in local storage
+  pwa.ts            Install offers, standalone detection
   naming.ts         Product titles, slugs, file names
   fontStore.ts      Font loading, parsing and caching
   presets.ts        Papers, faces, styles, layouts, inks, starter packs
@@ -314,6 +365,8 @@ lib/
   doodles.ts        Generated cover art: blobs, bursts, clouds, arches
 scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts
+public/sw.js        Service worker: shell cache, offline, update handshake
+public/screenshots/ What the install dialog shows, shot from the real app
 ```
 
 ## Stack

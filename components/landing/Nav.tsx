@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { InstallButton } from '../InstallPrompt';
 import { Logo } from '../Logo';
 import { useRipple } from '../motion';
 
@@ -44,6 +45,8 @@ export function Nav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          {/* Only renders where an install is actually on offer. */}
+          <InstallButton className="hidden sm:inline-flex" />
           <Link href="/studio" className="btn-primary !px-4 !py-2 !text-[14px]">
             Buka Studio
           </Link>
@@ -95,6 +98,7 @@ export function Nav() {
                 {link.label}
               </a>
             ))}
+            <InstallButton className="mt-1 !justify-start sm:hidden" />
           </div>
         </nav>
       </div>

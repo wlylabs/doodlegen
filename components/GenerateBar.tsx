@@ -52,7 +52,7 @@ export function GenerateBar({
     images.reduce((sum, image) => sum + image.size, 0);
 
   return (
-    <div className="relative border-t border-line bg-surface">
+    <div className="relative border-t border-line bg-surface px-safe pb-safe">
       {busy ? (
         <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-accent-soft">
           <div

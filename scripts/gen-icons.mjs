@@ -47,10 +47,46 @@ const targets = [
   { name: 'icon-192.png', svg: dark(192, 0.2), size: 192 },
   { name: 'icon-512.png', svg: dark(512, 0.2), size: 512 },
   // Maskable icons get cropped to a circle on some launchers, so the mark
-  // sits well inside the safe zone.
+  // sits well inside the safe zone. Android picks the maskable icon nearest
+  // the density it needs, so both sizes the manifest lists are drawn.
+  { name: 'icon-192-maskable.png', svg: dark(192, 0.29), size: 192 },
   { name: 'icon-512-maskable.png', svg: dark(512, 0.29), size: 512 },
   { name: 'apple-touch-icon.png', svg: dark(180, 0.19), size: 180 },
 ];
+
+/**
+ * Manifest shortcuts — the entries a long-press on the installed app shows.
+ * Each is a tile carrying what that shortcut makes: the mark for the studio
+ * itself, a bare letter for the colouring pack, a letter sitting on a guide
+ * line for tracing, and figures for the number pack. Type is set in a generic sans, like the
+ * social card, so the file renders the same wherever this script runs.
+ */
+function shortcut(glyph, { guide = false, size = 96 } = {}) {
+  const radius = size * 0.22;
+  const fontSize = glyph.length > 1 ? size * 0.42 : size * 0.62;
+  const middle = guide ? size * 0.46 : size * 0.54;
+  // A dotted glyph is what tracing looks like on the page, but at 96 px it
+  // collapses into speckle. The worksheet's guide line says the same thing
+  // and survives the size, so the letter stays solid and sits on a rule.
+  const rule = guide
+    ? `<line x1="${size * 0.2}" x2="${size * 0.8}" y1="${size * 0.72}" y2="${size * 0.72}"
+             stroke="${ACCENT_ON_DARK}" stroke-width="${size * 0.045}" stroke-linecap="round"
+             stroke-dasharray="${size * 0.09} ${size * 0.07}"/>`
+    : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" rx="${radius}" fill="${INK}"/>
+  <text x="${size / 2}" y="${middle}" font-family="sans-serif" font-size="${fontSize}" font-weight="700"
+        text-anchor="middle" dominant-baseline="central" fill="${PAPER}">${glyph}</text>
+  ${rule}
+</svg>`;
+}
+
+targets.push(
+  { name: 'shortcut-studio.png', svg: dark(96, 0.2), size: 96 },
+  { name: 'shortcut-letters.png', svg: shortcut('A'), size: 96 },
+  { name: 'shortcut-tracing.png', svg: shortcut('a', { guide: true }), size: 96 },
+  { name: 'shortcut-numbers.png', svg: shortcut('123'), size: 96 },
+);
 
 await fs.mkdir(OUT, { recursive: true });
 

@@ -10,9 +10,11 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "icons": "node scripts/gen-icons.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
     "samples": "node scripts/sample.mjs",
     "verify": "node scripts/verify-pdfs.mjs",
     "verify:listing": "node scripts/verify-listing.mjs",
+    "verify:pwa": "node scripts/verify-pwa.mjs",
     "fonts": "python3 scripts/build-fonts.py"
   },
   "dependencies": {

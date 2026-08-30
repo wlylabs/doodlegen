@@ -31,6 +31,11 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
   },
   formatDetection: { telephone: false },
+  // `appleWebApp.capable` above emits the standardised `mobile-web-app-capable`.
+  // iOS before 16.4 only understands the old apple-prefixed spelling, and that
+  // is the meta deciding whether a home-screen launch opens full screen or in
+  // a Safari tab, so both are sent.
+  other: { 'apple-mobile-web-app-capable': 'yes' },
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
@@ -51,6 +56,7 @@ export const metadata: Metadata = {
       { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/favicon.ico', sizes: '32x32' },
       { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
     ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
   },

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExportDialog } from './ExportDialog';
 import { GenerateBar, type Progress } from './GenerateBar';
+import { InstallButton } from './InstallPrompt';
 import { Logo } from './Logo';
 import { PreviewDeck } from './PreviewDeck';
 import { PresetRail, SettingsPanel } from './SettingsPanel';
@@ -268,7 +269,7 @@ export function App() {
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-paper">
-      <header className="z-30 shrink-0 border-b border-line bg-surface">
+      <header className="z-30 shrink-0 border-b border-line bg-surface px-safe">
         {/* The one line of colour in the chrome: a press bar across the top,
             so the app is stamped rather than merely bordered. */}
         <div className="h-[3px] bg-accent" aria-hidden="true" />
@@ -281,35 +282,42 @@ export function App() {
             {printedTitle(config, characters)}
           </span>
 
-          <button
-            type="button"
-            className="btn-quiet ml-auto"
-            onClick={(event) => {
-              ripple(event);
-              onShare();
-            }}
-          >
-            <span className={copied === 'share' ? 'text-accent' : ''}>
-              {copied === 'share' ? <CheckIcon /> : <LinkIcon />}
-            </span>
-            <span className="hidden sm:inline">{copied === 'share' ? 'Tautan disalin' : 'Bagikan setelan'}</span>
-          </button>
+          <div className="ml-auto flex items-center gap-3">
+            {/* Renders nothing unless this browser has an install to offer. */}
+            <InstallButton compact />
 
-          <button
-            type="button"
-            onClick={(event) => {
-              ripple(event);
-              setPanelOpen((open) => !open);
-            }}
-            aria-expanded={panelOpen}
-            aria-controls="settings-panel"
-            className="btn-quiet lg:hidden"
-          >
-            <span className="max-w-[30vw] truncate">{panelOpen ? 'Tutup' : 'Pengaturan'}</span>
-            <span className={`transition-transform duration-300 ${panelOpen ? 'rotate-180' : ''}`}>
-              <ChevronIcon direction="down" />
-            </span>
-          </button>
+            <button
+              type="button"
+              className="btn-quiet"
+              onClick={(event) => {
+                ripple(event);
+                onShare();
+              }}
+            >
+              <span className={copied === 'share' ? 'text-accent' : ''}>
+                {copied === 'share' ? <CheckIcon /> : <LinkIcon />}
+              </span>
+              <span className="hidden sm:inline">
+                {copied === 'share' ? 'Tautan disalin' : 'Bagikan setelan'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                ripple(event);
+                setPanelOpen((open) => !open);
+              }}
+              aria-expanded={panelOpen}
+              aria-controls="settings-panel"
+              className="btn-quiet lg:hidden"
+            >
+              <span className="max-w-[30vw] truncate">{panelOpen ? 'Tutup' : 'Pengaturan'}</span>
+              <span className={`transition-transform duration-300 ${panelOpen ? 'rotate-180' : ''}`}>
+                <ChevronIcon direction="down" />
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 
