@@ -11,6 +11,7 @@ const STYLE_EN: Record<Config['style'], string> = {
   outline: 'Coloring Outline',
   dotted: 'Dotted Tracing',
   combo: 'Trace and Color',
+  progressive: 'Trace Fade Write',
 };
 
 const LAYOUT_EN: Record<Config['layout'], string> = {

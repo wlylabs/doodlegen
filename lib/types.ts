@@ -1,6 +1,6 @@
 export type ContentType = 'letters' | 'numbers' | 'words';
 export type LetterCase = 'upper' | 'lower' | 'both';
-export type StyleId = 'outline' | 'dotted' | 'combo';
+export type StyleId = 'outline' | 'dotted' | 'combo' | 'progressive';
 export type LayoutId = 'single' | 'grid' | 'worksheet';
 export type GridId = '2x2' | '3x3' | '3x4' | '4x5';
 export type FontId = 'rounded' | 'boldsans' | 'playful' | 'school';
@@ -87,6 +87,11 @@ export interface Placement {
   strokeWidth: number;
   /** Dot pitch in points; only meaningful when mode === 'dotted'. */
   dotGap: number;
+  /**
+   * K-only ink level for the contour, overriding the one the ink preset
+   * implies. Only the fading steps of a progressive sheet set it.
+   */
+  ink?: number;
   /** Colour poured inside the contour before it is stroked, cover pages only. */
   fill?: Cmyk;
 }

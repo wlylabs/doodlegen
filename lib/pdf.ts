@@ -133,7 +133,8 @@ function drawRules(page: PDFPage, rules: RuleDraw[]) {
 }
 
 function drawPlacement(page: PDFPage, font: PDFFont, place: Placement, config: Config) {
-  const level = place.mode === 'dotted' ? INKS[config.ink].dotted : INKS[config.ink].solid;
+  const level =
+    place.ink ?? (place.mode === 'dotted' ? INKS[config.ink].dotted : INKS[config.ink].solid);
 
   // A filled sample is drawn colour-first, contour second, exactly the order a
   // child works in — and the order that keeps the outline crisp on top.

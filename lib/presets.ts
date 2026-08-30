@@ -105,7 +105,20 @@ export const STYLES: StyleSpec[] = [
   { id: 'outline', label: 'Outline', note: 'Kontur tebal utuh, siap diwarnai' },
   { id: 'dotted', label: 'Titik-titik', note: 'Garis putus untuk ditebalkan' },
   { id: 'combo', label: 'Kombinasi', note: 'Contoh outline + latihan titik-titik' },
+  {
+    id: 'progressive',
+    label: 'Bertahap',
+    note: 'Contoh → titik-titik → samar → kosong, satu halaman',
+  },
 ];
+
+/**
+ * How faint the third step of a progressive sheet prints, as a share of the
+ * ink its dotted step uses. Light enough to write over, dark enough that a
+ * home printer and a photocopier both still put it on the paper.
+ */
+export const FADED_INK = 0.45;
+export const MIN_FADED_INK = 0.28;
 
 export interface LayoutSpec {
   id: LayoutId;

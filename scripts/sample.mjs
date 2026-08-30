@@ -88,6 +88,14 @@ const cases = [
       productTitle: 'Alfabet A-Z Trace and Color',
     },
   },
+  {
+    name: 'worksheet-progressive-school',
+    patch: { layout: 'worksheet', style: 'progressive', font: 'school', paper: 'a4', guides: true },
+  },
+  {
+    name: 'grid-progressive-rounded',
+    patch: { layout: 'grid', style: 'progressive', font: 'rounded', grid: '3x3', paper: 'a4' },
+  },
   // One case per cover style: the cover is the only page a buyer sees before
   // paying, so every composition gets dumped as its own SVG to look at.
   ...['classic', 'poster', 'showcase', 'minimal'].map((coverStyle) => ({

@@ -111,6 +111,15 @@ starts with, and what they end up with. Worksheets stay K-only whatever is
 picked, because colour there would cost a second plate on press, muddy every
 photocopy and drain a home printer for nothing.
 
+**The tracing ladder.** `Bertahap` is the progression every printed
+handwriting sheet uses and the one every open-source worksheet generator
+converges on: a worked example, dotted repeats to trace, faded ones that give
+less away, and then a cell with nothing in it at all. That last cell is the
+point of the exercise — it is the only style that ever leaves one, and the
+guide lines still run under it so the child has something to sit on. The fade
+is K-only like everything else, floored at 28% so a home printer and a
+photocopier both still put it on the paper.
+
 **Language follows the market.** Everything a buyer reads — cover, licence
 page, page footer, read-me, and the folder names above — is written in the
 pack's language, English by default and Indonesian on request. The listing

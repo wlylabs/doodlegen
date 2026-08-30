@@ -1,7 +1,7 @@
 import { renderTitle, subjectOf } from './charset';
 import { COVER_STYLES, coverSamples, type CoverStyle } from './covers';
 import { PALETTES, type Palette } from './palette';
-import { FONTS, GRIDS, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
+import { FADED_INK, FONTS, GRIDS, INKS, MIN_FADED_INK, MIN_MARGIN_IN, PT_PER_INCH, STROKES } from './presets';
 import { brandName, printedTitle } from './naming';
 import type {
   Box,
@@ -321,9 +321,14 @@ function strip(area: Box, count: number, gutterRatio: number): Box[] {
   }));
 }
 
+/** Styles that put a model character above rows the child works through. */
+function hasPractice(style: Config['style']): boolean {
+  return style === 'combo' || style === 'progressive';
+}
+
 function slotBoxes(art: Box, config: Config, text: string): SlotBoxes {
   if (config.layout === 'single') {
-    if (config.style !== 'combo') return { hero: art, cells: [], rows: [] };
+    if (!hasPractice(config.style)) return { hero: art, cells: [], rows: [] };
     const gap = art.h * 0.045;
     const stripH = art.h * 0.2;
     const cells = strip({ ...art, h: stripH }, repeatsFor(text), 0.03);
@@ -379,11 +384,44 @@ function heroMode(config: Config): Mode {
   return config.style === 'dotted' ? 'dotted' : 'solid';
 }
 
-function cellMode(config: Config, index: number): Mode {
-  if (config.style === 'outline') return 'solid';
-  if (config.style === 'dotted') return 'dotted';
-  // combo: the first grid cell is the worked example, the rest are to trace.
-  return config.layout === 'grid' && index === 0 ? 'solid' : 'dotted';
+/** One practice cell, or null where the child is meant to write unaided. */
+interface CellStep {
+  mode: Mode;
+  /** K-only override, for the faded step only. */
+  ink?: number;
+}
+
+/**
+ * Every handwriting sheet in print works the same way: a worked example, a
+ * dotted repeat to trace, a faded one that gives less away, and then a cell
+ * with nothing in it at all. `progressive` is that ladder on one page — the
+ * blank cell is the point of the exercise, and the only one of the four
+ * styles that ever leaves one.
+ */
+function cellStep(config: Config, index: number, count: number): CellStep | null {
+  if (config.style === 'outline') return { mode: 'solid' };
+  if (config.style === 'dotted') return { mode: 'dotted' };
+  // Without a hero above them, the first cell of a grid is the worked example.
+  const examples = config.layout === 'grid' ? 1 : 0;
+  if (index < examples) return { mode: 'solid' };
+  if (config.style === 'combo') return { mode: 'dotted' };
+
+  const practice = count - examples;
+  const step = index - examples;
+  if (practice <= 1) return { mode: 'dotted' };
+
+  // A third of the row is blank, a third faded, whatever is left dotted —
+  // and a short row still ends on a cell the child fills in themselves.
+  const blanks = Math.max(1, Math.floor(practice / 3));
+  const faded = practice - blanks >= 2 ? Math.max(1, Math.floor(practice / 3)) : 0;
+  if (step >= practice - blanks) return null;
+  if (step >= practice - blanks - faded) {
+    return {
+      mode: 'solid',
+      ink: Math.max(MIN_FADED_INK, INKS[config.ink].dotted * FADED_INK),
+    };
+  }
+  return { mode: 'dotted' };
 }
 
 /**
@@ -1110,9 +1148,12 @@ export function planDocument({ font, config, paper, characters }: PlanInput): Pa
 
     const cellSize = cellSizes.get(text.length) ?? 0;
     boxes.cells.forEach((box, index) => {
-      placements.push(
-        placeMetric(font, text, box, cellSize, cellMode(config, index), strokeBase, band),
-      );
+      const step = cellStep(config, index, boxes.cells.length);
+      // A blank cell is drawn by drawing nothing: the guide lines below still
+      // run the full width of the row, so the child has something to sit on.
+      if (!step) return;
+      const place = placeMetric(font, text, box, cellSize, step.mode, strokeBase, band);
+      placements.push(step.ink === undefined ? place : { ...place, ink: step.ink });
     });
 
     if (config.guides) {

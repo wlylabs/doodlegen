@@ -5,7 +5,42 @@
  */
 const stroke = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round' } as const;
 
-export function StyleMark({ kind }: { kind: 'outline' | 'dotted' | 'combo' }) {
+export function StyleMark({
+  kind,
+}: {
+  kind: 'outline' | 'dotted' | 'combo' | 'progressive';
+}) {
+  if (kind === 'progressive') {
+    // The ladder itself: solid, dotted, faded, and a cell with nothing but
+    // the line the child writes on.
+    return (
+      <svg viewBox="0 0 44 22" className="h-6 w-[52px]" aria-hidden="true">
+        <rect x="1" y="3" width="9.5" height="16" rx="3" {...stroke} strokeWidth="1.6" />
+        <rect
+          x="12.5"
+          y="3"
+          width="9.5"
+          height="16"
+          rx="3"
+          {...stroke}
+          strokeWidth="1.6"
+          strokeDasharray="0.01 2.8"
+        />
+        <rect
+          x="24"
+          y="3"
+          width="9.5"
+          height="16"
+          rx="3"
+          {...stroke}
+          strokeWidth="1.6"
+          strokeDasharray="0.01 2.8"
+          opacity="0.35"
+        />
+        <line x1="35.5" x2="43" y1="19" y2="19" {...stroke} strokeWidth="1.4" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 44 22" className="h-6 w-[52px]" aria-hidden="true">
       {kind !== 'combo' ? (

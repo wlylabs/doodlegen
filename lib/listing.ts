@@ -56,6 +56,7 @@ const STYLE_TAGS: Record<Config['style'], string[]> = {
   outline: ['coloring page', 'coloring book', 'color and learn'],
   dotted: ['tracing worksheet', 'dotted letters', 'trace and write'],
   combo: ['trace and color', 'tracing practice', 'write and color'],
+  progressive: ['trace and write', 'handwriting practice', 'learn to write'],
 };
 
 const BASE_TAGS = [
