@@ -3,7 +3,7 @@ import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar';
 import './globals.css';
 
 const description =
-  'Generator halaman mewarnai dan tracing alfabet, angka, dan kata: PDF A4 dan US Letter yang benar-benar vektor, plus gambar listing dan draf deskripsi untuk Etsy, Gumroad, dan Shopee.';
+  'Generator halaman mewarnai dan tracing alfabet, angka, dan kata: PDF A4 dan US Letter yang benar-benar vektor, plus gambar listing dan draf deskripsi untuk Etsy, TPT, Gumroad, Shopee, Tokopedia, dan Pinterest.';
 
 // A deploy can point this at its own domain; localhost keeps dev links valid.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';

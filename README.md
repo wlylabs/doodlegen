@@ -6,7 +6,7 @@ Generator for print-ready alphabet, number and word colouring and tracing
 packs. Pick a character set, a contour treatment, a page layout and a paper
 size; scroll the preview; get A4 and US Letter PDFs — and the listing images,
 descriptions and paperwork that turn those PDFs into something sellable on
-Etsy, Gumroad, Shopee or TPT.
+Etsy, TPT, Gumroad, Shopee, Tokopedia or Pinterest.
 
 Typography only — no companion illustrations, by design.
 
@@ -65,8 +65,8 @@ the rest around it:
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
-| Listing images | 2000×2000 (Etsy), 1280×720 (Gumroad), 1200×1200 (Shopee), 1000×1500 (Pinterest), drawn from the same page plans. |
-| Listing copy | Title, description and tags for Etsy, Gumroad and Shopee, already inside each marketplace's character and tag limits. |
+| Listing images | 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 (Gumroad), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest), drawn from the same page plans. |
+| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, already inside each channel's character and tag limits. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
 `Kit marketplace` builds all of it and hands back one ZIP:
@@ -74,8 +74,9 @@ the rest around it:
 ```
 doodlegen-<subject>-<style>-<layout>/
   01-PRINT-FILES/       A4 and US Letter PDFs
-  02-LISTING-IMAGES/    the four listing canvases, PNG
-  03-LISTING-COPY/      etsy.txt, gumroad.txt, shopee.txt
+  02-LISTING-IMAGES/    the five listing canvases, PNG
+  03-LISTING-COPY/      etsy.txt, tpt.txt, gumroad.txt, shopee.txt,
+                        tokopedia.txt, pinterest.txt
   04-SVG-EDITABLE/      one SVG per worksheet
   READ-ME-FIRST.txt
   FONT-LICENSE.txt
@@ -103,9 +104,9 @@ photocopy and drain a home printer for nothing.
 **Language follows the market.** Everything a buyer reads — cover, licence
 page, page footer, read-me, and the folder names above — is written in the
 pack's language, English by default and Indonesian on request. The listing
-images are not the seller's call: the Etsy, Gumroad and Pinterest canvases are
-always English, the Shopee canvas always Indonesian, because that is who reads
-them. The listing copy has always worked that way.
+images are not the seller's call: the Etsy, TPT, Gumroad and Pinterest canvases
+are always English, the Shopee and Tokopedia canvas always Indonesian, because
+that is who reads them. The listing copy has always worked that way.
 
 Content is not limited to A–Z and 0–9: the `Kata & Nama` mode takes a list of
 words, one per line, which is what a custom name-tracing order actually is —
@@ -176,6 +177,7 @@ that crosses the margin.
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run samples` | Renders sample PDFs across layouts into `.samples/` |
 | `npm run verify` | Checks those PDFs against the table above |
+| `npm run verify:listing` | Checks every marketplace draft against that marketplace's title, description and tag limits |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |
 | `npm run icons` | Regenerates the logo, favicon, PWA icons and the social card |
 

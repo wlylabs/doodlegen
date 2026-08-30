@@ -38,6 +38,15 @@ export const IMAGE_SPECS: ImageSpec[] = [
     language: 'en',
   },
   {
+    id: 'tpt',
+    label: 'TPT 1200 × 1600',
+    note: 'Sampul produk, rasio 3:4',
+    width: 1200,
+    height: 1600,
+    market: 'Teachers Pay Teachers',
+    language: 'en',
+  },
+  {
     id: 'gumroad',
     label: 'Gumroad 1280 × 720',
     note: 'Sampul produk, rasio 16:9',

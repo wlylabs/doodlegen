@@ -21,6 +21,8 @@ export interface ListingCopy {
   tags: string[];
   /** Notes about the marketplace's own limits, shown next to the copy. */
   limits: string;
+  /** Set only where the marketplace caps the description field. */
+  bodyMax?: number;
 }
 
 const CONTENT_TAGS: Record<Config['content'], string[]> = {
@@ -120,6 +122,11 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   const papers = paperLine(config);
   const family = FONTS[config.font].family.replace(/\s*\(.*\)$/, '');
   const worksheets = characters.length;
+  const shortPapers = config.paper === 'both' ? 'A4 & US Letter' : PAPERS[config.paper].label;
+  const spec = Object.fromEntries(MARKETS.map((market) => [market.id, market])) as Record<
+    MarketSpec['id'],
+    MarketSpec
+  >;
 
   const tagPool = [
     ...CONTENT_TAGS[config.content],
@@ -152,7 +159,7 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
       `${worksheets} Printable Worksheets`,
       'Instant Download PDF for Preschool and Kindergarten',
     ].join(' | '),
-    MARKETS[0].titleMax,
+    spec.etsy.titleMax,
   );
 
   const etsyBody = [
@@ -177,6 +184,31 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     .filter((line): line is string => line !== null)
     .join('\n');
 
+  // Teachers Pay Teachers is read by a teacher planning a week, not by a
+  // parent browsing: the copy leads with how the pages are used in a room
+  // full of children, and states the licence a school actually asks about.
+  const tptBody = [
+    `${title.en} — ${worksheets} print-and-go pages for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
+    '',
+    'WHAT IS INCLUDED',
+    ...includedEn.map((line) => `- ${line}`),
+    `- ${layout.en} layout, drawn in ${family}`,
+    '',
+    'HOW TO USE IT',
+    '- Morning work, literacy or maths centres, early finishers, and homework.',
+    '- Laminate one set for dry-erase markers and reuse it all year.',
+    '- Black ink on a single plate, so it photocopies cleanly for the whole class.',
+    '- Prints at 100% scale on any home or school printer.',
+    '',
+    'TERMS OF USE',
+    '- One licence covers one teacher and that teacher’s own students.',
+    '- Buy additional licences for the rest of your team or your whole school.',
+    '- Please do not share, resell or re-upload the file.',
+    brand ? `- Designed by ${brand}.` : null,
+  ]
+    .filter((line): line is string => line !== null)
+    .join('\n');
+
   const gumroadBody = [
     `# ${title.en}`,
     '',
@@ -197,64 +229,107 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     .filter((line): line is string => line !== null)
     .join('\n');
 
-  const shopeeBody = [
+  /**
+   * Shopee and Tokopedia sell the same file to the same buyer, and the buyer
+   * asks the same questions on both. Only the way the file reaches them
+   * differs, so the copy is written once and the delivery lines are swapped.
+   */
+  const indonesianBody = (opening: string, fetchLine: string) =>
+    [
+      opening,
+      '',
+      'ISI PAKET',
+      ...included.map((line) => `- ${line}`),
+      `- Susunan ${layout.id.toLowerCase()}, huruf ${family}`,
+      '',
+      'CARA PAKAI',
+      fetchLine,
+      '- Cetak ukuran asli 100%, jangan pakai "fit to page".',
+      '- Kertas 80-120 gsm supaya crayon tidak tembus ke belakang.',
+      '',
+      'KETENTUAN',
+      '- Untuk pemakaian pribadi, keluarga, dan kelas.',
+      '- Dilarang menjual ulang atau membagikan filenya.',
+      brand ? `- Dibuat oleh ${brand}.` : null,
+      '',
+      'PENTING: produk digital, tidak ada barang fisik yang dikirim.',
+    ]
+      .filter((line): line is string => line !== null)
+      .join('\n');
+
+  const shopeeBody = indonesianBody(
     `${title.id} — file PDF siap cetak, langsung bisa diunduh setelah pembayaran.`,
-    '',
-    'ISI PAKET',
-    ...included.map((line) => `- ${line}`),
-    `- Susunan ${layout.id.toLowerCase()}, huruf ${family}`,
-    '',
-    'CARA PAKAI',
     '- Unduh file PDF dari chat/pesanan, simpan di HP atau laptop.',
-    '- Cetak ukuran asli 100%, jangan pakai "fit to page".',
-    '- Kertas 80-120 gsm supaya crayon tidak tembus ke belakang.',
-    '',
-    'KETENTUAN',
-    '- Untuk pemakaian pribadi, keluarga, dan kelas.',
-    '- Dilarang menjual ulang atau membagikan filenya.',
-    brand ? `- Dibuat oleh ${brand}.` : null,
-    '',
-    'PENTING: produk digital, tidak ada barang fisik yang dikirim.',
-  ]
-    .filter((line): line is string => line !== null)
-    .join('\n');
+  );
 
-  const [etsy, gumroad, shopee] = MARKETS;
+  const tokopediaBody = indonesianBody(
+    `${title.id} — produk digital, file PDF dikirim lewat chat setelah pesanan diproses.`,
+    '- Simpan file PDF dari chat Tokopedia ke HP atau laptop.',
+  );
 
-  return [
-    {
-      market: 'etsy',
-      label: etsy.label,
-      language: 'en',
+  // A pin is not a listing: it has one job, which is to send the reader to
+  // the shop. Short lines, the hook first, hashtags where Pinterest reads
+  // them — and every word of it inside the 500 characters Pinterest allows.
+  const pinterestTags = fitTags(tagPool, spec.pinterest);
+  const pinterestBody = [
+    `${title.en} — ${worksheets} printable pages kids can trace and colour.`,
+    `Print at home as often as you like: ${shortPapers}, 300 DPI vector lines, 0.5 inch safe margin, no watermark.`,
+    'Perfect for preschool, kindergarten, homeschool and busy books.',
+    '',
+    pinterestTags.map((tag) => `#${tag.replace(/\s+/g, '')}`).join(' '),
+  ].join('\n');
+
+  const drafts: Record<MarketSpec['id'], { title: string; body: string; tags: string[] }> = {
+    etsy: {
       title: etsyTitle,
       body: etsyBody,
-      tags: fitTags(tagPool, etsy),
-      limits: etsy.note,
+      tags: fitTags(tagPool, spec.etsy),
     },
-    {
-      market: 'gumroad',
-      label: gumroad.label,
-      language: 'en',
-      title: clampTitle(`${title.en} — ${worksheets} Printable Worksheets`, gumroad.titleMax),
-      body: gumroadBody,
-      tags: fitTags(tagPool, gumroad),
-      limits: gumroad.note,
-    },
-    {
-      market: 'shopee',
-      label: shopee.label,
-      language: 'id',
+    tpt: {
       title: clampTitle(
-        `${title.id} | ${worksheets} Lembar Kerja PDF Siap Cetak ${
-          config.paper === 'both' ? 'A4 & Letter' : PAPERS[config.paper].label
-        }`,
-        shopee.titleMax,
+        `${title.en} — ${worksheets} Printable Worksheets for Preschool and Kindergarten`,
+        spec.tpt.titleMax,
+      ),
+      body: tptBody,
+      tags: fitTags(tagPool, spec.tpt),
+    },
+    gumroad: {
+      title: clampTitle(`${title.en} — ${worksheets} Printable Worksheets`, spec.gumroad.titleMax),
+      body: gumroadBody,
+      tags: fitTags(tagPool, spec.gumroad),
+    },
+    shopee: {
+      title: clampTitle(
+        `${title.id} | ${worksheets} Lembar Kerja PDF Siap Cetak ${shortPapers}`,
+        spec.shopee.titleMax,
       ),
       body: shopeeBody,
-      tags: fitTags([...ID_TAGS, ...tagPool], shopee),
-      limits: shopee.note,
+      tags: fitTags([...ID_TAGS, ...tagPool], spec.shopee),
     },
-  ];
+    tokopedia: {
+      // Tokopedia stops the product name at 70 characters, so the paper sizes
+      // are left to the description and the name keeps the words buyers type.
+      title: clampTitle(`${title.id} | ${worksheets} Lembar Kerja PDF`, spec.tokopedia.titleMax),
+      body: tokopediaBody,
+      tags: fitTags([...ID_TAGS, ...tagPool], spec.tokopedia),
+    },
+    pinterest: {
+      title: clampTitle(`${title.en} | Printable Worksheets for Kids`, spec.pinterest.titleMax),
+      body: pinterestBody,
+      tags: pinterestTags,
+    },
+  };
+
+  // Tab order on screen, folder order in the ZIP and the order of this list
+  // are all the same one: whatever MARKETS says.
+  return MARKETS.map((market) => ({
+    market: market.id,
+    label: market.label,
+    language: market.language,
+    limits: market.note,
+    bodyMax: market.bodyMax,
+    ...drafts[market.id],
+  }));
 }
 
 /** The read-me that ships inside the pack, addressed to the buyer. */

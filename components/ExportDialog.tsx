@@ -106,7 +106,7 @@ export function ExportDialog({
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold tracking-tight">Kit marketplace</h2>
             <p className="truncate text-[12px] text-ink-mute">
-              {files.length} PDF · {images.length} gambar listing · 3 draf deskripsi
+              {files.length} PDF · {images.length} gambar listing · {listings.length} draf deskripsi
             </p>
           </div>
           <button
@@ -203,12 +203,23 @@ export function ExportDialog({
               <section className="space-y-2">
                 <div className="flex items-center gap-2">
                   <p className="field-label">Deskripsi</p>
-                  <CopyButton
-                    text={listing.body}
-                    copiedKey={`${listing.market}-body`}
-                    active={copied === `${listing.market}-body`}
-                    onCopy={copy}
-                  />
+                  <div className="ml-auto flex items-center gap-2">
+                    {listing.bodyMax ? (
+                      <span
+                        className={`text-[11px] tabular-nums ${
+                          listing.body.length > listing.bodyMax ? 'text-accent' : 'text-ink-mute'
+                        }`}
+                      >
+                        {listing.body.length} / {listing.bodyMax} karakter
+                      </span>
+                    ) : null}
+                    <CopyButton
+                      text={listing.body}
+                      copiedKey={`${listing.market}-body`}
+                      active={copied === `${listing.market}-body`}
+                      onCopy={copy}
+                    />
+                  </div>
                 </div>
                 <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-paper px-3 py-2.5 font-sans text-[13px] leading-relaxed text-ink-soft">
                   {listing.body}
