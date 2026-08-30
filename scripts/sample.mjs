@@ -161,6 +161,22 @@ const cases = [
       },
     },
   ]),
+  // A shop name long enough to fill the foot: the imprint is tracked out, so
+  // it runs off the page unless the size and the tracking answer the name.
+  // The workbook's is the narrowest block any imprint is set in.
+  ...['classic', 'workbook'].map((coverStyle) => ({
+    name: `imprint-long-${coverStyle}`,
+    patch: {
+      layout: 'single',
+      style: 'outline',
+      font: 'boldsans',
+      paper: 'a4',
+      coverPage: true,
+      coverStyle,
+      brand: 'Rumah Belajar Anak Ceria Nusantara',
+      productTitle: 'Alfabet A-Z Trace and Color',
+    },
+  })),
   // The loud compositions have to survive every palette, including the one
   // with no colour to give them: a cover that only works in "Krayon" is a
   // cover half the shop cannot use.

@@ -52,7 +52,12 @@ export function GenerateBar({
     images.reduce((sum, image) => sum + image.size, 0);
 
   return (
-    <div className="relative border-t border-line bg-surface px-safe pb-safe">
+    /*
+     * The checkout bar. Everything that has to be true before a seller can
+     * hand this to a marketplace lives on one line: what the pack is, how big
+     * it came out, and the one button that makes it.
+     */
+    <div className="relative z-20 border-t border-line bg-surface shadow-[0_-1px_2px_rgba(16,19,23,0.04)] px-safe pb-safe">
       {busy ? (
         <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-accent-soft">
           <div
@@ -64,19 +69,22 @@ export function GenerateBar({
 
       <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center">
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-[13px]">
+          <p className="flex items-center gap-2 text-[13.5px]">
             <span className="step-mark">06</span>
-            <span className="font-semibold text-ink">Hasil</span>
+            <span className="font-semibold tracking-tight text-ink">Hasil</span>
             <span className="truncate text-ink-mute">{summary}</span>
           </p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-[12px] tabular-nums text-ink-mute" aria-live="polite">
+          <p
+            className="mt-1 flex items-center gap-1.5 pl-[30px] text-[12.5px] tabular-nums text-ink-mute"
+            aria-live="polite"
+          >
             {busy && progress ? (
               `${progress.label} ${progress.done}/${progress.total} — ${percent}%`
             ) : error ? (
-              <span className="text-accent-hover">{error}</span>
+              <span className="text-accent-ink">{error}</span>
             ) : files.length ? (
               <>
-                <span className="text-accent animate-pop">
+                <span className="animate-pop text-accent">
                   <CheckIcon />
                 </span>
                 Siap: {files.length + images.length} berkas, {formatSize(totalSize)}
@@ -93,7 +101,7 @@ export function GenerateBar({
               <button
                 key={file.name}
                 type="button"
-                className="btn-quiet animate-pop-in tabular-nums"
+                className="btn-quiet animate-pop-in !rounded-full tabular-nums"
                 onClick={(event) => {
                   ripple(event);
                   onDownload(file);
@@ -107,7 +115,7 @@ export function GenerateBar({
             {files.length > 1 ? (
               <button
                 type="button"
-                className="btn-quiet animate-pop-in"
+                className="btn-quiet animate-pop-in !rounded-full"
                 onClick={(event) => {
                   ripple(event);
                   onDownloadAll();
@@ -120,7 +128,7 @@ export function GenerateBar({
             {images.length ? (
               <button
                 type="button"
-                className="btn-quiet animate-pop-in"
+                className="btn-quiet animate-pop-in !rounded-full"
                 onClick={(event) => {
                   ripple(event);
                   onOpenKit();
@@ -163,7 +171,7 @@ export function GenerateBar({
 
           <button
             type="button"
-            className="btn-primary flex-1 lg:flex-none"
+            className="btn-primary flex-1 !px-6 !py-2.5 lg:flex-none"
             onClick={(event) => {
               ripple(event);
               onGenerate();

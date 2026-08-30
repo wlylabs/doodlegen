@@ -418,6 +418,11 @@ All four faces are SIL OFL 1.1: commercial use, embedding and resale of the
 resulting PDFs are all permitted. The build pipeline, the modifications made,
 and why one face had to be renamed are documented in **[FONTS.md](FONTS.md)**.
 
+The interface glyphs are Lucide, ISC-licensed and vendored rather than
+installed; the option marks beside them are drawn here because they are
+schematics of this product's own compositions. Which is which, and why, is in
+**[ICONS.md](ICONS.md)**.
+
 ## Layout
 
 ```
@@ -455,6 +460,7 @@ lib/
   doodles.ts        Generated cover art: blobs, bursts, clouds, arches
 scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts
+public/ISC-lucide.txt  The icon set's licence, shipped with the site
 public/sw.js        Service worker: shell cache, offline, update handshake
 public/screenshots/ What the install dialog shows, shot from the real app
 ```

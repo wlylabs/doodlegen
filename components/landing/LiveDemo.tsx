@@ -73,7 +73,7 @@ export function LiveDemo() {
        * a proofing bench, and a slug of specs underneath. Same furniture, so
        * the landing page is a picture of the tool rather than an ad for it.
        */}
-      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sheet">
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-lift">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-line px-3.5 py-2.5">
           <div className="flex items-center gap-1.5">
             <span className="field-label mr-0.5 hidden sm:inline">Gaya</span>
@@ -82,7 +82,7 @@ export function LiveDemo() {
                 key={chip.id}
                 type="button"
                 data-active={chip.id === style}
-                className="chip !py-1.5 !text-[12px]"
+                className="chip !px-3 !py-1 !text-[12px]"
                 onClick={(event) => {
                   ripple(event);
                   setStyle(chip.id);
@@ -99,7 +99,7 @@ export function LiveDemo() {
                 key={chip.id}
                 type="button"
                 data-active={chip.id === layout}
-                className="chip !py-1.5 !text-[12px]"
+                className="chip !px-3 !py-1 !text-[12px]"
                 onClick={(event) => {
                   ripple(event);
                   setLayout(chip.id);

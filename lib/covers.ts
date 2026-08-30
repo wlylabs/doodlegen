@@ -56,7 +56,7 @@ export const COVER_STYLES: Record<CoverStyleId, CoverStyle> = {
   classic: {
     id: 'classic',
     label: 'Klasik',
-    note: 'Judul di tengah, tiga contoh berjajar, garis merek di kepala',
+    note: 'Judul di tengah, tiga contoh berjajar, nama toko di kaki',
     page: 'classic',
     samples: 3,
     decoration: 'full',

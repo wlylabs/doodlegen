@@ -269,20 +269,24 @@ export function App() {
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-paper">
-      <header className="z-30 shrink-0 border-b border-line bg-surface px-safe">
-        {/* The one line of colour in the chrome: a press bar across the top,
-            so the app is stamped rather than merely bordered. */}
-        <div className="h-[3px] bg-accent" aria-hidden="true" />
-        <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-4 py-3 sm:px-6">
+      {/*
+       * A flat white bar with one hairline under it. The old chrome carried a
+       * stamped accent rule across the top; on a neutral ground that is the
+       * loudest thing on screen, and it is competing with the one button that
+       * actually does something.
+       */}
+      <header className="z-30 shrink-0 border-b border-line bg-surface/90 backdrop-blur px-safe">
+        <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-4 py-2.5 sm:px-6">
           <Link href="/" className="press rounded-lg" aria-label="Ke beranda DoodleGen">
             <Logo />
           </Link>
           <span className="hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
-          <span className="hidden min-w-0 truncate text-[12.5px] font-medium text-ink-soft sm:inline">
+          {/* What is on the bench, named the way a document is named. */}
+          <span className="hidden min-w-0 truncate text-[13px] font-medium text-ink-soft sm:inline">
             {printedTitle(config, characters)}
           </span>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2">
             {/* Renders nothing unless this browser has an install to offer. */}
             <InstallButton compact />
 
@@ -312,7 +316,7 @@ export function App() {
               aria-controls="settings-panel"
               className="btn-quiet lg:hidden"
             >
-              <span className="max-w-[30vw] truncate">{panelOpen ? 'Tutup' : 'Pengaturan'}</span>
+              <span className="max-w-[22vw] truncate">{panelOpen ? 'Tutup' : 'Pengaturan'}</span>
               <span className={`transition-transform duration-300 ${panelOpen ? 'rotate-180' : ''}`}>
                 <ChevronIcon direction="down" />
               </span>
@@ -324,9 +328,9 @@ export function App() {
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <aside
           id="settings-panel"
-          className={`shrink-0 overflow-y-auto border-line bg-surface transition-[max-height] duration-300 ease-out
-            lg:max-h-none lg:w-[380px] lg:border-r xl:w-[420px]
-            ${panelOpen ? 'max-h-[60vh] border-b' : 'max-h-0 lg:max-h-none'}`}
+          className={`rail shrink-0 overflow-y-auto border-line bg-surface transition-[max-height] duration-300 ease-out
+            lg:max-h-none lg:w-[392px] lg:border-r xl:w-[428px]
+            ${panelOpen ? 'max-h-[65vh] border-b' : 'max-h-0 lg:max-h-none'}`}
         >
           <PresetRail
             activeId={presetId}
@@ -337,9 +341,9 @@ export function App() {
           />
           <SettingsPanel config={config} font={font} update={update} />
           {issues.length ? (
-            <div className="mx-5 mb-6 animate-fade-up rounded-xl border border-accent/30 bg-accent-soft px-3 py-2.5">
+            <div className="mx-5 mb-6 animate-fade-up rounded-xl border border-accent-line bg-accent-soft px-3.5 py-3">
               {issues.map((issue) => (
-                <p key={issue.message} className="text-[12px] leading-snug text-accent-hover">
+                <p key={issue.message} className="text-[12.5px] leading-snug text-accent-ink">
                   {issue.message}
                 </p>
               ))}
@@ -347,7 +351,7 @@ export function App() {
           ) : null}
         </aside>
 
-        <section className="min-h-0 min-w-0 flex-1 bg-paper">
+        <section className="min-h-0 min-w-0 flex-1 bg-sunk">
           {fontError ? (
             <div className="flex h-full items-center justify-center px-6 text-center">
               <p className="text-[13px] text-ink-soft">{fontError}</p>

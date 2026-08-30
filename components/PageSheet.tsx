@@ -78,7 +78,7 @@ export function PageSheet({
           width={safe.w}
           height={safe.h}
           fill="none"
-          stroke="#C2410C"
+          stroke="#E4550D"
           strokeOpacity="0.35"
           strokeWidth="1"
           strokeDasharray="6 5"

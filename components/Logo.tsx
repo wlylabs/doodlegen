@@ -15,7 +15,7 @@ export function LogoMark({ className = 'h-6 w-6' }: { className?: string }) {
       <path
         d="M7 4.2H10.7A7.8 7.8 0 0 1 10.7 19.8H7"
         fill="none"
-        stroke="#C2410C"
+        stroke="#E4550D"
         strokeWidth="2.6"
         strokeLinecap="round"
         strokeDasharray="0.01 4.5"

@@ -89,7 +89,7 @@ export function ServiceWorkerRegistrar() {
       role="status"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
-      <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2.5 shadow-[0_18px_40px_-20px_rgba(28,25,23,0.55)]">
+      <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2.5 shadow-pop">
         <span className="text-[13px] text-ink-soft">Versi baru DoodleGen sudah siap.</span>
         <button
           type="button"

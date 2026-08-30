@@ -12,10 +12,10 @@ import sharp from 'sharp';
 
 const OUT = path.resolve(import.meta.dirname, '..', 'public');
 
-const INK = '#1C1917';
-const PAPER = '#FAFAF9';
-const ACCENT_ON_DARK = '#F97316';
-const ACCENT = '#C2410C';
+const INK = '#101317';
+const PAPER = '#FFFFFF';
+const ACCENT_ON_DARK = '#FB8B3C';
+const ACCENT = '#E4550D';
 
 /** The mark itself, drawn on a 24-unit grid. */
 function mark({ stem, dots }) {

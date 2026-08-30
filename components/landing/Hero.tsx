@@ -23,12 +23,12 @@ function DemoSkeleton() {
     <div className="w-full">
       <div className="flex flex-wrap gap-1.5">
         {[64, 78, 86, 92, 88, 74].map((width, index) => (
-          <span key={index} className="h-8 rounded-lg bg-line/70" style={{ width }} />
+          <span key={index} className="h-8 rounded-full bg-line" style={{ width }} />
         ))}
       </div>
-      <div className="mt-3 flex items-center justify-center rounded-2xl border border-line bg-white p-3 shadow-sheet">
+      <div className="mt-3 flex items-center justify-center rounded-2xl border border-line bg-white p-3 shadow-lift">
         <div
-          className="flex w-full max-w-[300px] items-center justify-center rounded-lg bg-paper text-ink-mute"
+          className="flex w-full max-w-[300px] items-center justify-center rounded-lg bg-sunk text-ink-mute"
           style={{ aspectRatio: `${PAPERS.a4.widthPt} / ${PAPERS.a4.heightPt}` }}
         >
           <Spinner />
@@ -55,24 +55,24 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative overflow-hidden">
-      {/* Two soft washes and a dotted field: the page's only decoration. */}
+    <section className="relative overflow-hidden bg-surface">
+      {/*
+       * One dotted field, faded out before it reaches the copy. The washes of
+       * accent that used to sit behind the headline were the warmest thing on
+       * the page; on a white ground they only muddied it.
+       */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.55]"
+        className="pointer-events-none absolute inset-0 opacity-70"
         style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(28,25,23,0.10) 1px, transparent 0)',
-          backgroundSize: '22px 22px',
-          maskImage: 'radial-gradient(ellipse 70% 55% at 50% 0%, black, transparent 75%)',
-          WebkitMaskImage: 'radial-gradient(ellipse 70% 55% at 50% 0%, black, transparent 75%)',
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(16,19,23,0.07) 1px, transparent 0)',
+          backgroundSize: '24px 24px',
+          maskImage: 'radial-gradient(ellipse 75% 60% at 50% 0%, black, transparent 72%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 75% 60% at 50% 0%, black, transparent 72%)',
         }}
       />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-accent/10 blur-3xl"
-      />
 
-      <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:pb-24 lg:pt-20">
+      <div className="relative mx-auto grid max-w-6xl gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:items-center lg:gap-16 lg:pb-24 lg:pt-24">
         <div>
           <Reveal>
             <span className="pill bg-surface">
@@ -84,14 +84,14 @@ export function Hero() {
           </Reveal>
 
           <Reveal delay={80}>
-            <h1 className="mt-5 text-balance font-brand text-[38px] leading-[1.05] tracking-tightest sm:text-[52px] lg:text-[58px]">
-              Halaman mewarnai &amp; tracing
+            <h1 className="mt-6 font-brand text-[38px] leading-[1.06] tracking-tightest sm:text-[50px] lg:text-[54px]">
+              <span className="block text-balance">Halaman mewarnai &amp; tracing</span>
               <span className="block text-accent">yang siap dijual hari ini</span>
             </h1>
           </Reveal>
 
           <Reveal delay={150}>
-            <p className="mt-5 max-w-xl text-[15.5px] leading-relaxed text-ink-soft">
+            <p className="mt-6 max-w-xl text-[16px] leading-relaxed text-ink-soft">
               Susun set alfabet, angka, atau nama sendiri; ambil PDF A4 dan US Letter yang benar-benar
               vektor, lengkap dengan sampul, lembar lisensi, gambar listing, dan draf deskripsi untuk
               Etsy, TPT, Gumroad, Shopee, Tokopedia, dan Pinterest.
@@ -99,8 +99,8 @@ export function Hero() {
           </Reveal>
 
           <Reveal delay={220}>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/studio" className="btn-primary">
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/studio" className="btn-primary !px-6 !py-3 !text-[15px]">
                 Buka Studio
               </Link>
               <a href="#kit" className="btn-quiet !px-5 !py-3 !text-[15px]">
@@ -110,11 +110,11 @@ export function Hero() {
           </Reveal>
 
           <Reveal delay={280}>
-            <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2">
+            <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2.5 border-t border-line pt-6">
               {PROOF.map((item) => (
                 <li key={item} className="flex items-center gap-1.5 text-[13px] font-medium text-ink-soft">
-                  <span className="text-accent">
-                    <CheckIcon className="h-3.5 w-3.5" />
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent-soft text-accent">
+                    <CheckIcon className="h-3 w-3" />
                   </span>
                   {item}
                 </li>

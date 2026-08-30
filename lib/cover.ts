@@ -255,6 +255,13 @@ function colourised(plan: PagePlan, palette: Palette): PagePlan {
 const BRAND_STACK = "'DoodleGen Brand', system-ui, -apple-system, Segoe UI, sans-serif";
 const TEXT_STACK = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
 
+/**
+ * How far apart the wordmark's letters are set, as a fraction of its size.
+ * The printed cover tracks its imprint out by the same fraction, and that
+ * shared number is most of what makes the two read as the same mark.
+ */
+const IMPRINT_TRACK = 0.16;
+
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -523,12 +530,19 @@ function drawBrandLine(
   color: string,
 ) {
   ctx.save();
-  ctx.font = `700 ${size}px ${TEXT_STACK}`;
+  // The wordmark is set in the product's own face, not the interface stack.
+  // Drawn in system-ui it came out as whatever sans the viewer's OS happens
+  // to ship — a different typeface from every other word on the image, which
+  // is what made a shop's name read as a stamp pressed onto someone else's
+  // cover rather than as part of it.
+  ctx.font = `600 ${size}px ${BRAND_STACK}`;
   ctx.fillStyle = color;
   ctx.textAlign = align;
   // Canvas has no letter-spacing everywhere yet, so it is drawn by hand.
   const letters = [...text.toUpperCase()];
-  const spacing = size * 0.18;
+  // The same tracking the printed cover's imprint is set at, so the listing
+  // image and the file a buyer opens carry one mark, not two.
+  const spacing = size * IMPRINT_TRACK;
   const width = letters.reduce((sum, ch) => sum + ctx.measureText(ch).width + spacing, -spacing);
   let cursor = align === 'center' ? x - width / 2 : align === 'right' ? x - width : x;
   ctx.textAlign = 'left';

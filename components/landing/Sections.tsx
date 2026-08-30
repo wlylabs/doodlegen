@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { CheckIcon, ChevronIcon, KitIcon } from '../diagrams';
+import { CheckIcon, ChevronIcon, CoverMark, KitIcon, LayoutMark } from '../diagrams';
 import { CountUp, Reveal, useRipple } from '../motion';
 import { IMAGE_SPECS } from '@/lib/cover';
+import { COVER_STYLES } from '@/lib/covers';
 import { MARKETS, STARTER_PRESETS } from '@/lib/presets';
 
 /** "2000 x 2000" reads as 1:1; the tile says which shape it is. */
@@ -25,23 +26,53 @@ const MARKETPLACES = [
   'Karyakarsa',
 ];
 
+/**
+ * Every section opens the same way: an eyebrow, one heading, and at most one
+ * paragraph. Repeating the shape is what lets a long page be scanned instead
+ * of read, which is the only way a landing page is ever actually used.
+ */
+function SectionHead({
+  eyebrow,
+  title,
+  lede,
+  align = 'left',
+}: {
+  eyebrow: string;
+  title: string;
+  lede?: string;
+  align?: 'left' | 'centre';
+}) {
+  return (
+    <Reveal className={align === 'centre' ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'}>
+      <p className="field-label text-accent">{eyebrow}</p>
+      <h2 className="mt-3 text-balance font-brand text-[28px] leading-[1.15] tracking-tightest sm:text-[36px]">
+        {title}
+      </h2>
+      {lede ? <p className="mt-4 text-[15px] leading-relaxed text-ink-soft">{lede}</p> : null}
+    </Reveal>
+  );
+}
+
 export function Marquee() {
   const row = [...MARKETPLACES, ...MARKETPLACES];
   return (
-    <section aria-label="Marketplace yang didukung" className="border-y border-line bg-surface py-5">
+    <section aria-label="Marketplace yang didukung" className="border-y border-line bg-surface py-7">
+      <p className="mb-4 text-center text-[11.5px] font-medium text-ink-mute">
+        Formatnya mengikuti formulir unggah di
+      </p>
       <div className="marquee-host relative overflow-hidden">
-        <div className="marquee-track flex w-max items-center gap-10 px-6">
+        <div className="marquee-track flex w-max items-center gap-12 px-6">
           {row.map((name, index) => (
             <span
               key={`${name}-${index}`}
-              className="whitespace-nowrap text-[12.5px] font-semibold uppercase tracking-[0.14em] text-ink-mute"
+              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-ink-mute"
             >
               {name}
             </span>
           ))}
         </div>
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-surface to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-surface to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-surface to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-surface to-transparent" />
       </div>
     </section>
   );
@@ -56,14 +87,24 @@ const STATS = [
 
 export function Stats() {
   return (
-    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:py-16">
+      {/* One panel, four columns, divided by the same hairline as everything
+          else — four floating numbers read as decoration, a panel reads as a
+          claim. */}
+      <div className="card grid overflow-hidden divide-y divide-line sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4">
         {STATS.map((stat, index) => (
-          <Reveal key={stat.label} delay={index * 70} className="text-center sm:text-left">
-            <p className="font-brand text-[40px] leading-none tracking-tightest text-accent">
+          <Reveal
+            key={stat.label}
+            delay={index * 70}
+            className={`px-6 py-7 sm:[&:nth-child(n+3)]:border-t sm:[&:nth-child(n+3)]:border-line
+                        sm:[&:nth-child(even)]:border-l sm:[&:nth-child(even)]:border-line
+                        lg:[&:nth-child(n+3)]:border-t-0 lg:[&:not(:first-child)]:border-l
+                        lg:[&:not(:first-child)]:border-line`}
+          >
+            <p className="font-brand text-[38px] leading-none tracking-tightest text-ink">
               <CountUp to={stat.value} suffix={stat.suffix} />
             </p>
-            <p className="mt-2 text-[13px] leading-snug text-ink-soft">{stat.label}</p>
+            <p className="mt-2 text-[13px] leading-snug text-ink-mute">{stat.label}</p>
           </Reveal>
         ))}
       </div>
@@ -108,33 +149,30 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section id="fitur" className="scroll-mt-20 border-t border-line bg-surface py-16">
+    <section id="fitur" className="scroll-mt-20 border-t border-line bg-surface py-16 lg:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <Reveal>
-          <p className="field-label text-accent">Kenapa DoodleGen</p>
-          <h2 className="mt-3 max-w-2xl font-brand text-[30px] leading-tight tracking-tightest sm:text-[38px]">
-            Dari ide sampai listing, tanpa membuka aplikasi desain
-          </h2>
-        </Reveal>
+        <SectionHead
+          eyebrow="Kenapa DoodleGen"
+          title="Dari ide sampai listing, tanpa membuka aplikasi desain"
+        />
 
         {/*
-         * A hairline grid, not eight identical boxes with the same icon in
-         * them. The rules do the separating, the numbers do the ordering, and
-         * nothing is repeated eight times except the rhythm.
+         * Eight cards on a grid, the shape a marketplace uses for everything
+         * it wants browsed rather than read. The hairline grid this replaced
+         * asked the eye to follow rules across four columns; a card asks it
+         * only to stop.
          */}
-        <div className="mt-10 grid border-t border-line sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature, index) => (
-            <Reveal
-              key={feature.title}
-              delay={index * 45}
-              className="border-b border-line px-0 py-6 sm:odd:pr-7 sm:even:border-l sm:even:pl-7
-                         lg:[&:nth-child(4n+1)]:pr-7 lg:[&:not(:nth-child(4n+1))]:border-l
-                         lg:[&:not(:nth-child(4n+1))]:px-7 lg:[&:nth-child(4n)]:pr-0"
-            >
-              <article className="h-full">
-                <p className="spec text-accent">{String(index + 1).padStart(2, '0')}</p>
-                <h3 className="mt-2.5 text-[15px] font-semibold leading-snug">{feature.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{feature.body}</p>
+            <Reveal key={feature.title} delay={index * 45} className="h-full">
+              <article className="card-lift flex h-full flex-col p-5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sunk text-[12px] font-bold tabular-nums text-ink-mute">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <h3 className="mt-4 text-[15px] font-semibold leading-snug tracking-tight">
+                  {feature.title}
+                </h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-mute">{feature.body}</p>
               </article>
             </Reveal>
           ))}
@@ -155,34 +193,39 @@ const STANDARDS = [
 
 export function Standards() {
   return (
-    <section id="standar" className="scroll-mt-20 py-16">
+    <section id="standar" className="scroll-mt-20 py-16 lg:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <Reveal>
-            <p className="field-label text-accent">Standar cetak</p>
-            <h2 className="mt-3 font-brand text-[30px] leading-tight tracking-tightest sm:text-[38px]">
-              Enam janji yang diperiksa mesin, bukan diklaim di halaman ini
-            </h2>
-            <p className="mt-4 max-w-md text-[14px] leading-relaxed text-ink-soft">
-              Setiap PDF hasil DoodleGen diuji ulang lewat <code className="rounded bg-accent-soft px-1.5 py-0.5 text-[13px] text-accent-hover">npm run verify</code>:
-              berkas dirender ke piksel, isi streamnya dibaca, dan pemeriksaan gagal bila salah satu
-              janji di samping tidak terpenuhi.
-            </p>
-          </Reveal>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
+          <div>
+            <SectionHead
+              eyebrow="Standar cetak"
+              title="Enam janji yang diperiksa mesin, bukan diklaim di halaman ini"
+            />
+            <Reveal delay={80}>
+              <p className="mt-4 max-w-md text-[14px] leading-relaxed text-ink-soft">
+                Setiap PDF hasil DoodleGen diuji ulang lewat{' '}
+                <code className="rounded-md bg-sunk px-1.5 py-0.5 text-[13px] text-ink-soft">
+                  npm run verify
+                </code>
+                : berkas dirender ke piksel, isi streamnya dibaca, dan pemeriksaan gagal bila salah
+                satu janji di samping tidak terpenuhi.
+              </p>
+            </Reveal>
+          </div>
 
           {/* Read as what it is: a spec sheet, ruled line by line. */}
-          <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+          <div className="card overflow-hidden shadow-sheet">
             {STANDARDS.map((item, index) => (
               <Reveal
                 key={item.label}
                 delay={index * 45}
-                className="flex gap-3 border-b border-line px-4 py-3.5 last:border-b-0"
+                className="flex gap-3 border-b border-line px-5 py-4 last:border-b-0"
               >
-                <span className="mt-[3px] shrink-0 text-accent">
-                  <CheckIcon className="h-4 w-4" />
+                <span className="mt-[3px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                  <CheckIcon className="h-3.5 w-3.5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[13.5px] font-semibold leading-snug">{item.label}</p>
+                  <p className="text-[14px] font-semibold leading-snug tracking-tight">{item.label}</p>
                   <p className="mt-1 text-[12.5px] leading-relaxed text-ink-mute">{item.body}</p>
                 </div>
                 <span className="spec ml-auto hidden shrink-0 pt-0.5 sm:block">
@@ -214,37 +257,20 @@ const STEPS = [
 
 export function Steps() {
   return (
-    <section className="border-y border-line bg-surface py-16">
+    <section className="border-y border-line bg-surface py-16 lg:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <Reveal>
-          <p className="field-label text-accent">Cara kerja</p>
-          <h2 className="mt-3 font-brand text-[30px] leading-tight tracking-tightest sm:text-[38px]">
-            Tiga langkah, sekitar dua menit
-          </h2>
-        </Reveal>
+        <SectionHead eyebrow="Cara kerja" title="Tiga langkah, sekitar dua menit" />
 
-        {/*
-         * Three steps in sequence, laid along a rule with a tick above each
-         * one — a process reads as a line, not as three parked boxes.
-         */}
-        <ol className="mt-10 grid md:grid-cols-3">
+        <ol className="mt-12 grid gap-4 md:grid-cols-3">
           {STEPS.map((step, index) => (
-            <Reveal
-              key={step.title}
-              delay={index * 90}
-              as="li"
-              className="relative border-t border-line pt-6 md:pr-8
-                         md:[&:not(:first-child)]:border-l md:[&:not(:first-child)]:pl-8"
-            >
-              <span
-                aria-hidden="true"
-                className="absolute left-0 top-0 h-[2px] w-10 bg-accent md:top-[-1px]"
-              />
-              <span className="font-brand text-[26px] leading-none tracking-tightest text-accent">
-                0{index + 1}
-              </span>
-              <h3 className="mt-3 text-[15.5px] font-semibold">{step.title}</h3>
-              <p className="mt-2 max-w-[38ch] text-[13px] leading-relaxed text-ink-soft">{step.body}</p>
+            <Reveal key={step.title} delay={index * 90} as="li" className="h-full">
+              <div className="card flex h-full flex-col p-6">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[13px] font-bold tabular-nums text-white">
+                  {index + 1}
+                </span>
+                <h3 className="mt-4 text-[16px] font-semibold tracking-tight">{step.title}</h3>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-ink-mute">{step.body}</p>
+              </div>
             </Reveal>
           ))}
         </ol>
@@ -255,67 +281,64 @@ export function Steps() {
 
 export function KitShowcase() {
   return (
-    <section id="kit" className="scroll-mt-20 py-16">
+    <section id="kit" className="scroll-mt-20 py-16 lg:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-10 lg:grid-cols-2">
-          <Reveal>
-            <p className="field-label text-accent">Kit marketplace</p>
-            <h2 className="mt-3 font-brand text-[30px] leading-tight tracking-tightest sm:text-[38px]">
-              Bagian yang biasanya makan waktu semalam, ikut keluar bersama berkasnya
-            </h2>
-            <p className="mt-4 text-[14px] leading-relaxed text-ink-soft">
-              Halaman cetak hanya setengah dari produk digital. Setengah lagi adalah dua belas gambar listing,
-              judul, deskripsi, tag, lembar ketentuan — dan urutan mengisi formulir tambah produk di
-              lapaknya. DoodleGen menyiapkan semuanya dari setelan yang sama, jadi angka di deskripsi
-              selalu cocok dengan isi berkasnya.
-            </p>
+        <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
+          <div>
+            <SectionHead
+              eyebrow="Kit marketplace"
+              title="Bagian yang biasanya makan waktu semalam, ikut keluar bersama berkasnya"
+              lede="Halaman cetak hanya setengah dari produk digital. Setengah lagi adalah dua belas gambar listing, judul, deskripsi, tag, lembar ketentuan — dan urutan mengisi formulir tambah produk di lapaknya. DoodleGen menyiapkan semuanya dari setelan yang sama, jadi angka di deskripsi selalu cocok dengan isi berkasnya."
+            />
 
             {/* One ruled panel, matching the copy panel opposite it. */}
-            <ul className="mt-6 overflow-hidden rounded-2xl border border-line bg-surface">
+            <ul className="card mt-8 overflow-hidden shadow-sheet">
               {IMAGE_SPECS.filter((spec) => spec.kind === 'cover').map((spec, index) => (
                 <Reveal key={spec.id} delay={index * 60} as="li" className="border-b border-line last:border-b-0">
-                  <div className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex items-center gap-3.5 px-5 py-3.5">
                     <span
                       aria-hidden="true"
-                      className="flex shrink-0 items-center justify-center rounded border border-line-strong bg-paper
+                      className="flex shrink-0 items-center justify-center rounded-md border border-line bg-sunk
                                  text-[9px] font-semibold tabular-nums text-ink-mute"
                       style={{ width: 38, height: (38 * spec.height) / spec.width }}
                     >
                       {ratioOf(spec.width, spec.height)}
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[13.5px] font-semibold">{spec.label}</span>
+                      <span className="block text-[13.5px] font-semibold tracking-tight">{spec.label}</span>
                       <span className="block text-[12px] text-ink-mute">{spec.note}</span>
                     </span>
-                    <span className="ml-auto shrink-0 text-[11px] font-medium text-accent">
+                    <span className="ml-auto shrink-0 rounded-full bg-sunk px-2.5 py-1 text-[11px] font-medium text-ink-mute">
                       {spec.market}
                     </span>
                   </div>
                 </Reveal>
               ))}
             </ul>
-          </Reveal>
+          </div>
 
           <Reveal delay={120}>
-            <div className="card-lift overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-line px-4 py-3">
+            <div className="card overflow-hidden shadow-sheet">
+              <div className="flex items-center gap-2 border-b border-line px-5 py-3.5">
                 <span className="text-accent">
                   <KitIcon />
                 </span>
-                <p className="text-[13px] font-semibold">Teks listing & langkah unggah</p>
+                <p className="text-[13.5px] font-semibold tracking-tight">Teks listing &amp; langkah unggah</p>
               </div>
               <div className="divide-y divide-line">
                 {MARKETS.map((market) => (
-                  <div key={market.id} className="px-4 py-3.5">
-                    <p className="flex items-center gap-2 text-[13px] font-semibold">
+                  <div key={market.id} className="px-5 py-4">
+                    <p className="flex items-center gap-2 text-[13.5px] font-semibold tracking-tight">
                       {market.label}
-                      <span className="pill !py-0.5 !text-[11px]">{market.language.toUpperCase()}</span>
+                      <span className="rounded-full bg-sunk px-2 py-0.5 text-[10.5px] font-semibold text-ink-mute">
+                        {market.language.toUpperCase()}
+                      </span>
                     </p>
                     <p className="mt-1 text-[12.5px] leading-relaxed text-ink-mute">{market.note}</p>
                   </div>
                 ))}
               </div>
-              <div className="border-t border-line bg-paper px-4 py-3">
+              <div className="border-t border-line bg-paper px-5 py-4">
                 <p className="text-[12px] leading-relaxed text-ink-mute">
                   Isi ZIP: <span className="text-ink-soft">01-PRINT-FILES</span>,{' '}
                   <span className="text-ink-soft">02-LISTING-IMAGES</span>,{' '}
@@ -336,33 +359,42 @@ export function KitShowcase() {
 export function Presets() {
   const ripple = useRipple<HTMLAnchorElement>();
   return (
-    <section className="border-y border-line bg-surface py-16">
+    <section className="border-y border-line bg-surface py-16 lg:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <Reveal>
-          <p className="field-label text-accent">Mulai cepat</p>
-          <h2 className="mt-3 font-brand text-[30px] leading-tight tracking-tightest sm:text-[38px]">
-            Empat paket yang tinggal dipakai
-          </h2>
-        </Reveal>
+        <SectionHead eyebrow="Mulai cepat" title="Empat paket yang tinggal dipakai" />
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/*
+         * Product cards: a picture of what comes out, a name, a line, and the
+         * channel it was cut for. The picture is the two marks the studio
+         * already draws for these very settings, so the card cannot promise a
+         * layout the preset does not set.
+         */}
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STARTER_PRESETS.map((preset, index) => (
-            <Reveal key={preset.id} delay={index * 70}>
+            <Reveal key={preset.id} delay={index * 70} className="h-full">
               <Link
                 href={`/studio#p=${preset.id}`}
                 onClick={ripple}
-                className="ripple-host card-lift flex h-full flex-col p-5"
+                className="ripple-host card-lift group flex h-full flex-col overflow-hidden"
               >
-                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-accent">
-                  {preset.market}
+                <span className="flex items-center justify-center gap-4 border-b border-line bg-sunk py-7 text-ink-soft">
+                  <LayoutMark kind={preset.patch.layout ?? 'single'} />
+                  <CoverMark kind={COVER_STYLES[preset.patch.coverStyle ?? 'classic'].page} />
                 </span>
-                <span className="mt-2 text-[16px] font-semibold leading-tight tracking-tight">
-                  {preset.label}
-                </span>
-                <span className="mt-1.5 text-[13px] leading-relaxed text-ink-mute">{preset.note}</span>
-                <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-accent">
-                  Buka di studio
-                  <ChevronIcon direction="right" />
+                <span className="flex flex-1 flex-col p-5">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-mute">
+                    {preset.market}
+                  </span>
+                  <span className="mt-2 text-[16px] font-semibold leading-tight tracking-tight">
+                    {preset.label}
+                  </span>
+                  <span className="mt-1.5 text-[13px] leading-relaxed text-ink-mute">{preset.note}</span>
+                  <span className="mt-auto pt-4 inline-flex items-center gap-1 text-[13px] font-semibold text-accent">
+                    Buka di studio
+                    <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+                      <ChevronIcon direction="right" />
+                    </span>
+                  </span>
                 </span>
               </Link>
             </Reveal>
@@ -421,16 +453,15 @@ export function Faq() {
   const ripple = useRipple<HTMLButtonElement>();
 
   return (
-    <section id="faq" className="scroll-mt-20 py-16">
+    <section id="faq" className="scroll-mt-20 py-16 lg:py-24">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <Reveal>
-          <p className="field-label text-accent">Pertanyaan</p>
-          <h2 className="mt-3 font-brand text-[30px] leading-tight tracking-tightest sm:text-[38px]">
-            Hal yang biasanya ditanyakan lebih dulu
-          </h2>
-        </Reveal>
+        <SectionHead
+          eyebrow="Pertanyaan"
+          title="Hal yang biasanya ditanyakan lebih dulu"
+          align="centre"
+        />
 
-        <div className="mt-8 divide-y divide-line border-y border-line">
+        <div className="card mt-10 divide-y divide-line overflow-hidden shadow-sheet">
           {FAQ.map((item, index) => {
             const isOpen = open === index;
             return (
@@ -438,13 +469,13 @@ export function Faq() {
                 <button
                   type="button"
                   aria-expanded={isOpen}
-                  className="ripple-host press flex w-full items-center gap-3 py-4 text-left"
+                  className="ripple-host flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-paper"
                   onClick={(event) => {
                     ripple(event);
                     setOpen(isOpen ? null : index);
                   }}
                 >
-                  <span className="text-[15px] font-semibold tracking-tight">{item.question}</span>
+                  <span className="text-[14.5px] font-semibold tracking-tight">{item.question}</span>
                   <span
                     className={`ml-auto shrink-0 text-ink-mute transition-transform duration-300 ${
                       isOpen ? 'rotate-180 text-accent' : ''
@@ -459,7 +490,7 @@ export function Faq() {
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <p className="pb-5 pr-8 text-[14px] leading-relaxed text-ink-soft">{item.answer}</p>
+                    <p className="px-5 pb-5 text-[13.5px] leading-relaxed text-ink-soft">{item.answer}</p>
                   </div>
                 </div>
               </div>
@@ -473,25 +504,45 @@ export function Faq() {
 
 export function Cta() {
   return (
-    <section className="px-4 pb-16 sm:px-6">
+    <section className="px-4 pb-20 sm:px-6">
       <Reveal className="mx-auto max-w-6xl">
-        <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-accent-soft px-6 py-12 text-center sm:px-12">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/10 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-12 -left-6 h-40 w-40 rounded-full bg-accent/10 blur-2xl" />
-          <h2 className="font-brand text-[30px] leading-tight tracking-tightest sm:text-[40px]">
-            Paket pertama Anda tinggal satu klik
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-[14.5px] leading-relaxed text-ink-soft">
-            Tanpa akun, tanpa langganan, tanpa watermark. Buka studio, pilih satu preset, dan unduh
-            berkas yang siap diunggah hari ini juga.
-          </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link href="/studio" className="btn-primary">
-              Buka Studio
-            </Link>
-            <a href="#fitur" className="btn-quiet !px-5 !py-3 !text-[15px]">
-              Lihat fiturnya dulu
-            </a>
+        {/*
+         * The one dark panel on the page. A closing call that shares the
+         * ground with everything above it does not close anything; this one
+         * stops the scroll on its own.
+         */}
+        <div className="relative overflow-hidden rounded-3xl bg-ink px-6 py-14 text-center sm:px-12 lg:py-20">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.35]"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.12) 1px, transparent 0)',
+              backgroundSize: '22px 22px',
+              maskImage: 'radial-gradient(ellipse 70% 80% at 50% 0%, black, transparent 70%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 50% 0%, black, transparent 70%)',
+            }}
+          />
+          <div className="relative">
+            <h2 className="text-balance font-brand text-[30px] leading-tight tracking-tightest text-white sm:text-[42px]">
+              Paket pertama Anda tinggal satu klik
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/70">
+              Tanpa akun, tanpa langganan, tanpa watermark. Buka studio, pilih satu preset, dan
+              unduh berkas yang siap diunggah hari ini juga.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link href="/studio" className="btn-primary !px-6 !py-3 !text-[15px]">
+                Buka Studio
+              </Link>
+              <a
+                href="#fitur"
+                className="press inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3
+                           text-[15px] font-medium text-white transition-colors hover:bg-white/10"
+              >
+                Lihat fiturnya dulu
+              </a>
+            </div>
           </div>
         </div>
       </Reveal>
@@ -506,14 +557,14 @@ export function Footer() {
         <p className="text-[13px] text-ink-mute">
           DoodleGen — generator halaman mewarnai dan tracing siap cetak.
         </p>
-        <div className="flex flex-wrap gap-4 sm:ml-auto">
-          <Link href="/studio" className="text-[13px] font-medium text-ink-soft hover:text-accent">
+        <div className="flex flex-wrap items-center gap-5 sm:ml-auto">
+          <Link href="/studio" className="text-[13px] font-medium text-ink-soft transition-colors hover:text-accent">
             Studio
           </Link>
-          <a href="#standar" className="text-[13px] font-medium text-ink-soft hover:text-accent">
+          <a href="#standar" className="text-[13px] font-medium text-ink-soft transition-colors hover:text-accent">
             Standar cetak
           </a>
-          <a href="#faq" className="text-[13px] font-medium text-ink-soft hover:text-accent">
+          <a href="#faq" className="text-[13px] font-medium text-ink-soft transition-colors hover:text-accent">
             FAQ
           </a>
           <span className="text-[13px] text-ink-mute">Font: SIL OFL 1.1</span>

@@ -129,12 +129,12 @@ function IosHint({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/25 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/35 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-[2px]">
       <button type="button" className="absolute inset-0 cursor-default" aria-label="Tutup" onClick={dismiss} />
       <div
         role="dialog"
         aria-label="Pasang DoodleGen di layar utama"
-        className="relative w-full max-w-sm rounded-2xl border border-line bg-surface p-4 shadow-[0_24px_60px_-24px_rgba(28,25,23,0.5)]"
+        className="relative w-full max-w-sm rounded-3xl border border-line bg-surface p-5 shadow-pop"
       >
         <button
           type="button"
