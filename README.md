@@ -65,7 +65,7 @@ the rest around it:
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
-| Listing images | 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 (Gumroad), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest), drawn from the same page plans. |
+| Listing images | Twelve canvases, not five: a cover for each channel at its own size — 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 and 600×600 (Gumroad cover and square thumbnail), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest) — plus, where a channel gives a listing more than one photo slot, a contents grid of every page, a paper mockup of the printed sheets, and a three-step "how it works" card. All drawn from the same page plans, in vector, with no stock photography. |
 | Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The description says what is genuinely on the pages — stroke weight, handwriting guides, grid size, the words in a word pack, the editable SVGs — so two packs read as two products. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
 | Upload steps | Each channel's own add-product form, walked field by field: photo, product name, category, description, price, stock, SKU — and the weight, package size and courier Shopee and Tokopedia will not let a listing save without. Every blank says whether it is pasted, chosen or uploaded, and the pasted ones carry the copy above. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
@@ -75,7 +75,7 @@ the rest around it:
 ```
 doodlegen-<subject>-<style>-<layout>/
   01-PRINT-FILES/       A4 and US Letter PDFs
-  02-LISTING-IMAGES/    the five listing canvases, PNG
+  02-LISTING-IMAGES/    the twelve listing canvases, PNG
   03-LISTING-COPY/      etsy.txt, tpt.txt, gumroad.txt, shopee.txt,
                         tokopedia.txt, pinterest.txt
   04-UPLOAD-STEPS/      the same six channels, as add-product walkthroughs
@@ -83,6 +83,21 @@ doodlegen-<subject>-<style>-<layout>/
   READ-ME-FIRST.txt
   FONT-LICENSE.txt
 ```
+
+**A listing needs a set of pictures, not a picture.** A cover sells the
+idea; the rest answer the questions that stop a digital sale. The contents
+grid draws every page in the pack, because a buyer of a 26-page PDF cannot
+open it before paying and that is the thing they are actually asking. The
+mockup shows the sheets as paper with a crayon beside them, because a flat
+PDF thumbnail reads as a file rather than as the afternoon someone is
+shopping for. The steps card says nothing is shipped and how the file
+arrives — the question Indonesian sellers otherwise answer in chat all day.
+Past thirty pages the grid samples evenly and says so rather than shrinking
+the thumbnails into a texture.
+
+Everything is drawn on a canvas from the same page plans as the PDF, crayons
+included: a mockup built on someone else's stock photo would carry someone
+else's licence into the seller's shop.
 
 **Copy is only half of a listing.** Knowing what to write is not the same as
 knowing where it goes, and the field that stops a first-time seller is never

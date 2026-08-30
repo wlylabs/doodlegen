@@ -86,7 +86,7 @@ const FEATURES = [
   },
   {
     title: 'Gambar listing siap unggah',
-    body: 'Lima kanvas untuk Etsy, TPT, Gumroad, Shopee/Tokopedia, dan Pinterest digambar dari halaman aslinya — ukuran dan bahasanya sudah sesuai aturan tiap marketplace.',
+    body: 'Bukan satu gambar, tapi satu set: sampul, kisi berisi semua halaman, mockup lembaran di atas meja, dan kartu "cara kerja" yang menjawab pertanyaan barangnya dikirim ke mana. Semuanya digambar dari halaman aslinya, dalam ukuran dan bahasa tiap marketplace.',
   },
   {
     title: 'Teks listing dan langkah unggahnya',
@@ -264,7 +264,7 @@ export function KitShowcase() {
               Bagian yang biasanya makan waktu semalam, ikut keluar bersama berkasnya
             </h2>
             <p className="mt-4 text-[14px] leading-relaxed text-ink-soft">
-              Halaman cetak hanya setengah dari produk digital. Setengah lagi adalah gambar listing,
+              Halaman cetak hanya setengah dari produk digital. Setengah lagi adalah dua belas gambar listing,
               judul, deskripsi, tag, lembar ketentuan — dan urutan mengisi formulir tambah produk di
               lapaknya. DoodleGen menyiapkan semuanya dari setelan yang sama, jadi angka di deskripsi
               selalu cocok dengan isi berkasnya.
@@ -272,7 +272,7 @@ export function KitShowcase() {
 
             {/* One ruled panel, matching the copy panel opposite it. */}
             <ul className="mt-6 overflow-hidden rounded-2xl border border-line bg-surface">
-              {IMAGE_SPECS.map((spec, index) => (
+              {IMAGE_SPECS.filter((spec) => spec.kind === 'cover').map((spec, index) => (
                 <Reveal key={spec.id} delay={index * 60} as="li" className="border-b border-line last:border-b-0">
                   <div className="flex items-center gap-3 px-4 py-3">
                     <span

@@ -1,4 +1,5 @@
 import { IMAGE_SPECS } from './cover';
+import type { ImageKind, ImageSpec } from './cover';
 import { buildListing } from './listing';
 import type { ListingCopy, ListingInput } from './listing';
 import { packSlug } from './naming';
@@ -51,15 +52,23 @@ export interface UploadGuide {
 /** Everything a guide holds except what the marketplace table already knows. */
 type GuideBody = Omit<UploadGuide, 'market' | 'label' | 'copy'>;
 
-/** Which listing canvas each marketplace's photo field wants. */
-const IMAGE_FOR: Record<MarketSpec['id'], string> = {
-  etsy: 'etsy',
-  tpt: 'tpt',
-  gumroad: 'gumroad',
-  // One Indonesian canvas serves both lapak: same buyer, same 1:1 crop.
-  shopee: 'shopee',
-  tokopedia: 'shopee',
-  pinterest: 'pinterest',
+/** Which canvases each marketplace's photo slots are cut for. */
+const IMAGE_MARKET: Record<MarketSpec['id'], string> = {
+  etsy: 'Etsy',
+  tpt: 'Teachers Pay Teachers',
+  gumroad: 'Gumroad',
+  // One Indonesian set serves both lapak: same buyer, same 1:1 crop.
+  shopee: 'Shopee / Tokopedia',
+  tokopedia: 'Shopee / Tokopedia',
+  pinterest: 'Pinterest',
+};
+
+/** What each canvas is doing in the slot it occupies. */
+const IMAGE_ROLE: Record<ImageKind, string> = {
+  cover: 'Foto utama — ini yang muncul di hasil pencarian dan menentukan diklik atau tidak.',
+  grid: 'Bukti isi: semua halaman dalam satu gambar. Pembeli produk digital tidak bisa membuka filenya sebelum bayar, dan ini yang menjawabnya.',
+  mockup: 'Memperlihatkan lembarannya sebagai kertas, bukan sebagai berkas — yang dibayangkan pembeli adalah sore hari anaknya mewarnai.',
+  steps: 'Menjawab "barangnya dikirim ke mana?" sebelum ditanya di chat.',
 };
 
 /** Grade bands a TPT product page asks for, from what the pack teaches. */
@@ -108,13 +117,30 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
       ? `Unggah versi ${paperLabel} sekaligus supaya pembeli dari negara mana pun bisa mencetak.`
       : `Paket ini hanya berisi ${paperLabel}. Nyalakan dua ukuran kertas di langkah 04 (Ukuran Kertas) kalau mau menjangkau pembeli yang mencetak di ukuran satunya.`;
 
+  const imagesFor = (market: MarketSpec['id']): ImageSpec[] =>
+    IMAGE_SPECS.filter((spec) => spec.market === IMAGE_MARKET[market]);
+
   const image = (market: MarketSpec['id']): { value: string; note: string } => {
-    const spec = IMAGE_SPECS.find((item) => item.id === IMAGE_FOR[market]) ?? IMAGE_SPECS[0];
+    const specs = imagesFor(market);
+    const spec = specs.find((item) => item.kind === 'cover') ?? specs[0] ?? IMAGE_SPECS[0];
     return {
       value: `${spec.label} — ${spec.note}`,
       note: 'Ada di tab Gambar, dan di folder gambar listing dalam ZIP.',
     };
   };
+
+  /**
+   * One field per photo slot, in the order they should be uploaded. A digital
+   * listing lives or dies on its second and third photo as much as its first:
+   * the buyer who is still deciding is the one scrolling past the cover.
+   */
+  const photoFields = (market: MarketSpec['id'], label: string): UploadField[] =>
+    imagesFor(market).map((spec, index) => ({
+      kind: 'asset' as const,
+      label: index === 0 ? label : `Foto ke-${index + 1}`,
+      value: `${spec.label} — ${spec.note}`,
+      note: IMAGE_ROLE[spec.kind],
+    }));
 
   /** The generated copy for one marketplace, as three ready fields. */
   const copyFields = (market: MarketSpec['id']) => {
@@ -163,16 +189,16 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
           title: 'Foto Produk',
           detail: 'Ketuk "+ Tambah Foto", pilih dari galeri, dan biarkan pilihan rasio pada Foto 1:1.',
           fields: [
-            { kind: 'asset', label: 'Foto Produk *', value: photo.value, note: photo.note },
+            ...photoFields('shopee', 'Foto Produk *'),
             {
               kind: 'pick',
               label: 'Rasio foto',
               value: '1:1',
-              note: 'Shopee memotong foto yang bukan 1:1 di halaman pencarian, dan potongannya tidak bisa diatur.',
+              note: 'Shopee memotong foto yang bukan 1:1 di halaman pencarian, dan potongannya tidak bisa diatur. Ketiga gambar kit ini sudah 1:1.',
             },
           ],
           tips: [
-            'Foto pertama adalah foto utama. Tambahkan 2–3 foto lagi: satu isi halaman, satu hasil yang sudah diwarnai, satu keterangan besar "file PDF, bukan barang fisik".',
+            'Unggah ketiganya berurutan: foto utama, isi lengkap, lalu cara kerja. Slot foto kedua dan ketiga itu yang dilihat pembeli yang masih ragu.',
           ],
         },
         {
@@ -316,10 +342,10 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
       steps: [
         {
           title: 'Foto Produk',
-          fields: [
-            { kind: 'asset', label: 'Foto Produk *', value: photo.value, note: `${photo.note} Ukuran 1200 × 1200 aman di atas batas minimum Tokopedia.` },
+          fields: photoFields('tokopedia', 'Foto Produk *'),
+          tips: [
+            'Set yang sama dengan Shopee: 1200 × 1200, aman di atas batas minimum Tokopedia. Unggah ketiganya berurutan.',
           ],
-          tips: ['Foto pertama jadi foto utama; sisanya untuk isi halaman dan keterangan bahwa yang dikirim adalah berkas.'],
         },
         {
           title: 'Nama Produk',
@@ -446,8 +472,11 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
           title: 'Photos & video',
           detail: 'Foto pertama yang dilihat pembeli di hasil pencarian; sisanya baru dibuka setelah masuk halaman produk.',
           fields: [
-            { kind: 'asset', label: 'Photos', value: photo.value, note: `${photo.note} Etsy menerima sampai 10 foto per listing.` },
+            ...photoFields('etsy', 'Photos'),
             { kind: 'pick', label: 'Video', value: 'Lewati', note: 'Opsional, dan tidak wajib untuk instant download.' },
+          ],
+          tips: [
+            'Etsy menerima sampai 10 foto. Empat kanvas dari kit ini mengisi empat slot pertama; sisanya bisa kamu tambahi foto hasil cetak sendiri.',
           ],
         },
         {
@@ -572,7 +601,8 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               value: String(pageCount),
               note: 'Angka ini dihitung dari PDF yang barusan dibuat, termasuk sampul dan halaman ketentuan bila diaktifkan.',
             },
-            { kind: 'asset', label: 'Product thumbnail', value: photo.value, note: `${photo.note} ${coverNote}` },
+            ...photoFields('tpt', 'Product thumbnail'),
+            { kind: 'pick', label: 'Pratinjau otomatis', value: 'Periksa setelah unggah', note: coverNote },
           ],
           tips: [
             'TPT membuat pratinjau dari berkas yang diunggah, jadi halaman pertama PDF ikut menjadi muka produk.',
@@ -608,7 +638,8 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
   function gumroadGuide(): GuideBody {
     const copy = copyFields('gumroad');
     const photo = image('gumroad');
-    const square = image('shopee');
+    const square =
+      IMAGE_SPECS.find((spec) => spec.id === 'gumroad-thumb') ?? IMAGE_SPECS[0];
     return {
       entry: 'Gumroad.com → Products → New product. Draf yang sama bisa dipakai di Payhip, Lemon Squeezy, dan Karyakarsa.',
       steps: [
@@ -635,7 +666,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
           title: 'Cover & thumbnail',
           fields: [
             { kind: 'asset', label: 'Cover', value: photo.value, note: `${photo.note} Rasio 16:9 yang dipakai halaman produk Gumroad.` },
-            { kind: 'asset', label: 'Thumbnail', value: square.value, note: 'Gumroad memakai gambar persegi untuk kartu produk; kanvas 1200 × 1200 dari kit ini pas dipotong ke sana.' },
+            { kind: 'asset', label: 'Thumbnail', value: `${square.label} — ${square.note}`, note: 'Kartu produk Gumroad memakai gambar persegi; kit ini menyediakannya terpisah, jadi tidak perlu memotong sampulnya sendiri.' },
           ],
         },
         {
