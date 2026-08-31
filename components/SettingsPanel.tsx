@@ -18,6 +18,7 @@ import {
 import { clampNumber, unsupportedCharacters, wordList } from '@/lib/charset';
 import { BOOK_STYLES, COLOURFUL_STYLES, COVER_STYLES, COVER_STYLE_ORDER } from '@/lib/covers';
 import { PALETTES, PALETTE_ORDER, swatches } from '@/lib/palette';
+import { safeLinkUrl } from '@/lib/policy';
 import { WORD_LISTS, listToText } from '@/lib/wordlists';
 import {
   FONTS,
@@ -477,6 +478,44 @@ export function SettingsPanel({
           checked={config.termsPage}
           onChange={(termsPage) => update({ termsPage })}
         />
+        <TextField
+          label="Tautan untuk pembeli"
+          value={config.linkUrl}
+          maxLength={120}
+          placeholder="https://shopee.co.id/namatoko"
+          onChange={(linkUrl) => update({ linkUrl })}
+        />
+        <TextField
+          label="Teks di atas tautan"
+          value={config.linkLabel}
+          maxLength={60}
+          placeholder="Selengkapnya dari toko ini"
+          onChange={(linkLabel) => update({ linkLabel })}
+        />
+        {/* Three things a seller needs to know before typing an address, in
+            the order they hit: where it prints, whether it will print at all,
+            and that it is the one place in the pack a link is allowed. */}
+        {config.linkUrl.trim() && !safeLinkUrl(config.linkUrl) ? (
+          <Note tone="warn">
+            Alamatnya belum terbaca sebagai tautan http/https, jadi halaman lisensi akan dicetak
+            tanpa tautan. Tulis lengkap, misalnya https://shopee.co.id/namatoko.
+          </Note>
+        ) : config.linkUrl.trim() && !config.termsPage ? (
+          <Note tone="warn">
+            Tautan dicetak di halaman lisensi, dan halaman itu sedang mati — nyalakan “Halaman
+            lisensi” di atas supaya tautannya ikut ke dalam berkas.
+          </Note>
+        ) : (
+          <Note>
+            Satu baris yang bisa diklik di halaman lisensi: tokomu, lembar bonus, atau panduan
+            cetak. Ini satu-satunya alamat di dalam paket — teks listing sengaja tidak pernah
+            memuat tautan, karena semua lapak melarangnya di kolom deskripsi. Untuk tautan di
+            dalam berkas, aturannya berbeda-beda: Gumroad bebas, Shopee dan Tokopedia aman kalau
+            mengarah ke tokomu sendiri di lapak itu, Etsy melarang ajakan membeli di luar Etsy,
+            dan TPT melarang menautkan ke toko lain sama sekali. Tab Kit marketplace memeriksa
+            alamatmu untuk tiap lapak.
+          </Note>
+        )}
         <Toggle
           label="Nomor halaman"
           hint="Nomor dan nama merek di kaki setiap lembar latihan."

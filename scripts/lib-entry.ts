@@ -6,4 +6,14 @@ export { FONT_FEATURES } from '../lib/fontStore';
 export { pageToSvg } from '../lib/svgdoc';
 export { buildListing, copyToText } from '../lib/listing';
 export { buildUploadGuides, guideToText } from '../lib/upload';
-export { POLICY_DUTIES, POLICY_RULES, checkListing, findingToText, marketRules } from '../lib/policy';
+export {
+  LINK_POLICY,
+  POLICY_DUTIES,
+  POLICY_RULES,
+  checkBuyerLink,
+  checkListing,
+  findingToText,
+  linkDisplay,
+  marketRules,
+  safeLinkUrl,
+} from '../lib/policy';

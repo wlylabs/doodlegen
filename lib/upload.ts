@@ -3,7 +3,7 @@ import type { ImageKind, ImageSpec } from './cover';
 import { buildListing } from './listing';
 import type { ListingCopy, ListingInput } from './listing';
 import { packSlug } from './naming';
-import { checkListing, findingToText, marketRules } from './policy';
+import { LINK_POLICY, checkBuyerLink, checkListing, findingToText, marketRules } from './policy';
 import type { PolicyFinding } from './policy';
 import { MARKETS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
@@ -192,11 +192,20 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
       market: market.id,
       label: market.label,
       copy: listing,
-      rules: marketRules(market.id),
+      /*
+       * The rules the draft is written to, plus — only for a pack that
+       * carries one — what a link inside the delivered file may point to
+       * there. That last rule is not about the listing at all, which is
+       * exactly why a seller never finds it until it is broken.
+       */
+      rules: [
+        ...marketRules(market.id),
+        ...(config.linkUrl.trim() ? [LINK_POLICY[market.id]] : []),
+      ],
       // Read the draft the way that marketplace's scanner reads it, every
       // time the guide is built: the seller's own words reach the listing
       // through the same fields, and they are the ones that trip it.
-      warnings: checkListing(listing, market.id),
+      warnings: [...checkListing(listing, market.id), ...checkBuyerLink(config.linkUrl, market.id)],
       ...build[market.id],
     };
   });

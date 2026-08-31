@@ -24,12 +24,14 @@ import {
   STROKES,
 } from './presets';
 import { brandName, printedTitle } from './naming';
+import { linkDisplay, safeLinkUrl } from './policy';
 import type {
   Box,
   Cmyk,
   Config,
   GuideLine,
   LanguageId,
+  LinkArea,
   LoadedFont,
   Mode,
   PagePlan,
@@ -513,6 +515,8 @@ interface MatterInput {
 interface TermsCopy {
   title: string;
   footer: string;
+  /** Heading over the seller's link, when they did not write one. */
+  linkHeading: string;
   contents: (pages: number, papers: string) => string;
   papers: (both: boolean, label: string) => string;
   sections: (contents: string, fontFamily: string, owner: string) => TermsSection[];
@@ -522,6 +526,7 @@ const TERMS_COPY: Record<LanguageId, TermsCopy> = {
   en: {
     title: 'Terms of Use',
     footer: 'Made with DoodleGen — print-ready coloring and tracing pages',
+    linkHeading: 'More from this shop',
     contents: (pages, papers) =>
       `${pages} practice pages as a PDF, ${papers}, ready to print again and again.`,
     papers: (both, label) => (both ? 'A4 and US Letter' : label),
@@ -558,6 +563,7 @@ const TERMS_COPY: Record<LanguageId, TermsCopy> = {
   id: {
     title: 'Ketentuan Penggunaan',
     footer: 'Dibuat dengan DoodleGen — halaman mewarnai dan tracing siap cetak',
+    linkHeading: 'Selengkapnya dari toko ini',
     contents: (pages, papers) =>
       `${pages} halaman latihan dalam format PDF, ${papers}, siap cetak berulang kali.`,
     papers: (both, label) => (both ? 'A4 dan US Letter' : label),
@@ -1988,6 +1994,38 @@ function planTerms(
     cursor -= headingSize * 0.9;
   }
 
+  /*
+   * The seller's own address, and the only one in the whole pack.
+   *
+   * It sits at the end of the licence page because that is the page a buyer
+   * opens looking for the shop behind the file, and it is drawn in the same
+   * K-only ink as everything around it: colour on this page would break the
+   * one-plate promise the print spec makes. Underlined, so a sheet that is
+   * printed rather than tapped still reads it as an address to type.
+   */
+  const links: LinkArea[] = [];
+  const url = safeLinkUrl(config.linkUrl);
+  if (url) {
+    const heading = safeLine(font, config.linkLabel.trim() || copy.linkHeading);
+    cursor -= headingSize;
+    texts.push({ text: heading, size: headingSize, x: art.x, y: cursor, ink: 0.85 });
+    cursor -= headingSize * 0.7;
+
+    // A long address is set smaller rather than wrapped: half a URL on a
+    // second line reads as two broken links, and the clickable area is one
+    // rectangle either way.
+    const shown = safeLine(font, linkDisplay(url));
+    let linkSize = bodySize + 0.5;
+    while (linkSize > 7.5 && textWidth(font, shown, linkSize) > art.w) linkSize -= 0.5;
+    const width = Math.min(textWidth(font, shown, linkSize), art.w);
+    cursor -= linkSize * 1.45;
+    texts.push({ text: shown, size: linkSize, x: art.x, y: cursor, ink: 0.75 });
+    rules.push({ x1: art.x, x2: art.x + width, y: cursor - linkSize * 0.28, width: 0.6, ink: 0.45 });
+    // The hit area is the line plus its own leading: a tap lands on words,
+    // not on a hairline.
+    links.push({ x: art.x, y: cursor - linkSize * 0.35, w: width, h: linkSize * 1.35, url });
+  }
+
   const footer = safeLine(font, copy.footer);
   texts.push(centred(font, footer, 9.5, art, art.y + 4, 0.4));
   rules.push({ x1: art.x, x2: art.x + art.w, y: art.y + 18, width: 0.6, ink: 0.2 });
@@ -2002,6 +2040,7 @@ function planTerms(
     guides: [],
     texts,
     rules,
+    links,
   };
 }
 

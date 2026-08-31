@@ -63,7 +63,7 @@ the rest around it:
 | --- | --- |
 | Cover page | Brand line, product title, an optional tagline in the seller's own words, and real sample characters — in one of twelve compositions the seller picks, two of them built to the convention a published book follows. Vector like every other page, and the only page allowed to carry colour. No page counts, DPI or reprint terms: that is listing copy, not a title page. |
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
-| Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
+| Terms page | What a buyer may and may not do, plus printing tips and the font licence — and, when the seller adds one, a single clickable link for the buyer: the shop, a bonus sheet, a printing guide. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
 | Listing images | Twelve canvases, not five: a cover for each channel at its own size — 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 and 600×600 (Gumroad cover and square thumbnail), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest) — plus, where a channel gives a listing more than one photo slot, a contents grid of every page, a paper mockup of the printed sheets, and a three-step "how it works" card. All drawn from the same page plans, in vector, with no stock photography. |
 | Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The description says what is genuinely on the pages — stroke weight, handwriting guides, grid size, the words in a word pack, the editable SVGs — so two packs read as two products. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. Every draft is written to that marketplace's own listing rules — no third-party brand names, no contact details or rival lapak, no vocabulary of restricted digital goods — and each text file carries those rules under the copy. |
@@ -149,6 +149,30 @@ search, if a word appears in a title more than twice — that is stuffing, and
 every marketplace here ranks it down — if Shopee's name wastes the only
 field its search engine reads, or if the pack ships editable SVGs that no
 description mentions.
+
+**One link, and it is not in the listing.** A seller who has just sold a pack
+wants to say where the next one is, so the licence page takes an optional
+address from them: a heading in their own words, the URL under it, underlined
+in the same K-only black as the rest of the page, and a link annotation over
+it so a buyer reading on a phone taps rather than types. It rides along into
+`READ-ME-FIRST.txt` as well, because that is the file someone opens when a
+PDF will not print.
+
+It is deliberately the only address in the pack, and it never reaches the
+listing copy: every marketplace here forbids a link in a description, and
+that rule is already enforced by the check above. Inside the delivered file
+the rules differ, so the studio says which is which — Gumroad is the seller's
+own storefront and takes any link; Shopee and Tokopedia are safe when it
+points at your own shop *on that lapak*, since the offence there is pulling a
+buyer off-platform; Etsy forbids inviting a purchase outside Etsy at all; TPT
+is strictest and does not permit a store link in a resource. A link that
+points at a rival marketplace fails `verify:listing` for the marketplace it
+would be sold on, and one that is not a plain http(s) address is dropped
+rather than repaired — a config travels in a shareable URL, and a
+`javascript:` string that reached a PDF annotation would be an injection, not
+a typo. `verify:pdfs` then checks the annotation in the finished file: an
+http(s) address, and a tap target inside the same safe margin the ink has to
+stay in.
 
 **Ranking is not the only way a listing dies.** A seller pasted one of these
 descriptions into Shopee's *Tambah Produk* form and the field turned yellow:

@@ -1,6 +1,7 @@
 import { clampNumber } from './charset';
 import { COVER_STYLE_ORDER } from './covers';
 import { PALETTE_ORDER } from './palette';
+import { safeLinkUrl } from './policy';
 import {
   DEFAULT_CONFIG,
   FONTS,
@@ -39,7 +40,14 @@ const BOOLEANS = [
   'termsPage',
   'svgFiles',
 ] as const;
-const STRINGS = ['words', 'titleTemplate', 'brand', 'productTitle', 'coverTagline'] as const;
+const STRINGS = [
+  'words',
+  'titleTemplate',
+  'brand',
+  'productTitle',
+  'coverTagline',
+  'linkLabel',
+] as const;
 
 /** Longest value accepted from a shared link, so a URL cannot bloat the app. */
 const MAX_TEXT = 600;
@@ -68,6 +76,16 @@ export function sanitizeConfig(raw: unknown): Partial<Config> {
   for (const key of STRINGS) {
     const value = input[key];
     if (typeof value === 'string') out[key] = value.slice(0, MAX_TEXT);
+  }
+
+  /*
+   * The buyer link is the one field in a config that becomes a URL again at
+   * the other end — in a PDF annotation, and in the studio's own preview. A
+   * shared link is somebody else's input, so anything that is not plain
+   * http(s) is dropped here as well as at the point it is drawn.
+   */
+  if (typeof input.linkUrl === 'string') {
+    out.linkUrl = safeLinkUrl(input.linkUrl.slice(0, MAX_TEXT)) ?? '';
   }
 
   if (typeof input.numberFrom === 'number') out.numberFrom = clampNumber(input.numberFrom);

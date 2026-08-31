@@ -86,6 +86,10 @@ const cases = [
       termsPage: true,
       brand: 'Studio Cerdas',
       productTitle: 'Alfabet A-Z Trace and Color',
+      // The one page in the pack that carries a link, so the margin check and
+      // the annotation check both have a file to run on.
+      linkUrl: 'https://shopee.co.id/studiocerdas',
+      linkLabel: 'Paket lainnya di toko kami',
     },
   },
   {

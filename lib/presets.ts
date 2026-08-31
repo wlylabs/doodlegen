@@ -214,6 +214,8 @@ export const DEFAULT_CONFIG: Config = {
   termsPage: false,
   brand: '',
   productTitle: '',
+  linkUrl: '',
+  linkLabel: '',
   language: 'en',
   palette: 'sunset',
   svgFiles: true,

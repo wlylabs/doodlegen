@@ -4,6 +4,7 @@ import {
   PDFDocument,
   PDFFont,
   PDFPage,
+  PDFString,
   TextRenderingMode,
   appendBezierCurve,
   closePath,
@@ -34,6 +35,7 @@ import type {
   Cmyk,
   Config,
   GuideLine,
+  LinkArea,
   LoadedFont,
   PagePlan,
   PathCmd,
@@ -231,6 +233,34 @@ function drawPlacement(page: PDFPage, font: PDFFont, place: Placement, config: C
   page.pushOperators(popGraphicsState());
 }
 
+/**
+ * The seller's link, as the one annotation in the file.
+ *
+ * A PDF link is not drawn — the words are already on the page as text, and
+ * this is the rectangle a reader turns into a tap target. pdf-lib has no API
+ * for it above the object level, so the annotation dictionary is written out
+ * by hand: /Border zeroed, because a reader's own blue box around it would
+ * be the only frame in a pack that has none.
+ */
+function addLinks(doc: PDFDocument, page: PDFPage, links: LinkArea[]) {
+  for (const link of links) {
+    const annotation = doc.context.register(
+      doc.context.obj({
+        Type: 'Annot',
+        Subtype: 'Link',
+        Rect: [link.x, link.y, link.x + link.w, link.y + link.h],
+        Border: [0, 0, 0],
+        A: doc.context.obj({
+          Type: 'Action',
+          S: 'URI',
+          URI: PDFString.of(link.url),
+        }),
+      }),
+    );
+    page.node.addAnnot(annotation);
+  }
+}
+
 function drawPage(doc: PDFDocument, font: PDFFont, plan: PagePlan, config: Config) {
   const page = doc.addPage([plan.widthPt, plan.heightPt]);
   // An explicit 0% ink fill guarantees a clean white sheet on screen while
@@ -255,6 +285,7 @@ function drawPage(doc: PDFDocument, font: PDFFont, plan: PagePlan, config: Confi
       color: paint(text.color, text.ink),
     });
   }
+  if (plan.links?.length) addLinks(doc, page, plan.links);
 }
 
 export interface GeneratedFile {

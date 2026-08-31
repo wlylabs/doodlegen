@@ -316,6 +316,146 @@ export const POLICY_DUTIES: PolicyDuty[] = [
   },
 ];
 
+/**
+ * A link inside the file the buyer downloads is a different question from a
+ * link in the listing, and every marketplace answers it differently:
+ *
+ *   TPT      is the strictest — resources may not link to another store or
+ *            push buyers to a different sales channel; a link is allowed for
+ *            hosting a file too large to upload, and little else
+ *   Etsy     forbids fee avoidance: a link that invites the buyer to purchase
+ *            outside Etsy is the one that costs a shop its account
+ *   Shopee   both treat pulling a buyer off-platform as the offence, so a
+ *   Tokopedia link to your own shop *on that lapak* is the safe one
+ *   Gumroad  is the seller's own storefront; link where you like
+ *   Pinterest is a signpost, not a shop
+ *
+ * So the studio prints whatever address the seller typed and says, per
+ * marketplace, what that address is allowed to be.
+ */
+export const LINK_POLICY: Record<MarketId, string> = {
+  etsy: 'Tautan di dalam berkas boleh mengarah ke halaman bantuan, cara mencetak, atau tokomu di Etsy. Mengajak pembeli membeli di luar Etsy termasuk fee avoidance dan berisiko menutup toko.',
+  tpt: 'TPT paling ketat: berkas tidak boleh menautkan ke toko lain atau mengarahkan pembeli ke saluran penjualan lain. Kosongkan tautannya untuk edisi TPT, atau arahkan ke halaman petunjuk pemakaian saja.',
+  gumroad: 'Gumroad adalah etalase milikmu sendiri — tautan bebas: halaman produk lain, daftar surel, atau situsmu.',
+  shopee: 'Arahkan ke toko Shopee-mu sendiri atau ke halaman petunjuk cetak. Mengajak pembeli bertransaksi di luar Shopee adalah pelanggaran, dan berkas yang dilaporkan pembeli sampai juga ke Shopee.',
+  tokopedia: 'Arahkan ke toko Tokopedia-mu sendiri atau ke halaman petunjuk cetak. Mengajak transaksi di luar Tokopedia melanggar aturan lapak.',
+  pinterest: 'Pin memang bertugas mengirim orang ke tokomu, jadi tautan di berkasnya tidak menambah masalah apa pun.',
+};
+
+/** Marketplace domains, so "my own shop" can be told from "somebody else's". */
+const MARKET_HOSTS: Record<MarketId, string[]> = {
+  etsy: ['etsy.com'],
+  tpt: ['teacherspayteachers.com'],
+  gumroad: ['gumroad.com'],
+  shopee: ['shopee.co.id', 'shopee.com'],
+  tokopedia: ['tokopedia.com'],
+  pinterest: ['pinterest.com'],
+};
+
+/** Places that sell the same kind of file, whichever lapak is being filled. */
+const OTHER_SHOPS = [
+  'lazada.',
+  'bukalapak.',
+  'blibli.',
+  'tiktok.',
+  'amazon.',
+  'ebay.',
+  'payhip.',
+  'lemonsqueezy.',
+  'karyakarsa.',
+  'lynk.id',
+  'shopify.',
+];
+
+/**
+ * The address as it will be printed, or null when there is nothing safe to
+ * print. Anything that is not plain http(s) is dropped rather than repaired:
+ * a config travels in a shared link, and a `javascript:` URL that reaches a
+ * PDF annotation or an `href` is an injection, not a typo.
+ */
+export function safeLinkUrl(raw: string): string | null {
+  const text = raw.trim();
+  if (!text) return null;
+  // A seller types "tokoku.com/abc"; a browser would guess the scheme, and a
+  // PDF reader would not, so the guess is made here instead.
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(text) ? text : `https://${text}`;
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    if (!url.hostname.includes('.')) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** The address without its scheme: what a buyer would read, and retype. */
+export function linkDisplay(url: string): string {
+  return url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+}
+
+/**
+ * The seller's buyer-facing link, checked against the marketplace the pack is
+ * being sold on. A link is normal and useful; these are the three shapes of
+ * it that cost a shop its account.
+ */
+export function checkBuyerLink(raw: string, market: MarketId): PolicyFinding[] {
+  const text = raw.trim();
+  if (!text) return [];
+
+  const finding = (
+    rule: string,
+    severity: PolicySeverity,
+    says: string,
+    fix: string,
+  ): PolicyFinding => ({ rule, market, field: 'body', severity, found: text, says, fix });
+
+  const url = safeLinkUrl(text);
+  if (!url) {
+    return [
+      finding(
+        'tautan-tidak-sah',
+        'block',
+        'Tautan untuk pembeli tidak bisa dibaca sebagai alamat http/https, jadi tidak akan dicetak di halaman lisensi.',
+        'Tulis alamat lengkap, misalnya https://shopee.co.id/namatoko.',
+      ),
+    ];
+  }
+
+  const host = new URL(url).hostname.toLowerCase();
+  const own = MARKET_HOSTS[market].some((domain) => host === domain || host.endsWith(`.${domain}`));
+  const rival =
+    !own &&
+    (Object.entries(MARKET_HOSTS).some(
+      ([id, domains]) =>
+        id !== market && domains.some((domain) => host === domain || host.endsWith(`.${domain}`)),
+    ) ||
+      OTHER_SHOPS.some((domain) => host.includes(domain)));
+
+  const findings: PolicyFinding[] = [];
+  if (rival) {
+    findings.push(
+      finding(
+        'tautan-lapak-lain',
+        'block',
+        `Tautan di dalam berkas mengarah ke ${host}, yaitu lapak lain — semua lapak di sini menghitungnya sebagai mengajak pembeli bertransaksi di luar platform.`,
+        'Arahkan ke tokomu di lapak tempat berkas ini dijual, atau ke halaman petunjuk cetak yang tidak menjual apa pun.',
+      ),
+    );
+  }
+  if (market === 'tpt' && !own) {
+    findings.push(
+      finding(
+        'tautan-tpt',
+        'warn',
+        LINK_POLICY.tpt,
+        'Untuk edisi TPT, kosongkan kolom tautan sebelum membuat berkasnya, atau pakai halaman petunjuk yang tidak menjual apa pun.',
+      ),
+    );
+  }
+  return findings;
+}
+
 /** The rules that apply to one marketplace, as lines to show the seller. */
 export function marketRules(market: MarketId): string[] {
   return [

@@ -336,6 +336,34 @@ if (missed.length) {
   console.log(`  shopee     tertangkap: ${[...caught].join(', ')}`);
 }
 
+/*
+ * The buyer link is checked per marketplace rather than once, because the
+ * same address is fine on one lapak and a takedown on the next: a Tokopedia
+ * shop link inside a file sold on Shopee is pulling the buyer off Shopee,
+ * and TPT does not allow a store link at all.
+ */
+const linkCases = [
+  { url: 'https://shopee.co.id/studiocerdas', market: 'shopee', want: [] },
+  { url: 'https://tokopedia.com/studiocerdas', market: 'shopee', want: ['tautan-lapak-lain'] },
+  { url: 'https://studiocerdas.com/cara-cetak', market: 'tpt', want: ['tautan-tpt'] },
+  { url: 'https://www.teacherspayteachers.com/store/studio', market: 'tpt', want: [] },
+  { url: 'javascript:alert(1)', market: 'gumroad', want: ['tautan-tidak-sah'] },
+  { url: '', market: 'etsy', want: [] },
+];
+
+console.log('\ntautan untuk pembeli — satu alamat, enam aturan');
+for (const linkCase of linkCases) {
+  const got = lib.checkBuyerLink(linkCase.url, linkCase.market).map((finding) => finding.rule);
+  const same = got.length === linkCase.want.length && got.every((rule, i) => rule === linkCase.want[i]);
+  const line = `  ${linkCase.market.padEnd(10)} ${linkCase.url || '(kosong)'}`;
+  if (same) {
+    console.log(`${line} → ${got.length ? got.join(', ') : 'bersih'}`);
+  } else {
+    failures += 1;
+    console.log(`${line}  FAIL — dapat [${got.join(', ')}], harusnya [${linkCase.want.join(', ')}]`);
+  }
+}
+
 console.log(
   failures
     ? `\n${failures} problem(s) found.`

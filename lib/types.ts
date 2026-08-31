@@ -69,6 +69,17 @@ export interface Config {
   /** Product title; empty means "derive it from the character set". */
   productTitle: string;
   /**
+   * One clickable line for the buyer, printed on the licence page: a shop,
+   * a bonus sheet, a printing guide. Empty means the page carries none.
+   *
+   * It is the only address in the whole pack, and it is deliberately not in
+   * the listing copy: every marketplace here forbids a link in a listing,
+   * and most of them have something to say about one inside the file too.
+   */
+  linkUrl: string;
+  /** What the line above the address says. Empty falls back to a default. */
+  linkLabel: string;
+  /**
    * The language of the printed pack. Listing images are not covered by it:
    * each canvas follows the marketplace it is cut for.
    */
@@ -176,6 +187,20 @@ export interface ShapeDraw {
 /** Worksheets carry characters; the front and back matter carry type. */
 export type PageKind = 'char' | 'cover' | 'terms';
 
+/**
+ * A clickable rectangle on a page, in the same points everything else is in.
+ * The visible words are an ordinary `TextDraw` — this is only the hit area,
+ * so a printed page loses nothing and a page on a screen gains a link.
+ */
+export interface LinkArea {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Already checked to be http(s) before it reaches a plan. */
+  url: string;
+}
+
 export interface PagePlan {
   kind: PageKind;
   /** The character(s) this page teaches, e.g. "A", "Aa", "17". */
@@ -188,6 +213,8 @@ export interface PagePlan {
   guides: GuideLine[];
   texts: TextDraw[];
   rules: RuleDraw[];
+  /** Set only on a page that carries the seller's link. */
+  links?: LinkArea[];
 }
 
 /** Minimal slice of the fontkit API this app relies on. */

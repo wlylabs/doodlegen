@@ -8,6 +8,9 @@
  *   - colour, if any, is confined to the one optional cover page
  *   - no raster image is present anywhere in the file
  *   - nothing is drawn inside the 0.5 inch safe margin
+ *   - the seller's buyer link, where a pack carries one, is an http(s)
+ *     address and its tap target sits inside the safe area like everything
+ *     else on the page
  *
  * The margin check is done by rasterising pages through pdf.js and looking
  * for any non-white pixel in the border band, which catches layout mistakes
@@ -76,10 +79,29 @@ function hasColour(chunk) {
   return false;
 }
 
+/**
+ * Every link annotation in the file: the address and the rectangle a reader
+ * turns into a tap target. Written out by the generator in one shape, so one
+ * pattern reads them back — Rect first, then the URI action.
+ */
+function linkAnnotations(all) {
+  const pattern = /\/Subtype\s*\/Link[\s\S]{0,300}?\/Rect\s*\[([^\]]+)\][\s\S]{0,300}?\/URI\s*\(([^)]*)\)/g;
+  const out = [];
+  let match;
+  while ((match = pattern.exec(all)) !== null) {
+    out.push({
+      rect: match[1].trim().split(/\s+/).map(Number),
+      url: match[2],
+    });
+  }
+  return out;
+}
+
 function structure(file) {
   const buffer = fs.readFileSync(file);
   const { all, streams } = flatten(buffer);
   return {
+    links: linkAnnotations(all),
     embeddedFont: /\/FontFile2\b/.test(all) && /\/CIDFontType2\b/.test(all),
     strokedText: streams.some((chunk) => /\b1 Tr\b/.test(chunk)),
     cmykInk: streams.some((chunk) => /0 0 0 [\d.]+ K/.test(chunk)),
@@ -168,6 +190,18 @@ for (const file of files) {
     if (darkest < 250) bleeding.push(`p${number}`);
   }
 
+  // A link is the one thing in the file that acts rather than prints, so it
+  // is checked for both: an address a reader will actually open, and a hit
+  // area inside the same safe box the ink has to stay in.
+  const badLinks = checks.links.filter((link) => !/^https?:\/\//i.test(link.url));
+  const strayLinks = checks.links.filter(
+    ({ rect: [x1, y1, x2, y2] }) =>
+      x1 < MARGIN_PT - 0.5 ||
+      y1 < MARGIN_PT - 0.5 ||
+      x2 > meta.width - MARGIN_PT + 0.5 ||
+      y2 > meta.height - MARGIN_PT + 0.5,
+  );
+
   const size = `${Math.round(meta.width)}x${Math.round(meta.height)}pt`;
   const known = size === '595x842pt' || size === '612x792pt';
   const pass =
@@ -177,7 +211,9 @@ for (const file of files) {
     checks.cmykInk &&
     checks.colouredPages <= 1 &&
     !checks.rasterImage &&
-    !bleeding.length;
+    !bleeding.length &&
+    !badLinks.length &&
+    !strayLinks.length;
   if (!pass) failed += 1;
 
   console.log(
@@ -185,7 +221,10 @@ for (const file of files) {
       `      ${meta.pages} pages · ${size} · ${checks.kilobytes} KB · font=${checks.embeddedFont}` +
       ` · vector text=${checks.strokedText} · CMYK K=${checks.cmykInk} · raster=${checks.rasterImage}` +
       ` · colour pages=${checks.colouredPages}` +
-      ` · margin=${bleeding.length ? `INK IN BAND (${bleeding.join(', ')})` : 'clear'}`,
+      ` · margin=${bleeding.length ? `INK IN BAND (${bleeding.join(', ')})` : 'clear'}` +
+      ` · links=${checks.links.length}${badLinks.length ? ' NOT HTTP(S)' : ''}${
+        strayLinks.length ? ' OUTSIDE SAFE AREA' : ''
+      }`,
   );
 }
 

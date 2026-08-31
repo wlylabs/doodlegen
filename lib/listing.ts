@@ -1,6 +1,6 @@
 import { subjectOf } from './charset';
 import { brandName, layoutLabel, printedTitle, productTitle, styleLabel } from './naming';
-import { checkListing, findingToText, marketRules } from './policy';
+import { checkListing, findingToText, linkDisplay, marketRules, safeLinkUrl } from './policy';
 import { FONTS, GRIDS, MARKETS, PAPERS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
 import { fitTags, joinWithin, keywordTail, keywordsFor, titleCase } from './seo';
@@ -470,6 +470,11 @@ export function buyerReadme({ config, characters, pageCount }: ListingInput): st
   const title = printedTitle(config, characters);
   const brand = brandName(config);
   const papers = paperLine(config);
+  // The same address the licence page carries, in the file a buyer opens
+  // first. A read-me is where someone looks when the PDF will not print.
+  const link = safeLinkUrl(config.linkUrl);
+  const linkLines = (heading: string) =>
+    link ? ['', heading.toUpperCase(), config.linkLabel.trim() || heading, linkDisplay(link)] : [];
 
   const lines =
     config.language === 'id'
@@ -486,6 +491,7 @@ export function buyerReadme({ config, characters, pageCount }: ListingInput): st
           '- Boleh dicetak ulang tanpa batas untuk pemakaian pribadi, keluarga, dan kelas.',
           '- Tidak boleh dijual kembali, dibagikan, atau diunggah ulang dalam bentuk file.',
           brand ? `- Hak cipta ${brand}. Semua hak dilindungi.` : null,
+          ...linkLines('Tautan dari penjual'),
           '',
           'Dibuat dengan DoodleGen.',
         ]
@@ -502,6 +508,7 @@ export function buyerReadme({ config, characters, pageCount }: ListingInput): st
           '- Print as many copies as you like for personal, family and classroom use.',
           '- Do not resell, share, or re-upload the file itself.',
           brand ? `- Copyright ${brand}. All rights reserved.` : null,
+          ...linkLines('A link from the seller'),
           '',
           'Made with DoodleGen.',
         ];
