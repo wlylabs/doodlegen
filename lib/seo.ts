@@ -92,7 +92,13 @@ export function keywordsFor(config: Config, characters: string[], language: Lang
         'printable anak',
       ],
       audience: ['paud tk', 'anak tk', 'anak paud', 'belajar anak', 'aktivitas anak'],
-      format: ['printable pdf', 'file pdf', 'siap cetak', 'download digital', 'ebook anak'],
+      /*
+       * "Ebook" is a word buyers do type, and it is the one word here that
+       * files this pack with the digital goods Shopee only lets approved
+       * sellers list — in a book category it is what turns a product name
+       * into a review queue. The pack is a printable, so it is sold as one.
+       */
+      format: ['printable pdf', 'file pdf', 'siap cetak', 'lembar kerja pdf', 'buku latihan anak'],
     };
   }
 

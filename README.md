@@ -66,7 +66,7 @@ the rest around it:
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
 | Listing images | Twelve canvases, not five: a cover for each channel at its own size — 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 and 600×600 (Gumroad cover and square thumbnail), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest) — plus, where a channel gives a listing more than one photo slot, a contents grid of every page, a paper mockup of the printed sheets, and a three-step "how it works" card. All drawn from the same page plans, in vector, with no stock photography. |
-| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The description says what is genuinely on the pages — stroke weight, handwriting guides, grid size, the words in a word pack, the editable SVGs — so two packs read as two products. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. |
+| Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The description says what is genuinely on the pages — stroke weight, handwriting guides, grid size, the words in a word pack, the editable SVGs — so two packs read as two products. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. Every draft is written to that marketplace's own listing rules — no third-party brand names, no contact details or rival lapak, no vocabulary of restricted digital goods — and each text file carries those rules under the copy. |
 | Upload steps | Each channel's own add-product form, walked field by field: photo, product name, category, description, price, stock, SKU — and the weight, package size and courier Shopee and Tokopedia will not let a listing save without. Every blank says whether it is pasted, chosen or uploaded, and the pasted ones carry the copy above. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
 
@@ -149,6 +149,42 @@ search, if a word appears in a title more than twice — that is stuffing, and
 every marketplace here ranks it down — if Shopee's name wastes the only
 field its search engine reads, or if the pack ships editable SVGs that no
 description mentions.
+
+**Ranking is not the only way a listing dies.** A seller pasted one of these
+descriptions into Shopee's *Tambah Produk* form and the field turned yellow:
+*"Terdeteksi mengandung produk yang dilarang atau dalam pengawasan"*, hold
+1×24 hours for review. Nothing in the pack broke a rule; three habits of the
+copy did. Every marketplace here reads a listing with a scanner before a
+human sees it, and `lib/policy.ts` now holds what those scanners are looking
+for, per marketplace, as rules a script can fail on:
+
+| What is banned | Where it came from | What the draft does now |
+| --- | --- | --- |
+| Someone else's brand name in a title, description or tag | Shopee's HAKI policy on listings; Etsy's trademark policy, which counts a brand name as a keyword even under "compatible with" | The SVG line names the capability, not the tools: *terbuka di aplikasi desain vektor dan mesin potong* |
+| Links, emails, phone numbers, a rival marketplace's name — anything that finishes the sale elsewhere | Shopee's prohibited-listing rules and Tokopedia's moderation rules | Delivery is named and named *inside* the lapak: the PDF arrives in Shopee's or Tokopedia's own order chat |
+| The vocabulary of restricted digital goods — accounts, subscriptions, vouchers, credit, activation codes | Shopee's list of digital products only approved sellers may sell | The copy says what the thing is: a print-at-home PDF, sent after payment, with no parcel shipped |
+| Promotional shouting in an Indonesian product name — *gratis*, *diskon*, *termurah*, *best seller* | Shopee's product-name and spam guidance | The name stays Merek + Jenis Produk + Spesifikasi; promotions live in the promo tools |
+
+Two of the rules run the other way and require something to be *said*: that
+no physical item ships and how the file reaches the buyer, on Shopee and
+Tokopedia, and what licence the buyer gets, on Etsy, TPT and Gumroad. A
+description that leaves those out is the one that ends in a dispute rather
+than in a review.
+
+The book categories on both Indonesian lapak are policed for scanned and
+pirated titles, so a PDF listed among printed books is read against that
+suspicion first — the Indonesian terms block now states, in one line, that
+the pages are the shop's own work rather than a scan.
+
+The same check runs over the words the *seller* typed, because a shop name, a
+tagline and a custom product title all reach the listing through the same
+fields: a brand borrowed into a shop name, a phone number in a tagline, a
+discount shouted in a title. The studio shows what it found above the copy,
+before anything is pasted, and each marketplace tab and text file carries that
+marketplace's rules under the draft. `verify:listing` fails if any generated
+draft trips a rule, and — because a linter nobody has seen fail is not a
+linter — it also types one violation into every seller field and fails if the
+check lets it through.
 
 **Why there is no Canva integration, and what replaces it.** The app is a
 static export with no server, so there is nowhere to keep the client secret an

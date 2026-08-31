@@ -1,5 +1,6 @@
 import { subjectOf } from './charset';
 import { brandName, layoutLabel, printedTitle, productTitle, styleLabel } from './naming';
+import { checkListing, findingToText, marketRules } from './policy';
 import { FONTS, GRIDS, MARKETS, PAPERS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
 import { fitTags, joinWithin, keywordTail, keywordsFor, titleCase } from './seo';
@@ -126,8 +127,16 @@ function sellingPoints(config: Config, characters: string[]): { id: string[]; en
   }
 
   if (config.svgFiles) {
-    id.push('Bonus: satu file SVG per halaman — bisa dibuka di Canva, Cricut, Figma, Illustrator');
-    en.push('Bonus: one editable SVG per page, opens in Canva, Cricut, Figma and Illustrator');
+    /*
+     * Named by capability, not by brand. The four design tools this line used
+     * to list are trademarks, and every marketplace here reads a trademark in
+     * a listing as an infringement claim waiting to happen — Shopee's scanner
+     * holds the listing for review over it before a human ever looks. The
+     * buyer loses nothing: someone who owns a cutting machine knows what SVG
+     * is for, and nobody searches for a pack by the software they open it in.
+     */
+    id.push('Bonus: satu file SVG per halaman — terbuka di aplikasi desain vektor dan mesin potong');
+    en.push('Bonus: one editable SVG per page, opens in any vector design app or cutting machine');
   }
 
   return { id, en };
@@ -309,25 +318,40 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
       '- Kertas 80-120 gsm supaya crayon tidak tembus ke belakang.',
       '',
       'KETENTUAN',
+      // Book categories on both lapak are policed for scanned and pirated
+      // titles, and a PDF listed among printed books is read against that
+      // suspicion first. Saying whose work it is answers the reviewer's
+      // actual question before the listing is ever queued.
+      '- Karya asli toko ini, dibuat sendiri — bukan hasil pindai buku terbitan.',
       '- Untuk pemakaian pribadi, keluarga, dan kelas.',
       '- Dilarang menjual ulang atau membagikan filenya.',
       brand ? `- Dibuat oleh ${brand}.` : null,
       '',
-      'PENTING: produk digital, tidak ada barang fisik yang dikirim.',
+      // Said as what it is rather than as a category name: "produk digital"
+      // is the phrase both lapak reserve for accounts, vouchers and credit,
+      // and a printable that borrows it gets read as one of those.
+      'PENTING: yang dikirim adalah file PDF untuk dicetak sendiri — tidak ada barang fisik yang dikirim.',
     ]
       .filter((line): line is string => line !== null)
       .join('\n');
 
-  // Both lapak read the description, Tokopedia especially, so the phrase a
-  // buyer types opens the paragraph instead of waiting until the terms.
+  /*
+   * Both lapak read the description, Tokopedia especially, so the phrase a
+   * buyer types opens the paragraph instead of waiting until the terms — and
+   * the same sentence says how the file arrives, inside the lapak's own chat.
+   * Anything that reads like "we will sort it out elsewhere" is an invitation
+   * to transact off-platform, which is a takedown rather than a review, and a
+   * buyer who cannot tell how a file reaches them opens a dispute instead of
+   * a chat.
+   */
   const shopeeBody = indonesianBody(
-    `${title.id} — ${words.id.focus} untuk anak TK dan PAUD. File PDF siap cetak, langsung bisa diunduh setelah pembayaran.`,
-    '- Unduh file PDF dari chat/pesanan, simpan di HP atau laptop.',
+    `${title.id} — ${words.id.focus} untuk anak TK dan PAUD. File PDF siap cetak, dikirim lewat chat Shopee setelah pembayaran dikonfirmasi.`,
+    '- Simpan file PDF dari chat Shopee ke HP atau laptop, lalu cetak sendiri di rumah.',
   );
 
   const tokopediaBody = indonesianBody(
-    `${title.id} — ${words.id.focus} untuk anak TK dan PAUD, berisi ${worksheets} lembar kerja. Produk digital, file PDF dikirim lewat chat setelah pesanan diproses.`,
-    '- Simpan file PDF dari chat Tokopedia ke HP atau laptop.',
+    `${title.id} — ${words.id.focus} untuk anak TK dan PAUD, berisi ${worksheets} lembar kerja. File PDF siap cetak, dikirim lewat chat Tokopedia setelah pesanan diproses.`,
+    '- Simpan file PDF dari chat Tokopedia ke HP atau laptop, lalu cetak sendiri di rumah.',
   );
 
   // A pin is not a listing: it has one job, which is to send the reader to
@@ -519,6 +543,7 @@ export function licenceNote(config: Config, family: string, licence: string | nu
 
 /** One text file per marketplace, ready to paste field by field. */
 export function copyToText(copy: ListingCopy): string {
+  const warnings = checkListing(copy, copy.market);
   return [
     `${copy.label.toUpperCase()} — ${copy.limits}`,
     '',
@@ -536,5 +561,13 @@ export function copyToText(copy: ListingCopy): string {
     `TAG (${copy.tags.length})`,
     copy.tags.join(', '),
     '',
+    'ATURAN LAPAK YANG MENGIKAT TEKS INI',
+    ...marketRules(copy.market).map((rule) => `- ${rule}`),
+    '',
+    // A clean draft says so in one line rather than leaving the seller to
+    // guess whether the check ran at all.
+    ...(warnings.length
+      ? ['PERIKSA SEBELUM DITEMPEL', ...warnings.map((finding) => `- ${findingToText(finding)}`), '']
+      : ['Teks ini sudah lolos pemeriksaan aturan lapak di atas.', '']),
   ].join('\n');
 }
