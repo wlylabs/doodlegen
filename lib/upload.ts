@@ -3,6 +3,8 @@ import type { ImageKind, ImageSpec } from './cover';
 import { buildListing } from './listing';
 import type { ListingCopy, ListingInput } from './listing';
 import { packSlug } from './naming';
+import { checkListing, findingToText, marketRules } from './policy';
+import type { PolicyFinding } from './policy';
 import { MARKETS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
 import type { Config } from './types';
@@ -43,14 +45,28 @@ export interface UploadGuide {
   /** Read once before publishing, not while filling the form. */
   checklist: string[];
   /**
+   * That marketplace's own rules about the words themselves — what may not
+   * appear in a listing, and what has to. The draft below is written to
+   * satisfy them; these lines are here so the seller editing it knows which
+   * lines they are not free to rewrite.
+   */
+  rules: string[];
+  /**
+   * Anything in this pack's copy that still trips one of those rules. Normally
+   * empty — the generator's own words pass — so what shows up here is what the
+   * seller typed: a shop name carrying somebody's brand, a tagline with a
+   * phone number in it, a product title shouting a discount.
+   */
+  warnings: PolicyFinding[];
+  /**
    * The very copy these steps paste. Carried along so a caller holding a
    * guide never has to rebuild the listing to draw a tag chip or a counter.
    */
   copy: ListingCopy;
 }
 
-/** Everything a guide holds except what the marketplace table already knows. */
-type GuideBody = Omit<UploadGuide, 'market' | 'label' | 'copy'>;
+/** Everything a guide holds except what the generator fills in around it. */
+type GuideBody = Omit<UploadGuide, 'market' | 'label' | 'copy' | 'rules' | 'warnings'>;
 
 /** Which canvases each marketplace's photo slots are cut for. */
 const IMAGE_MARKET: Record<MarketSpec['id'], string> = {
@@ -172,7 +188,17 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
   return MARKETS.map((market) => {
     const listing = listings.get(market.id);
     if (!listing) throw new Error(`Teks listing ${market.id} tidak tersedia.`);
-    return { market: market.id, label: market.label, copy: listing, ...build[market.id] };
+    return {
+      market: market.id,
+      label: market.label,
+      copy: listing,
+      rules: marketRules(market.id),
+      // Read the draft the way that marketplace's scanner reads it, every
+      // time the guide is built: the seller's own words reach the listing
+      // through the same fields, and they are the ones that trip it.
+      warnings: checkListing(listing, market.id),
+      ...build[market.id],
+    };
   });
 
   // ---------------------------------------------------------------------
@@ -222,8 +248,8 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
             {
               kind: 'pick',
               label: 'Kategori *',
-              value: 'Buku & Alat Tulis › Buku › Buku Anak',
-              note: 'Ketik dulu "ebook" atau "digital" di pencarian kategori: kalau akunmu punya kategori produk digital, pakai itu dan lewati langkah Berat dan Pengiriman.',
+              value: 'Buku & Majalah › Buku Bacaan › Buku Anak',
+              note: 'Kategori digital Shopee (Tiket, Voucher & Layanan) hanya terbuka untuk penjual yang sudah diizinkan menjual produk digital — ketik "ebook" atau "digital" di pencarian kategori dulu, dan kalau muncul untuk akunmu, pakai itu lalu lewati langkah Berat dan Pengiriman. Kalau tidak muncul, kategori buku anak yang paling dekat; jangan memilih kategori mata pelajaran yang tidak sesuai isi paket, karena kategori yang meleset yang paling sering memicu peninjauan.',
             },
             {
               kind: 'pick',
@@ -241,8 +267,14 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               kind: 'body',
               label: 'Deskripsi Produk *',
               value: copy.body,
-              note: 'Batas 3000 karakter. Yang terlihat sebelum tombol "Selengkapnya" hanya 2–3 baris pertama, dan baris pertama draf ini sudah menyebut file PDF siap cetak.',
+              note: 'Batas 3000 karakter. Yang terlihat sebelum tombol "Selengkapnya" hanya 2–3 baris pertama, dan baris pertama draf ini sudah menyebut file PDF siap cetak beserta cara kirimnya.',
             },
+          ],
+          tips: [
+            'Kalau muncul kotak kuning "Terdeteksi mengandung produk yang dilarang atau dalam pengawasan": itu hasil pemeriksaan otomatis, bukan penolakan. Produk tetap bisa disimpan, lalu ditinjau maksimal 1×24 jam sebelum tampil.',
+            'Tiga hal yang paling sering memicunya: nama merek pihak lain (nama aplikasi desain, tokoh kartun), kontak atau ajakan di luar Shopee (nomor HP, tautan, email), dan kata-kata produk digital berakses instan seperti akun, langganan, voucher, atau kode aktivasi. Draf ini sudah bersih dari ketiganya — periksa nama toko, tagline, dan judul yang kamu tulis sendiri.',
+            'Kategori buku juga diawasi karena buku bajakan: kalimat "karya asli toko ini, bukan hasil pindai buku terbitan" sengaja ada di bagian KETENTUAN, jangan dihapus.',
+            'Kalau produknya sampai diblokir, buka Produk Saya → Pelanggaran Saya di Seller Centre: alasannya disebut di situ, deskripsinya bisa diperbaiki, lalu diajukan ulang.',
           ],
         },
         {
@@ -327,6 +359,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
       ],
       checklist: [
         'Tekan Simpan dulu untuk menyimpan draf, lihat pratinjaunya, baru tekan Tampilkan.',
+        'Baca ulang nama toko, tagline, dan judul yang kamu tulis sendiri: nama merek pihak lain, nomor HP, tautan, dan kata promosi seperti "gratis" atau "termurah" adalah yang ditahan Shopee, bukan isi paketnya.',
         'Buka lapakmu dari HP: judulnya tidak boleh terpotong di titik yang membuang kata kunci.',
         'Siapkan balasan chat otomatis berisi cara mengunduh dan mencetak file, supaya pengiriman tidak menunggu kamu online.',
         'Kirim berkasnya lewat chat pesanan, bukan lewat aplikasi lain: riwayat chat Shopee adalah bukti kalau ada sengketa.',
@@ -365,7 +398,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               kind: 'pick',
               label: 'Kategori *',
               value: 'Buku › Buku Anak',
-              note: 'Ketik "ebook" dulu di pencarian kategori; kalau ada kategori digital yang cocok untuk akunmu, pakai itu.',
+              note: 'Ketik "ebook" dulu di pencarian kategori; kalau ada kategori digital yang cocok untuk akunmu, pakai itu. Kategori yang tidak sesuai isi produk termasuk alasan moderasi di Tokopedia, jadi jangan memilih kategori mata pelajaran yang tidak dibahas paket ini.',
             },
             { kind: 'pick', label: 'Kondisi *', value: 'Baru', note: 'Kolom ini wajib walau isinya berkas.' },
             {
@@ -388,6 +421,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
           ],
           tips: [
             'Jangan menulis nomor WhatsApp, alamat email, atau tautan ke luar Tokopedia di deskripsi: itu melanggar aturan lapak dan produknya bisa ditolak.',
+            'Nama merek pihak lain juga tidak boleh ikut — termasuk nama aplikasi desain yang biasa dipakai membuka SVG. Draf ini menyebut kemampuannya, bukan mereknya.',
           ],
         },
         {
@@ -440,7 +474,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
       ],
       checklist: [
         'Simpan sebagai draf, buka halaman produknya sebagai pembeli, baru terbitkan.',
-        'Pastikan kalimat "produk digital, tidak ada barang fisik yang dikirim" masih ada di deskripsi setelah dipotong 2000 karakter.',
+        'Pastikan kalimat "tidak ada barang fisik yang dikirim" masih ada di deskripsi setelah dipotong 2000 karakter.',
         'Isi balasan otomatis toko dengan cara mengunduh dan mencetak berkasnya.',
       ],
     };
@@ -515,7 +549,12 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               value: copy.body,
               note: 'Etsy tidak memeringkat dari deskripsi, tapi Google mengutip ±160 karakter pertamanya — di situlah kata kunci utama draf ini duduk.',
             },
-            { kind: 'tags', label: 'Tags', value: copy.tags, note: 'Inilah yang memeringkat di Etsy, bukan deskripsi. 13 tag maksimal 20 karakter, semuanya terisi frasa dua kata ke atas — kata tunggal kalah oleh semua lapak lain yang memakainya juga.' },
+            {
+              kind: 'tags',
+              label: 'Tags',
+              value: copy.tags,
+              note: 'Inilah yang memeringkat di Etsy, bukan deskripsi. 13 tag maksimal 20 karakter, semuanya terisi frasa dua kata ke atas — kata tunggal kalah oleh semua lapak lain yang memakainya juga. Jangan menambahkan nama merek ke tag: kebijakan merek dagang Etsy menghitungnya pelanggaran walau hanya untuk menyebut kompatibilitas atau "terinspirasi dari".',
+            },
             {
               kind: 'pick',
               label: 'Materials',
@@ -808,6 +847,18 @@ export function guideToText(guide: UploadGuide): string {
   lines.push('SEBELUM TERBIT');
   for (const item of guide.checklist) lines.push(`- ${item}`);
   lines.push('');
+
+  lines.push('ATURAN LAPAK YANG MENGIKAT TEKS INI');
+  for (const rule of guide.rules) lines.push(`- ${rule}`);
+  lines.push('');
+
+  // Only printed when there is something to print: a clean draft should not
+  // hand the seller a heading to scroll past every time.
+  if (guide.warnings.length) {
+    lines.push('PERIKSA SEBELUM DITEMPEL');
+    for (const warning of guide.warnings) lines.push(`- ${findingToText(warning)}`);
+    lines.push('');
+  }
 
   return lines.join('\n');
 }

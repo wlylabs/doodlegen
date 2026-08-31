@@ -5,6 +5,7 @@ import { CheckIcon, CloseIcon, CopyIcon, DownloadIcon } from './diagrams';
 import { useCopy, useRipple } from './motion';
 import { buildUploadGuides, guideToText } from '@/lib/upload';
 import type { FieldKind, UploadField, UploadGuide, UploadStep } from '@/lib/upload';
+import type { PolicyField } from '@/lib/policy';
 import { formatSize } from '@/lib/download';
 import type { GeneratedImage } from '@/lib/cover';
 import type { GeneratedFile } from '@/lib/pdf';
@@ -54,6 +55,13 @@ const ACTION: Record<FieldKind, string> = {
 };
 
 const PASTEABLE: FieldKind[] = ['title', 'body', 'tags', 'text'];
+
+/** Which blank a rule was tripped in, named the way the form names it. */
+const POLICY_FIELD: Record<PolicyField, string> = {
+  title: 'Judul',
+  body: 'Deskripsi',
+  tags: 'Tag',
+};
 
 function FieldRow({
   field,
@@ -408,6 +416,31 @@ export function ExportDialog({
                     </div>
                     <p className="mt-1 text-[11.5px] leading-relaxed text-accent-hover">{guide.copy.seo}</p>
                   </div>
+
+                  {/* What the marketplace would hold the listing over, said
+                      before anything is pasted rather than after the form
+                      turns yellow. Empty for a draft this studio wrote on its
+                      own: what lands here is the shop name, the tagline, or
+                      the title the seller typed. */}
+                  {guide.warnings.length ? (
+                    <div className="rounded-xl border border-accent bg-accent-soft px-3 py-2.5">
+                      <p className="field-label !text-accent">Periksa sebelum ditempel</p>
+                      <ul className="mt-1.5 space-y-1.5">
+                        {guide.warnings.map((warning) => (
+                          <li
+                            key={`${warning.rule}-${warning.field}`}
+                            className="text-[12px] leading-relaxed text-accent-ink"
+                          >
+                            <span className="font-semibold">
+                              {POLICY_FIELD[warning.field]}
+                              {warning.found ? ` — "${warning.found}"` : ''}
+                            </span>{' '}
+                            {warning.says} {warning.fix}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </div>
 
                 {guide.steps.map((step, index) => (
@@ -430,6 +463,26 @@ export function ExportDialog({
                     {guide.checklist.map((item) => (
                       <li key={item} className="px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
                         {item}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                {/* The rules the draft above is written to satisfy. They sit
+                    last because they are read once — but they are read here,
+                    next to the copy, rather than on a help page the seller
+                    finds after the listing is already held for review. */}
+                <section className="space-y-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="step-mark">§</span>
+                    <h3 className="text-[13.5px] font-semibold tracking-tight">
+                      Aturan lapak yang mengikat teks ini
+                    </h3>
+                  </div>
+                  <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+                    {guide.rules.map((rule) => (
+                      <li key={rule} className="px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
+                        {rule}
                       </li>
                     ))}
                   </ul>

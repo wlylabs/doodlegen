@@ -24,6 +24,21 @@
  *   - Shopee's name uses the field it is given, since the name is the only
  *     thing its search engine reads
  *
+ * Every draft is then read the way the marketplace's own scanner reads it,
+ * because a listing that ranks and is taken down has ranked for nothing:
+ *
+ *   - no third-party brand name in the title, description or tags
+ *   - no link, email, phone number or rival marketplace anywhere in the copy
+ *   - no vocabulary of the digital goods a lapak actually restricts, and no
+ *     promotional shouting in an Indonesian product name
+ *   - what each marketplace requires to be *said* is said: no parcel shipped,
+ *     the file arrives in the lapak's own chat, and the licence is stated
+ *
+ * The check runs over the seller's own words too — shop name, tagline,
+ * product title all reach the listing through these fields — so the last
+ * case below deliberately types a violation into each of them and fails if
+ * the linter lets any of them through.
+ *
  * The upload guides are checked against the same drafts: every marketplace
  * has one, every step has fields, every field says what to put in it, and
  * every field that pastes generated copy pastes the very string the copy
@@ -227,6 +242,17 @@ for (const testCase of cases) {
     }
   }
 
+  for (const listing of listings) {
+    const findings = lib.checkListing(listing, listing.market);
+    const line = `  ${listing.market.padEnd(10)} aturan lapak`;
+    if (findings.length) {
+      failures += findings.length;
+      console.log(`${line}  FAIL — ${findings.map((finding) => lib.findingToText(finding)).join(' | ')}`);
+    } else {
+      console.log(`${line}  bersih (${lib.marketRules(listing.market).length} aturan)`);
+    }
+  }
+
   const guides = lib.buildUploadGuides({ config, characters, pageCount: characters.length });
   const covered = guides.map((guide) => guide.market).join(',');
   const expected = lib.MARKETS.map((market) => market.id).join(',');
@@ -262,9 +288,15 @@ for (const testCase of cases) {
       }
     }
 
+    if (!guide.rules.length) problems.push('no marketplace rules attached');
+    if (guide.warnings.length) {
+      problems.push(`draft trips its own rules: ${guide.warnings.map((w) => w.rule).join(', ')}`);
+    }
+
     const text = lib.guideToText(guide);
     if (!text.includes(listing.title)) problems.push('the text file is missing the title');
     if (text.includes('undefined')) problems.push('the text file contains "undefined"');
+    if (!text.includes('ATURAN LAPAK')) problems.push('the text file drops the marketplace rules');
 
     const line = `  ${guide.market.padEnd(10)} ${String(guide.steps.length).padStart(2)} steps  ${String(fields).padStart(2)} fields  ${guide.checklist.length} checks`;
     if (problems.length) {
@@ -276,9 +308,37 @@ for (const testCase of cases) {
   }
 }
 
+/*
+ * The linter's own test. Everything above proves the generator writes copy
+ * that passes; this proves the check would have caught it if it did not —
+ * every violation here is one a seller can type into the studio's own fields.
+ */
+const dirty = {
+  ...lib.DEFAULT_CONFIG,
+  language: 'id',
+  brand: 'Canva Kids Studio',
+  productTitle: 'Lembar Kerja GRATIS Termurah',
+  coverTagline: 'Pesan cepat WA 0812-3456-7890 atau cek toko kami di Tokopedia',
+};
+const dirtyCharacters = lib.buildCharacters(dirty);
+const dirtyListing = lib
+  .buildListing({ config: dirty, characters: dirtyCharacters, pageCount: dirtyCharacters.length })
+  .find((listing) => listing.market === 'shopee');
+const caught = new Set(lib.checkListing(dirtyListing, 'shopee').map((finding) => finding.rule));
+const wanted = ['merek-pihak-lain', 'kontak-di-luar', 'lapak-lain', 'kata-promosi'];
+const missed = wanted.filter((rule) => !caught.has(rule));
+
+console.log('\nkata penjual sendiri — kontrol positif untuk pemeriksa aturan');
+if (missed.length) {
+  failures += missed.length;
+  console.log(`  shopee     FAIL — tidak tertangkap: ${missed.join(', ')}`);
+} else {
+  console.log(`  shopee     tertangkap: ${[...caught].join(', ')}`);
+}
+
 console.log(
   failures
     ? `\n${failures} problem(s) found.`
-    : '\nAll listing drafts fit their marketplace limits, and every upload guide matches them.',
+    : '\nAll listing drafts fit their marketplace limits and their marketplace rules, and every upload guide matches them.',
 );
 process.exit(failures ? 1 : 0);
