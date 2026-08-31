@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckIcon, DownloadIcon, KitIcon, Spinner } from './diagrams';
+import { CheckIcon, DownloadIcon, KitIcon, ShareIcon, Spinner } from './diagrams';
 import { useRipple } from './motion';
 import { formatSize } from '@/lib/download';
 import type { GeneratedImage } from '@/lib/cover';
@@ -28,6 +28,8 @@ export function GenerateBar({
   onDownload,
   onDownloadAll,
   onOpenKit,
+  onShare,
+  shareCopied,
 }: {
   summary: string;
   pageCount: number;
@@ -43,6 +45,10 @@ export function GenerateBar({
   onDownload: (file: GeneratedFile) => void;
   onDownloadAll: () => void;
   onOpenKit: () => void;
+  /** Sends the files where the device allows it, and the link where it does not. */
+  onShare: () => void;
+  /** True while that fell back to a link and the link is on the clipboard. */
+  shareCopied: boolean;
 }) {
   const ripple = useRipple<HTMLButtonElement>();
   const percent =
@@ -138,6 +144,27 @@ export function GenerateBar({
                 Kit listing
               </button>
             ) : null}
+
+            {/*
+             * Sits with the downloads because it is the same errand by another
+             * route: the pack leaving this machine. What it does depends on
+             * what the device can do, so it does not promise a method in its
+             * label — only once it has fallen back to a link does it say so.
+             */}
+            <button
+              type="button"
+              className="btn-quiet animate-pop-in !rounded-full"
+              onClick={(event) => {
+                ripple(event);
+                onShare();
+              }}
+              title="Kirim berkasnya langsung, atau salin tautan yang membuatnya ulang"
+            >
+              <span className={shareCopied ? 'text-accent' : ''}>
+                {shareCopied ? <CheckIcon /> : <ShareIcon />}
+              </span>
+              {shareCopied ? 'Tautan disalin' : 'Kirim'}
+            </button>
           </div>
         ) : null}
 

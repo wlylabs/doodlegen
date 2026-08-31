@@ -401,6 +401,20 @@ than a second copy of it.
 alfabet, tracing, angka — using the same `#p=` links the landing page uses, so
 a shortcut and a link land on exactly the same setup.
 
+**Sharing a pack does not mean uploading one.** There is no file host here,
+and adding one would trade the guarantee above for a convenience. So the two
+things a seller actually wants both stay client-side. *Kirim* passes the PDFs
+straight to the device's own share sheet through the Web Share API — the bytes
+go from the tab into WhatsApp or a mail client without a server in between —
+and where a browser will not take files, the same button copies a link
+instead, so it is never the button that does nothing. That link carries the
+setup in its hash and `?auto=1` in its query, and the studio builds on arrival
+rather than waiting to be pressed: what the recipient opens is the pack, not a
+form. The flag is cleared as it fires, so a reload is quiet, and the setup
+rides in the hash precisely because no host ever sees one. Links are built on
+`NEXT_PUBLIC_SITE_URL` rather than on `location.href`, or a link copied from a
+dev server or a preview deploy would carry that host into somebody's chat.
+
 **Offline is the point, not a bonus.** Every PDF is built in the browser, so
 once the shell, the interface face and the worksheet face are cached there is
 nothing left to fetch. The worker serves the document that was asked for,
@@ -485,6 +499,7 @@ lib/
   listing.ts        Marketplace titles, descriptions and tags
   bundle.ts         The ZIP everything ships in
   share.ts          Config in a link, and in local storage
+  download.ts       Saving a file, and handing one to the device's share sheet
   pwa.ts            Install offers, standalone detection
   naming.ts         Product titles, slugs, file names
   fontStore.ts      Font loading, parsing and caching
