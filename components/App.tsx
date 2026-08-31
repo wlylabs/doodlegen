@@ -13,7 +13,7 @@ import { CheckIcon, ChevronIcon, LinkIcon, Spinner } from './diagrams';
 import { useCopy, useRipple } from './motion';
 import { buildCharacters, validate } from '@/lib/charset';
 import { IMAGE_SPECS, renderListingImages, type GeneratedImage } from '@/lib/cover';
-import { downloadBlob, downloadFile, downloadZip } from '@/lib/download';
+import { downloadBlob, downloadFile, downloadZip, sharePdfs } from '@/lib/download';
 import { loadFont, prefetchFont } from '@/lib/fontStore';
 import { pageCountOf, planDocument } from '@/lib/geometry';
 import { printedTitle } from '@/lib/naming';
@@ -28,6 +28,8 @@ import {
 } from '@/lib/presets';
 import type { PaperSpec } from '@/lib/presets';
 import {
+  autoFromLocation,
+  clearAutoFlag,
   configFromLocation,
   loadStoredConfig,
   presetFromLocation,
@@ -137,6 +139,7 @@ export function App() {
 
   const characters = useMemo(() => buildCharacters(config), [config]);
   const issues = useMemo(() => validate(config), [config]);
+  const blocked = useMemo(() => issues.some((issue) => issue.kind === 'error'), [issues]);
   const papers = useMemo(() => papersFor(config.paper), [config.paper]);
   const presetId = useMemo(() => activePresetId(config), [config]);
 
@@ -249,9 +252,31 @@ export function App() {
     }
   }, [config, characters, files, images, font]);
 
-  const onShare = useCallback(() => {
+  /**
+   * One action, because the intent behind it is the same either way: send this
+   * pack. Where the device can hand over the files themselves it does, and the
+   * seller never sees a link; everywhere else the link that rebuilds them is
+   * the next best thing, so the button is never the one that does nothing.
+   */
+  const onShare = useCallback(async () => {
+    if (files.length && (await sharePdfs(files)) !== 'unavailable') return;
     void copy(shareUrl(config), 'share');
-  }, [config, copy]);
+  }, [files, config, copy]);
+
+  /*
+   * A link sent with the setup in it should arrive as the pack, not as a form
+   * with a Generate button on it. Ordering is safe without a guard of its own:
+   * `ready` waits on a font that resolves a microtask after mount at the very
+   * earliest, by which time the effect above has applied the link's settings.
+   * The flag is cleared as it fires, so this runs once and a reload is quiet.
+   */
+  const autoBuilt = useRef(false);
+  useEffect(() => {
+    if (autoBuilt.current || !ready || busy || blocked || !autoFromLocation()) return;
+    autoBuilt.current = true;
+    clearAutoFlag();
+    void build(false);
+  }, [ready, busy, blocked, build]);
 
   // The one shortcut worth having: build without reaching for the mouse.
   useEffect(() => {
@@ -266,7 +291,6 @@ export function App() {
   }, [onGenerate, ready, busy]);
 
   const summary = summarise(config, characters);
-  const blocked = issues.some((issue) => issue.kind === 'error');
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-paper">
@@ -304,7 +328,7 @@ export function App() {
               className="btn-quiet"
               onClick={(event) => {
                 ripple(event);
-                onShare();
+                void copy(shareUrl(config), 'share');
               }}
             >
               <span className={copied === 'share' ? 'text-accent' : ''}>
@@ -406,6 +430,8 @@ export function App() {
         onDownload={downloadFile}
         onDownloadAll={onDownloadAll}
         onOpenKit={() => setKitOpen(true)}
+        onShare={() => void onShare()}
+        shareCopied={copied === 'share'}
       />
 
       <ExportDialog

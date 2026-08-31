@@ -16,6 +16,17 @@ import type { Config } from './types';
 const STORAGE_KEY = 'doodlegen.config.v2';
 const HASH_KEY = 'c';
 
+/**
+ * Where a shared link has to point, whatever surface it was copied from. The
+ * same build-time value the metadata uses; when it is unset the current origin
+ * still stands in, so a dev server and a preview deploy keep working.
+ */
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL;
+const STUDIO_PATH = '/studio/';
+
+/** Asks the studio to build on arrival rather than wait to be pressed. */
+const AUTO_KEY = 'auto';
+
 const ONE_OF = {
   content: ['letters', 'numbers', 'words'],
   letterCase: ['upper', 'lower', 'both'],
@@ -114,11 +125,39 @@ export function decodeConfig(value: string): Partial<Config> {
   }
 }
 
-/** A link that reopens the studio on exactly this setup. */
+/**
+ * A link that reopens the studio on exactly this setup and, because the point
+ * of sending one is the pack rather than the form, builds it on arrival.
+ *
+ * The base is the deployed origin, not `location.href`: a link copied from a
+ * dev server or a preview deploy would otherwise carry that host and be dead
+ * in the recipient's chat. The setup itself stays in the hash, which no host
+ * ever sees, so only the harmless auto flag travels as a query.
+ */
 export function shareUrl(config: Config): string {
-  const url = new URL(window.location.href);
+  const url = new URL(STUDIO_PATH, SITE_URL || window.location.origin);
+  url.searchParams.set(AUTO_KEY, '1');
   url.hash = `${HASH_KEY}=${encodeConfig(config)}`;
   return url.toString();
+}
+
+/** Whether this page was opened from a link that should build straight away. */
+export function autoFromLocation(): boolean {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get(AUTO_KEY) === '1';
+}
+
+/**
+ * Drop the flag as it is acted on, so a reload — or a tweak to the settings
+ * followed by one — does not start a second build nobody asked for. The hash
+ * stays behind: it is the setup, and it is still worth reopening on.
+ */
+export function clearAutoFlag(): void {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(AUTO_KEY)) return;
+  url.searchParams.delete(AUTO_KEY);
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 export function configFromLocation(): Partial<Config> {
