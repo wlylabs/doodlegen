@@ -5,6 +5,13 @@ export const metadata: Metadata = {
   title: 'Studio — susun halaman mewarnai & tracing',
   description:
     'Studio DoodleGen: pilih karakter, gaya garis, layout, dan ukuran kertas, lalu unduh PDF siap cetak beserta kit listing marketplace.',
+  alternates: { canonical: '/studio/' },
+  openGraph: {
+    url: '/studio/',
+    title: 'Studio DoodleGen',
+    description:
+      'Pilih karakter, gaya garis, layout, dan ukuran kertas, lalu unduh PDF siap cetak beserta kit listing marketplace.',
+  },
 };
 
 export default function StudioPage() {

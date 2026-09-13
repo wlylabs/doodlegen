@@ -33,13 +33,31 @@
   --line: 230 232 236;
   --line-strong: 207 212 220;
 
-  --accent: 228 85 13;
-  --accent-hover: 194 65 12;
-  --accent-soft: 255 244 236;
-  --accent-line: 251 209 179;
-  --accent-ink: 184 67 10;
-  --accent-ring: 249 188 148;
-  --accent-on: 255 255 255;
+  /*
+   * One accent, and one thing sitting on top of it.
+   *
+   * `accent-on` is near-black rather than white, in both themes, because a
+   * vivid orange is a light colour: white on it measures 3.7:1, which is
+   * under AA for a 14px button label, and the fix that keeps the colour is
+   * dark text rather than a duller button. It also means the filled button
+   * is drawn the same way at both ends of the day.
+   */
+  --accent: 244 96 28;
+  --accent-hover: 224 76 14;
+  --accent-soft: 255 243 235;
+  --accent-line: 253 205 173;
+  --accent-ink: 180 65 10;
+  --accent-ring: 250 176 128;
+  --accent-on: 31 18 6;
+
+  /*
+   * The brand ramp. The accent is the interface colour — one button, one
+   * chosen option — and this is the identity: the three stops the app icon,
+   * the mark and the one gradient on the landing page are drawn from.
+   */
+  --brand-from: 255 190 66;
+  --brand-via: 249 110 42;
+  --brand-to: 226 60 24;
 
   --band: 16 19 23;
   --band-ink: 247 248 250;
@@ -52,7 +70,7 @@
   --shadow-lift: 0 2px 4px rgb(16 19 23 / 0.04), 0 14px 28px -10px rgb(16 19 23 / 0.14);
   --shadow-proof: 0 1px 2px rgb(16 19 23 / 0.1), 0 14px 36px -14px rgb(16 19 23 / 0.3);
   --shadow-pop: 0 24px 64px -24px rgb(16 19 23 / 0.4);
-  --shadow-accent: 0 1px 2px rgb(16 19 23 / 0.08), 0 8px 20px -10px rgb(228 85 13 / 0.75);
+  --shadow-accent: 0 1px 2px rgb(16 19 23 / 0.08), 0 8px 20px -10px rgb(244 96 28 / 0.75);
   --shadow-bar: 0 -1px 2px rgb(16 19 23 / 0.04);
 }
 
@@ -85,13 +103,17 @@
     --line: 38 42 49;
     --line-strong: 58 64 73;
 
-    --accent: 255 122 47;
-    --accent-hover: 255 143 77;
-    --accent-soft: 36 24 18;
-    --accent-line: 74 42 18;
-    --accent-ink: 255 177 130;
-    --accent-ring: 255 177 130;
+    --accent: 255 130 56;
+    --accent-hover: 255 152 89;
+    --accent-soft: 38 25 17;
+    --accent-line: 78 44 20;
+    --accent-ink: 255 181 134;
+    --accent-ring: 255 181 134;
     --accent-on: 26 14 5;
+
+    --brand-from: 255 198 88;
+    --brand-via: 255 130 56;
+    --brand-to: 233 71 33;
 
     --band: 29 33 40;
     --band-ink: 247 248 250;
@@ -103,7 +125,7 @@
     --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 14px 28px -10px rgb(0 0 0 / 0.7);
     --shadow-proof: 0 1px 2px rgb(0 0 0 / 0.6), 0 18px 44px -14px rgb(0 0 0 / 0.85);
     --shadow-pop: 0 24px 64px -24px rgb(0 0 0 / 0.85);
-    --shadow-accent: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(255 122 47 / 0.55);
+    --shadow-accent: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(255 130 56 / 0.55);
     --shadow-bar: 0 -1px 2px rgb(0 0 0 / 0.5);
   }
 }
@@ -122,13 +144,17 @@
   --line: 38 42 49;
   --line-strong: 58 64 73;
 
-  --accent: 255 122 47;
-  --accent-hover: 255 143 77;
-  --accent-soft: 36 24 18;
-  --accent-line: 74 42 18;
-  --accent-ink: 255 177 130;
-  --accent-ring: 255 177 130;
+  --accent: 255 130 56;
+  --accent-hover: 255 152 89;
+  --accent-soft: 38 25 17;
+  --accent-line: 78 44 20;
+  --accent-ink: 255 181 134;
+  --accent-ring: 255 181 134;
   --accent-on: 26 14 5;
+
+  --brand-from: 255 198 88;
+  --brand-via: 255 130 56;
+  --brand-to: 233 71 33;
 
   --band: 29 33 40;
   --band-ink: 247 248 250;
@@ -140,7 +166,7 @@
   --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 14px 28px -10px rgb(0 0 0 / 0.7);
   --shadow-proof: 0 1px 2px rgb(0 0 0 / 0.6), 0 18px 44px -14px rgb(0 0 0 / 0.85);
   --shadow-pop: 0 24px 64px -24px rgb(0 0 0 / 0.85);
-  --shadow-accent: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(255 122 47 / 0.55);
+  --shadow-accent: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 20px -10px rgb(255 130 56 / 0.55);
   --shadow-bar: 0 -1px 2px rgb(0 0 0 / 0.5);
 }
 
@@ -627,6 +653,97 @@
       -webkit-backdrop-filter: blur(0px);
       backdrop-filter: blur(0px);
     }
+  }
+}
+
+@layer components {
+  /*
+   * The identity, as one declaration. The mark, the app icon and the single
+   * gradient the landing page is allowed to use are all this ramp, so a
+   * change of brand is a change of three custom properties rather than a
+   * hunt through the markup.
+   */
+  .brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--brand-from)) 0%,
+      rgb(var(--brand-via)) 52%,
+      rgb(var(--brand-to)) 100%
+    );
+  }
+
+  .brand-text {
+    background-image: linear-gradient(
+      100deg,
+      rgb(var(--brand-via)) 0%,
+      rgb(var(--brand-to)) 60%,
+      rgb(var(--brand-via)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /*
+   * A key, drawn as a key. Shortcuts are only worth printing next to an
+   * action if they read as something to press, and that is a raised cap with
+   * a hairline and a bottom edge — not a monospaced word.
+   */
+  .kbd {
+    @apply inline-flex h-[20px] min-w-[20px] items-center justify-center rounded-[6px] border border-line
+           border-b-line-strong bg-sunk px-1.5 text-[11px] font-semibold leading-none text-ink-mute;
+  }
+
+  /*
+   * The first thing in the tab order, and invisible until it is focused: the
+   * one way a keyboard reaches the page past a nav full of links.
+   */
+  .skip-link {
+    @apply sr-only;
+  }
+
+  .skip-link:focus-visible {
+    @apply not-sr-only fixed left-3 top-3 z-[60] rounded-xl bg-surface px-4 py-2.5 text-[13.5px]
+           font-semibold text-ink shadow-pop;
+  }
+
+  /*
+   * The settings panel on a phone is a bottom sheet: it comes up over the
+   * proof rather than squeezing it, which is how every app on the device
+   * presents the same thing. Above `lg` it is a column again and none of
+   * this applies.
+   */
+  .sheet-grip {
+    @apply mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-line-strong lg:hidden;
+  }
+
+  /*
+   * One row of the command palette. The whole row is the target, the mark on
+   * the left says what kind of thing it is, and the shortcut sits at the far
+   * end where a menu puts it.
+   */
+  .cmd-item {
+    @apply flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13.5px] text-ink-soft
+           transition-colors duration-100;
+  }
+
+  .cmd-item[data-active='true'] {
+    @apply bg-sunk text-ink;
+  }
+
+  .cmd-item[aria-disabled='true'] {
+    @apply cursor-not-allowed opacity-45;
+  }
+
+  /*
+   * A toast: the app answering something the user did somewhere else on the
+   * screen. It says what happened and gets out of the way, so it carries a
+   * tone stripe rather than a coloured ground — a wash of accent behind body
+   * text is the one thing that makes a passing message hard to read.
+   */
+  .toast {
+    @apply pointer-events-auto flex w-full items-start gap-2.5 overflow-hidden rounded-xl border border-line
+           bg-surface py-2.5 pl-3 pr-2.5 text-[13px] text-ink-soft shadow-pop;
   }
 }
 

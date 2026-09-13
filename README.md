@@ -14,7 +14,7 @@ Two routes:
 
 | Route | What it is |
 | --- | --- |
-| `/` | Landing page: what the tool makes, the print guarantees, the starter packs. Static, indexable, ~126 kB of JS. |
+| `/` | Landing page: what the tool makes, the print guarantees, the starter packs. Static, indexable, ~144 kB of JS. |
 | `/studio` | The generator itself. Everything runs in the browser. |
 
 The heavy parts — the font parser, `pdf-lib`, the ZIP writer — are all loaded
@@ -36,8 +36,10 @@ generated server-side: PDFs, listing images and the ZIP are built in the
 browser, which also means the tool keeps working offline once the service
 worker has cached the shell and the fonts.
 
-Set `NEXT_PUBLIC_SITE_URL` at build time to give the social card and other
-absolute metadata URLs a real origin.
+Set `NEXT_PUBLIC_SITE_URL` at build time to give the social card, the
+canonicals, the sitemap and every other absolute URL a real origin. Without
+it they fall back to `http://localhost:3000`, which is fine in development and
+is a page asking not to be indexed in production.
 
 Both deploy configs publish `out/` as plain static files, and neither uses a
 Next.js server preset. That is deliberate on Vercel: `vercel.json` sets
@@ -423,9 +425,10 @@ offline card if even the shell failed to cache. Navigation preload is on, so
 being offline-capable costs no latency when the network is there.
 
 **Updates are offered, never taken.** Nothing calls `skipWaiting()` on install:
-a new build installs quietly behind the running one, and the page shows a
-"Versi baru" bar. The reload happens when the user says so, because the studio
-holds unsaved settings and possibly a half-finished export. Hosts must serve
+a new build installs quietly behind the running one, and the app raises a
+"Versi baru" toast with a **Muat ulang** on it that does not time out. The
+reload happens when the user says so, because the studio holds unsaved
+settings and possibly a half-finished export. Hosts must serve
 `/sw.js` with `max-age=0, must-revalidate` — both `netlify.toml` and
 `vercel.json` already do — or clients pin an old shell forever.
 
@@ -438,6 +441,65 @@ browser: that every declared asset is the size it claims, that the app still
 renders with the network cut, that the install button stays hidden until a
 browser offers an install, and that a new build waits to be let in.
 
+## Reaching everything
+
+A studio has more verbs than a bar has room for — six settings steps, four
+starter packs, two exports, a share, a theme, an install — and the usual
+answer, an overflow menu, is how a toolbar becomes a filing cabinet.
+
+**The command palette is the way in.** `⌘K` / `Ctrl K` opens it, typing
+filters by subsequence (`gpdf` finds *Generate PDF*), the arrows move and
+Enter runs. It lists presets and settings alongside actions, and a command
+that cannot run right now is listed and disabled rather than hidden: a palette
+whose contents change shape between openings cannot be learned, and
+"Kit marketplace, greyed out" answers the question a missing row leaves open.
+
+**The shortcuts are written down.** `?` opens the list; the palette links to
+it too. `⌘↵` generates, `S` opens the settings, `Esc` closes whatever is on
+top. Every plain-key shortcut is suppressed while a field has focus, so typing
+a word list never triggers one.
+
+**On a phone the settings are a bottom sheet**, not a drawer that pushes the
+proof up the screen: it comes up over the work with a scrim behind it, and it
+is dismissed by the scrim, by `Esc`, or by the bar it came from. Above `lg` it
+is a column again and none of that applies.
+
+**The app answers in one place.** A failed export, a copied link, a connection
+that dropped, a new build waiting to be let in — all of it arrives as a toast
+in the same stack, raised from a module rather than a context so any part of
+the tree can speak without being handed the means to. Nothing there is
+load-bearing: every message it carries is also visible somewhere permanent, so
+a toast that is missed has not cost anything.
+
+## Links and indexing
+
+Static export or not, the two pages are real URLs and they are described like
+it.
+
+**One spelling per page.** `trailingSlash` means every route is served at one
+spelling and reachable at two, so each page declares its own canonical rather
+than letting the pair be indexed as duplicates.
+
+**`sitemap.xml` and `robots.txt` are built, not written.** Both read `ROUTES`
+in `lib/site.ts`, which is also what the nav and the footer read, so a route
+or a section that is renamed cannot leave one of the four disagreeing. Both
+files are generated at build time into `out/`.
+
+**The structured data says only what the page already says.** A `WebSite`, a
+`WebApplication` — free, browser-based, no account, which are exactly the
+facts a search result can show — and an `FAQPage` built from the same array
+the accordion renders. Two copies of an answer is two answers that drift
+apart.
+
+**404 is a page, not a dead end.** `app/not-found.tsx` exports to
+`out/404.html`, which is what every static host serves for a path it cannot
+match, and what an offline visit to a never-cached URL falls back to. It
+offers the two doors the site has.
+
+**Every absolute link is built on `NEXT_PUBLIC_SITE_URL`.** Set it for a
+production deploy: a canonical pointing at `localhost` is how a page quietly
+asks not to be indexed.
+
 ## Commands
 
 | Command | What it does |
@@ -449,14 +511,15 @@ browser offers an install, and that a new build waits to be let in.
 | `npm run verify` | Checks those PDFs against the table above |
 | `npm run verify:listing` | Checks every marketplace draft against that marketplace's limits and its ranking surface, and every upload guide against the draft it pastes |
 | `npm run verify:pwa` | Checks the manifest's assets, the offline shell, the install offer and the update handshake |
+| `npm run verify:ui` | Drives the palette, the shortcuts, the skip link and the settings sheet in a real browser |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |
 | `npm run icons` | Regenerates the logo, favicon, PWA icons and the social card |
 | `npm run screenshots` | Recaptures the manifest's install-dialog screenshots from `out/` |
 
-`verify`, `verify:pwa` and `screenshots` drive a real browser. Either run
-`npx playwright install chromium` once, or point `CHROMIUM_PATH` at a browser
-you already have. `verify:pwa` and `screenshots` read the built
-export, so `npm run build` comes first.
+`verify`, `verify:pwa`, `verify:ui` and `screenshots` drive a real browser.
+Either run `npx playwright install chromium` once, or point `CHROMIUM_PATH` at
+a browser you already have. `verify:pwa`, `verify:ui` and `screenshots` read
+the built export, so `npm run build` comes first.
 
 `fonts` needs Python with `fonttools` and `skia-pathops`
 (`pip install fonttools skia-pathops`). The built fonts are committed, so this
@@ -480,14 +543,21 @@ app/
   page.tsx          Landing page
   studio/page.tsx   The generator
   layout.tsx        Shell, metadata, PWA wiring
+  not-found.tsx     404, exported as out/404.html
+  sitemap.ts        sitemap.xml, robots.ts  robots.txt
 components/
   App.tsx           Studio state: config, generation, export
   SettingsPanel.tsx Settings and starter packs
+  CommandPalette.tsx  Every action in the studio, behind one key
+  ShortcutsDialog.tsx The keyboard map, written down
   PreviewDeck.tsx   Page deck, PageSheet.tsx  One rendered page
   ExportDialog.tsx  Listing images and copy, ready to paste
   GenerateBar.tsx   Progress, cancel, downloads
   InstallPrompt.tsx The install button, and Safari's two taps
-  ServiceWorkerRegistrar.tsx  Worker registration and the update bar
+  Logo.tsx          The mark: bare letter, and the app-icon tile
+  Toaster.tsx       Where the app answers
+  StructuredData.tsx  WebSite, WebApplication and FAQPage, as JSON-LD
+  ServiceWorkerRegistrar.tsx  Worker registration, updates, connection
   Theme.tsx         Light / dark / system, and the pre-paint script
   motion.tsx        Ripple, reveal, count-up, copy-to-clipboard
   landing/          Hero, live demo, sections
@@ -510,6 +580,9 @@ lib/
   palette.ts        The seven CMYK palettes
   covers.ts         The twelve cover compositions, page and listing image
   doodles.ts        Generated cover art: blobs, bursts, clouds, arches
+  toast.ts          The message queue, held outside React
+  site.ts           Origin, routes, sections — what the site says about itself
+  content.ts        The landing page's questions, shared with the JSON-LD
 scripts/            Font pipeline, icon and social card generation, QA tools
 public/fonts/       Built faces plus their OFL texts
 public/ISC-lucide.txt  The icon set's licence, shipped with the site
@@ -542,9 +615,17 @@ Nothing in the markup knows which theme is running.
 The choice is light, dark, or follow the device, and it survives a reload: the
 explicit ones write `data-theme` on the document, and a tiny script inlined in
 the head applies it before the first paint, so a dark-set device never gets a
-white flash. The dark palette lifts the accent until it clears 4.5:1 on a
-near-black ground and turns the text on top of a filled accent dark, because
-white on a lifted orange is the one pairing that stops being readable.
+white flash. The choice itself lives in a module rather than in the toggle, so
+the strip in the bar and the command palette are two controls over one
+setting rather than two settings.
+
+The accent is a vivid orange in both themes, and the text on top of a filled
+accent is near-black in both. That is an accessibility result rather than a
+style: white on this orange measures 3.7:1, which is under AA for a 14px
+button label, and the fix that keeps the colour is dark text rather than a
+duller button. Alongside it sits a brand ramp — `--brand-from`, `--brand-via`,
+`--brand-to` — which is spent on exactly two things: the mark, and one wash at
+the foot of the closing panel.
 
 Two things stay put in both themes. The sheet is white, because it is going to
 be printed on white paper and a proof that dims with the interface is lying

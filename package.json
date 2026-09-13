@@ -15,6 +15,7 @@
     "verify": "node scripts/verify-pdfs.mjs",
     "verify:listing": "node scripts/verify-listing.mjs",
     "verify:pwa": "node scripts/verify-pwa.mjs",
+    "verify:ui": "node scripts/verify-ui.mjs",
     "fonts": "python3 scripts/build-fonts.py"
   },
   "dependencies": {

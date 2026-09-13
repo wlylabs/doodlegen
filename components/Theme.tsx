@@ -18,6 +18,50 @@ function applyTheme(theme: Theme) {
   else root.setAttribute('data-theme', theme);
 }
 
+/**
+ * The choice, held outside React.
+ *
+ * The strip in the bar is no longer the only thing that can set the theme —
+ * the command palette can too — and two controls over one setting have to
+ * agree. A module-level value with subscribers is what keeps them in step
+ * without a provider wrapped around an app that needs one for nothing else.
+ */
+let current: Theme = 'system';
+const listeners = new Set<(theme: Theme) => void>();
+
+export function readStoredTheme(): Theme {
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark' || stored === 'system') current = stored;
+  } catch {
+    // Private mode refuses the read; the default is the honest answer.
+  }
+  return current;
+}
+
+/** The theme as last chosen, for anything that has to label the choice. */
+export function getTheme(): Theme {
+  return current;
+}
+
+export function setTheme(next: Theme): void {
+  current = next;
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, next);
+  } catch {
+    // Private mode can refuse the write. The theme still applies for this
+    // visit; it simply will not be remembered, which is better than throwing
+    // out of a click handler.
+  }
+  applyTheme(next);
+  for (const listener of listeners) listener(next);
+}
+
+export function subscribeTheme(listener: (theme: Theme) => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 const OPTIONS: { value: Theme; label: string; icon: typeof SunIcon }[] = [
   { value: 'light', label: 'Terang', icon: SunIcon },
   { value: 'dark', label: 'Gelap', icon: MoonIcon },
@@ -25,29 +69,19 @@ const OPTIONS: { value: Theme; label: string; icon: typeof SunIcon }[] = [
 ];
 
 export function ThemeToggle({ className = '' }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>('system');
+  const [theme, setLocalTheme] = useState<Theme>('system');
   // Nothing about the stored choice is known on the server, so the disc that
   // marks it stays hidden until the first client effect has read it back.
   const [mounted, setMounted] = useState(false);
   const groupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    if (stored === 'light' || stored === 'dark' || stored === 'system') setTheme(stored);
+    setLocalTheme(readStoredTheme());
     setMounted(true);
+    return subscribeTheme(setLocalTheme);
   }, []);
 
-  const choose = (next: Theme) => {
-    setTheme(next);
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // Private mode can refuse the write. The theme still applies for this
-      // visit; it simply will not be remembered, which is better than throwing
-      // out of a click handler.
-    }
-    applyTheme(next);
-  };
+  const choose = setTheme;
 
   const selected = OPTIONS.findIndex((option) => option.value === theme);
 

@@ -17,7 +17,7 @@ export default function Page() {
   return (
     <>
       <Nav />
-      <main>
+      <main id="main">
         <Hero />
         <Marquee />
         <Stats />

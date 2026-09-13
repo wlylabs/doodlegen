@@ -573,3 +573,62 @@ export function IosShareIcon({ className = 'h-4 w-4' }: { className?: string }) 
     </Icon>
   );
 }
+
+/** lucide/search — the one glyph a text box means "filter" with. */
+export function SearchIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </Icon>
+  );
+}
+
+/** lucide/keyboard */
+export function KeyboardIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h8" />
+    </Icon>
+  );
+}
+
+/** lucide/sliders-horizontal — the settings panel, as a panel of controls. */
+export function SlidersIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <line x1="21" x2="14" y1="4" y2="4" />
+      <line x1="10" x2="3" y1="4" y2="4" />
+      <line x1="21" x2="12" y1="12" y2="12" />
+      <line x1="8" x2="3" y1="12" y2="12" />
+      <line x1="21" x2="16" y1="20" y2="20" />
+      <line x1="12" x2="3" y1="20" y2="20" />
+      <line x1="14" x2="14" y1="2" y2="6" />
+      <line x1="8" x2="8" y1="10" y2="14" />
+      <line x1="16" x2="16" y1="18" y2="22" />
+    </Icon>
+  );
+}
+
+/** lucide/file-output — the one button that makes the thing. */
+export function GenerateIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M4 7V4a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2h-2" />
+      <path d="M2 15h10" />
+      <path d="m9 18 3-3-3-3" />
+    </Icon>
+  );
+}
+
+/** lucide/home */
+export function HomeIcon({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+      <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </Icon>
+  );
+}

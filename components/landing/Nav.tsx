@@ -6,17 +6,12 @@ import { InstallButton } from '../InstallPrompt';
 import { Logo } from '../Logo';
 import { ThemeToggle } from '../Theme';
 import { useRipple } from '../motion';
-
-const LINKS = [
-  { href: '#fitur', label: 'Fitur' },
-  { href: '#standar', label: 'Standar cetak' },
-  { href: '#kit', label: 'Kit marketplace' },
-  { href: '#faq', label: 'FAQ' },
-];
+import { SECTIONS } from '@/lib/site';
 
 export function Nav() {
   const [stuck, setStuck] = useState(false);
   const [open, setOpen] = useState(false);
+  const [active, setActive] = useState<string | null>(null);
   const ripple = useRipple<HTMLButtonElement>();
 
   useEffect(() => {
@@ -24,6 +19,37 @@ export function Nav() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  /*
+   * Which section the reader is actually in.
+   *
+   * A nav that lists four anchors and never says which one you are looking at
+   * is a table of contents, not a position. The band is the top third of the
+   * viewport rather than the whole of it, so the answer changes when a heading
+   * reaches reading height instead of when a section first peeks into view —
+   * and with several sections visible at once on a tall screen, the last one
+   * to have crossed that line is the one you are in.
+   */
+  useEffect(() => {
+    const targets = SECTIONS.map((section) => document.getElementById(section.id)).filter(
+      (node): node is HTMLElement => node !== null,
+    );
+    if (!targets.length || typeof IntersectionObserver === 'undefined') return;
+
+    const seen = new Map<string, boolean>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) seen.set(entry.target.id, entry.isIntersecting);
+        const inside = SECTIONS.filter((section) => seen.get(section.id));
+        setActive(inside.length ? (inside[inside.length - 1]?.id ?? null) : null);
+      },
+      // Top third of the viewport: everything below it is "not yet".
+      { rootMargin: '-64px 0px -67% 0px', threshold: 0 },
+    );
+
+    targets.forEach((target) => observer.observe(target));
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -37,10 +63,15 @@ export function Nav() {
           <Logo />
         </Link>
 
-        <nav className="ml-6 hidden gap-1 md:flex">
-          {LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="btn-ghost">
-              {link.label}
+        <nav aria-label="Bagian halaman" className="ml-6 hidden gap-1 md:flex">
+          {SECTIONS.map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              aria-current={active === section.id ? 'true' : undefined}
+              className={`btn-ghost ${active === section.id ? '!text-ink' : ''}`}
+            >
+              {section.label}
             </a>
           ))}
         </nav>
@@ -56,6 +87,7 @@ export function Nav() {
             type="button"
             className="btn-quiet md:hidden"
             aria-expanded={open}
+            aria-controls="nav-drawer"
             aria-label="Menu"
             onClick={(event) => {
               ripple(event);
@@ -84,20 +116,22 @@ export function Nav() {
       </div>
 
       <div
+        id="nav-drawer"
         className={`grid overflow-hidden border-t border-line bg-surface transition-[grid-template-rows] duration-300 ease-out md:hidden ${
           open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] border-t-0'
         }`}
       >
-        <nav className="overflow-hidden">
+        <nav aria-label="Bagian halaman" className="overflow-hidden">
           <div className="flex flex-col px-4 py-2">
-            {LINKS.map((link) => (
+            {SECTIONS.map((section) => (
               <a
-                key={link.href}
-                href={link.href}
-                className="btn-ghost !justify-start"
+                key={section.id}
+                href={`#${section.id}`}
+                aria-current={active === section.id ? 'true' : undefined}
+                className={`btn-ghost !justify-start ${active === section.id ? '!text-ink' : ''}`}
                 onClick={() => setOpen(false)}
               >
-                {link.label}
+                {section.label}
               </a>
             ))}
             <InstallButton className="mt-1 !justify-start sm:hidden" />

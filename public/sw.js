@@ -6,7 +6,7 @@
  * reason the installed app is allowed to look like a native one: it does not
  * go blank when the connection does.
  */
-const VERSION = 'doodlegen-v4';
+const VERSION = 'doodlegen-v5';
 
 /**
  * Two documents — the landing page and the studio — plus everything the
@@ -37,11 +37,27 @@ const FALLBACK = '/studio/';
 /** Last resort: the shell itself failed to cache, so answer in plain HTML. */
 const OFFLINE_PAGE = `<!doctype html><html lang="id"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161921">
 <title>DoodleGen — offline</title>
-<style>html{font-family:system-ui,sans-serif;background:#FAFAF9;color:#1C1917}
+<style>:root{color-scheme:light dark}
+html{font-family:system-ui,sans-serif;background:#F7F8FA;color:#101317}
 body{margin:0;display:grid;place-items:center;min-height:100dvh;padding:24px;text-align:center}
-p{color:#57534E;max-width:34ch;line-height:1.5}</style>
-<body><div><h1>Sedang offline</h1>
+h1{font-size:22px;margin:16px 0 0}
+p{color:#48505B;max-width:34ch;line-height:1.55}
+svg{display:block;margin:0 auto}
+@media(prefers-color-scheme:dark){html{background:#0E1014;color:#F2F4F7}p{color:#B4BCC8}}</style>
+<body><div>
+<svg width="56" height="56" viewBox="0 0 32 32" aria-hidden="true">
+<defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#FFBE42"/><stop offset="52%" stop-color="#F96E2A"/>
+<stop offset="100%" stop-color="#E23C18"/></linearGradient></defs>
+<rect width="32" height="32" rx="9.2" fill="url(#b)"/>
+<g transform="translate(4 4)">
+<path d="M6.2 4.4V19.6" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+<path d="M6.2 4.4h4.2a7.6 7.6 0 0 1 0 15.2H6.2" fill="none" stroke="#fff" stroke-width="3.2"
+      stroke-linecap="round" stroke-dasharray="3.4 2.3"/></g></svg>
+<h1>Sedang offline</h1>
 <p>Halaman ini belum pernah tersimpan di perangkat. Sambungkan internet sekali, lalu DoodleGen bisa dipakai tanpa koneksi.</p>
 </div></body></html>`;
 
