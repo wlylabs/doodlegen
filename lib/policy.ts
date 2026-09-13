@@ -282,6 +282,20 @@ export const POLICY_RULES: PolicyRule[] = [
     ],
   },
   {
+    id: 'nama-huruf-kapital',
+    markets: INDONESIAN,
+    fields: ['title'],
+    severity: 'warn',
+    says: 'Nama produk yang seluruhnya huruf kapital dihitung teriakan oleh panduan penamaan Shopee dan Tokopedia, sejajar dengan emoji dan tanda seru beruntun.',
+    fix: 'Tulis seperti kalimat biasa: kapital di awal kata, dan biarkan singkatan seperti PDF, A4, atau TK saja yang tetap kapital. Kalau itu memang nama merekmu, cukup mereknya yang kapital, bukan seluruh nama produk.',
+    // A shout is a run of words, not a short code: "PDF A4" is a spec, and a
+    // seller who typed "LEMBAR KERJA ANAK TK" is the case this catches.
+    find: (value) => {
+      const shouted = value.match(/\b[A-Z][A-Z\s]{14,}\b/g) ?? [];
+      return [...new Set(shouted.map((hit) => hit.trim()).filter((hit) => hit.split(/\s+/).length >= 3))];
+    },
+  },
+  {
     id: 'klaim-berlebihan',
     markets: ALL_MARKETS,
     fields: ['title', 'body'],
@@ -306,6 +320,14 @@ export const POLICY_DUTIES: PolicyDuty[] = [
     says: 'Cara berkas sampai ke pembeli harus disebut, dan jalannya harus chat lapak itu sendiri.',
     fix: 'Tulis bahwa PDF dikirim lewat chat pesanan setelah pembayaran dikonfirmasi.',
     met: (body) => /chat/i.test(body),
+  },
+  {
+    id: 'sebut-unduhan-digital',
+    markets: ['etsy', 'tpt', 'gumroad'],
+    says: 'A digital listing has to say that the buyer receives a file to download and that nothing is posted to them — a buyer who waits for a parcel opens a case, and every marketplace here settles that case against the seller.',
+    fix: 'Keep the line naming this an instant digital download with no physical item shipped.',
+    met: (body) =>
+      /(instant download|digital download|nothing is shipped|no physical item)/i.test(body),
   },
   {
     id: 'sebut-lisensi',

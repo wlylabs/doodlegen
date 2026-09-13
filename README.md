@@ -67,7 +67,7 @@ the rest around it:
 | Worksheets | One page per character, with an optional page title and a numbered, branded footer. |
 | Terms page | What a buyer may and may not do, plus printing tips and the font licence. |
 | Editable SVG | One SVG per worksheet, at trim size, drawn from the same plan — opens in Canva, Figma, Illustrator, Inkscape and Cricut Design Space. |
-| Listing images | Twelve canvases, not five: a cover for each channel at its own size — 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 and 600×600 (Gumroad cover and square thumbnail), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest) — plus, where a channel gives a listing more than one photo slot, a contents grid of every page, a paper mockup of the printed sheets, and a three-step "how it works" card. All drawn from the same page plans, in vector, with no stock photography. |
+| Listing images | Sixteen canvases, not five: a cover for each channel at its own size — 2000×2000 (Etsy), 1200×1600 (TPT), 1280×720 and 600×600 (Gumroad cover and square thumbnail), 1200×1200 (Shopee and Tokopedia), 1000×1500 (Pinterest) — and then the rest of that channel's photo slots, at the same size: a contents grid of every page for all six, a paper mockup of the printed sheets, and a three-step "how it works" card. Every channel gets the contents grid, because "what is actually in the file" is the one question a cover cannot answer about a product nobody can open before paying. All drawn from the same page plans, in vector, with no stock photography. |
 | Listing copy | Title, description and tags for Etsy, TPT, Gumroad, Shopee, Tokopedia and Pinterest, written for where each channel actually ranks them and already inside its character and tag limits. The description says what is genuinely on the pages — stroke weight, handwriting guides, grid size, the words in a word pack, the editable SVGs — so two packs read as two products. The Gumroad markdown draft doubles as the Payhip, Lemon Squeezy and Karyakarsa one. Every draft is written to that marketplace's own listing rules — no third-party brand names, no contact details or rival lapak, no vocabulary of restricted digital goods — and each text file carries those rules under the copy. |
 | Upload steps | Each channel's own add-product form, walked field by field: photo, product name, category, description, price, stock, SKU — and the weight, package size and courier Shopee and Tokopedia will not let a listing save without. Every blank says whether it is pasted, chosen or uploaded, and the pasted ones carry the copy above. |
 | Paperwork | A read-me for the buyer and the full SIL OFL text of the embedded face. |
@@ -76,8 +76,10 @@ the rest around it:
 
 ```
 doodlegen-<subject>-<style>-<layout>/
+  00-START-HERE.txt     what is in each folder, in what order, and which
+                        of them the buyer may receive
   01-PRINT-FILES/       A4 and US Letter PDFs
-  02-LISTING-IMAGES/    the twelve listing canvases, PNG
+  02-LISTING-IMAGES/    the sixteen listing canvases, PNG
   03-LISTING-COPY/      etsy.txt, tpt.txt, gumroad.txt, shopee.txt,
                         tokopedia.txt, pinterest.txt
   04-UPLOAD-STEPS/      the same six channels, as add-product walkthroughs
@@ -85,6 +87,16 @@ doodlegen-<subject>-<style>-<layout>/
   READ-ME-FIRST.txt
   FONT-LICENSE.txt
 ```
+
+**Five numbered folders are self-explanatory only to whoever numbered them.**
+The mistake the archive invites is not small: the copy, the canvases and the
+upload steps are the *seller's* working material, and a seller in a hurry
+uploads the whole ZIP as the product file. So `00-START-HERE.txt` opens with
+which folder the buyer is allowed to receive — the print files, and the SVGs
+if they are being sold — then the rest in the order they are worked through,
+and each channel's draft measured against its own limits, so the state of the
+kit is readable without opening six more files. It is written in the pack's
+language, like everything else a person reads.
 
 **A listing needs a set of pictures, not a picture.** A cover sells the
 idea; the rest answer the questions that stop a digital sale. The contents
@@ -96,6 +108,15 @@ shopping for. The steps card says nothing is shipped and how the file
 arrives — the question Indonesian sellers otherwise answer in chat all day.
 Past thirty pages the grid samples evenly and says so rather than shrinking
 the thumbnails into a texture.
+
+How many canvases a channel gets is the channel's own answer, not a round
+number: Shopee and Tokopedia show up to nine photos and get four, Gumroad
+shows its covers as a carousel and gets the grid beside the square thumbnail,
+and Pinterest — where one product is meant to be pinned more than once — gets
+a second 2:3 pin rather than a checklist line telling the seller to make one.
+`verify:listing` measures each canvas against that channel's published photo
+standard, since a canvas at the wrong ratio is cropped by the marketplace
+rather than by the designer.
 
 Everything is drawn on a canvas from the same page plans as the PDF, crayons
 included: a mockup built on someone else's stock photo would carry someone
@@ -166,12 +187,15 @@ for, per marketplace, as rules a script can fail on:
 | Links, emails, phone numbers, a rival marketplace's name — anything that finishes the sale elsewhere | Shopee's prohibited-listing rules and Tokopedia's moderation rules | Delivery is named and named *inside* the lapak: the PDF arrives in Shopee's or Tokopedia's own order chat |
 | The vocabulary of restricted digital goods — accounts, subscriptions, vouchers, credit, activation codes | Shopee's list of digital products only approved sellers may sell | The copy says what the thing is: a print-at-home PDF, sent after payment, with no parcel shipped |
 | Promotional shouting in an Indonesian product name — *gratis*, *diskon*, *termurah*, *best seller* | Shopee's product-name and spam guidance | The name stays Merek + Jenis Produk + Spesifikasi; promotions live in the promo tools |
+| A product name shouted in capitals — *LEMBAR KERJA ANAK TK* | The same naming guidance that files emoji and repeated punctuation as spam | The name is set as a sentence; only PDF, A4 and TK stay capitalised |
 
-Two of the rules run the other way and require something to be *said*: that
+Three of the rules run the other way and require something to be *said*: that
 no physical item ships and how the file reaches the buyer, on Shopee and
-Tokopedia, and what licence the buyer gets, on Etsy, TPT and Gumroad. A
-description that leaves those out is the one that ends in a dispute rather
-than in a review.
+Tokopedia; that the buyer is downloading a file and nothing is posted to
+them, on Etsy, TPT and Gumroad; and what licence the buyer gets, on the same
+three. A description that leaves those out is the one that ends in a dispute
+rather than in a review — a buyer waiting for a parcel opens a case, and every
+marketplace here settles that case against the seller.
 
 The book categories on both Indonesian lapak are policed for scanned and
 pirated titles, so a PDF listed among printed books is read against that
@@ -509,7 +533,7 @@ asks not to be indexed.
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run samples` | Renders sample PDFs across layouts into `.samples/` |
 | `npm run verify` | Checks those PDFs against the table above |
-| `npm run verify:listing` | Checks every marketplace draft against that marketplace's limits and its ranking surface, and every upload guide against the draft it pastes |
+| `npm run verify:listing` | Checks every marketplace draft against that marketplace's limits, its ranking surface and its listing rules; every upload guide against the draft it pastes; every listing canvas against that channel's own photo standard; and the kit's own index file against the folders the archive contains |
 | `npm run verify:pwa` | Checks the manifest's assets, the offline shell, the install offer and the update handshake |
 | `npm run verify:ui` | Drives the palette, the shortcuts, the skip link and the settings sheet in a real browser |
 | `npm run fonts` | Rebuilds `public/fonts` from upstream (see `FONTS.md`) |

@@ -44,6 +44,20 @@
  * every field that pastes generated copy pastes the very string the copy
  * generator produced. A guide quoting a stale title is worse than no guide.
  *
+ * The listing images are checked against each channel's own photo standard,
+ * because a canvas at the wrong size is cropped by the marketplace rather
+ * than by the designer:
+ *
+ *   - every marketplace has a canvas set, and every canvas is at one of the
+ *     aspect ratios that channel displays without cropping
+ *   - no canvas is below the resolution that channel asks for
+ *   - every channel gets a contents grid, since "what is actually in the
+ *     file" is the question a digital listing cannot answer with a cover
+ *
+ * And the seller's own first file in the ZIP is checked like any other
+ * generated text: it names every folder the archive actually contains, every
+ * marketplace the kit covers, and the one thing a seller must not do with it.
+ *
  * Usage: node scripts/verify-listing.mjs
  */
 import { build } from 'esbuild';
@@ -309,6 +323,116 @@ for (const testCase of cases) {
 }
 
 /*
+ * The listing images, against the photo standard each channel publishes.
+ *
+ * A canvas is not a matter of taste here: Etsy asks for 2000px on the short
+ * side, Pinterest shows 2:3 and crops everything else, Shopee crops to 1:1 in
+ * search with no say from the seller. So each channel's canvases are measured
+ * against its own numbers, and every channel has to carry the contents grid —
+ * the one picture that answers what is inside a file nobody can open before
+ * paying.
+ */
+const IMAGE_STANDARD = {
+  Etsy: { minShort: 2000, ratios: [1] },
+  'Teachers Pay Teachers': { minShort: 1200, ratios: [3 / 4] },
+  Gumroad: { minShort: 600, ratios: [16 / 9, 1] },
+  'Shopee / Tokopedia': { minShort: 1200, ratios: [1] },
+  Pinterest: { minShort: 1000, ratios: [2 / 3] },
+};
+
+console.log('\ngambar listing — standar foto tiap lapak');
+{
+  const byMarket = new Map();
+  for (const spec of lib.IMAGE_SPECS) {
+    byMarket.set(spec.market, [...(byMarket.get(spec.market) ?? []), spec]);
+  }
+
+  // Every marketplace with a guide needs a canvas set; the two Indonesian
+  // lapak deliberately share one, which is why this reads the specs' own
+  // market labels rather than the market ids.
+  const covered = [...byMarket.keys()];
+  for (const label of Object.keys(IMAGE_STANDARD)) {
+    if (!covered.includes(label)) {
+      failures += 1;
+      console.log(`  ${label.padEnd(22)} FAIL — no listing canvas at all`);
+    }
+  }
+
+  for (const [market, specs] of byMarket) {
+    const standard = IMAGE_STANDARD[market];
+    const problems = [];
+    if (!standard) {
+      problems.push('no published photo standard to check against');
+    } else {
+      for (const spec of specs) {
+        const short = Math.min(spec.width, spec.height);
+        if (short < standard.minShort) {
+          problems.push(`${spec.id} is ${short}px on the short side, under ${standard.minShort}`);
+        }
+        const ratio = spec.width / spec.height;
+        if (!standard.ratios.some((wanted) => Math.abs(ratio - wanted) < 0.02)) {
+          problems.push(`${spec.id} is ${spec.width}×${spec.height}, a ratio this channel crops`);
+        }
+      }
+    }
+    if (!specs.some((spec) => spec.kind === 'cover')) problems.push('no cover canvas');
+    if (!specs.some((spec) => spec.kind === 'grid')) problems.push('no contents grid');
+    if (new Set(specs.map((spec) => spec.id)).size !== specs.length) problems.push('duplicate spec id');
+
+    const line = `  ${market.padEnd(22)} ${String(specs.length).padStart(2)} kanvas  ${specs.map((spec) => spec.kind).join(', ')}`;
+    if (problems.length) {
+      failures += problems.length;
+      console.log(`${line}  FAIL — ${problems.join('; ')}`);
+    } else {
+      console.log(line);
+    }
+  }
+}
+
+/*
+ * The seller's first file in the ZIP. It is the only place that says which
+ * folder the buyer may receive, so a stale or half-built one is worse than
+ * the numbered folders on their own.
+ */
+console.log('\nberkas pengantar kit — 00-MULAI-DARI-SINI');
+for (const language of ['id', 'en']) {
+  const config = { ...lib.DEFAULT_CONFIG, language, brand: 'Studio Cerdas' };
+  const characters = lib.buildCharacters(config);
+  const folders = lib.BUNDLE_FOLDERS[language];
+  const names = lib.packFileNames(config);
+  const contents = { print: 2, images: lib.IMAGE_SPECS.length, copy: 6, steps: 6, svg: characters.length };
+  const index = lib.sellerIndex(
+    { config, characters, pageCount: characters.length },
+    { folders, contents, readme: names.readme, licence: names.licence },
+  );
+
+  const problems = [];
+  for (const folder of Object.values(folders)) {
+    if (!index.includes(folder)) problems.push(`does not name ${folder}`);
+  }
+  for (const market of lib.MARKETS) {
+    if (!index.includes(market.label)) problems.push(`does not name ${market.label}`);
+  }
+  if (!index.includes(names.readme) || !index.includes(names.licence)) {
+    problems.push('does not name the paperwork that ships with the pack');
+  }
+  // The one mistake the archive invites: the whole kit uploaded as the file
+  // the buyer downloads, listing copy and upload steps included.
+  if (!index.includes(folders.print) || !/IMPORTANT|PENTING/.test(index)) {
+    problems.push('does not say which folder the buyer may receive');
+  }
+  if (index.includes('undefined')) problems.push('contains "undefined"');
+
+  const line = `  ${language.padEnd(22)} ${index.split('\n').length} baris`;
+  if (problems.length) {
+    failures += problems.length;
+    console.log(`${line}  FAIL — ${problems.join('; ')}`);
+  } else {
+    console.log(line);
+  }
+}
+
+/*
  * The linter's own test. Everything above proves the generator writes copy
  * that passes; this proves the check would have caught it if it did not —
  * every violation here is one a seller can type into the studio's own fields.
@@ -325,15 +449,36 @@ const dirtyListing = lib
   .buildListing({ config: dirty, characters: dirtyCharacters, pageCount: dirtyCharacters.length })
   .find((listing) => listing.market === 'shopee');
 const caught = new Set(lib.checkListing(dirtyListing, 'shopee').map((finding) => finding.rule));
-const wanted = ['merek-pihak-lain', 'kontak-di-luar', 'lapak-lain', 'kata-promosi'];
+
+// A second seller, shouting. Shopee and Tokopedia both file a name written
+// entirely in capitals with emoji and exclamation marks: as spam.
+const shouted = {
+  ...lib.DEFAULT_CONFIG,
+  language: 'id',
+  brand: '',
+  productTitle: 'LEMBAR KERJA ANAK TK PAUD',
+};
+const shoutedCharacters = lib.buildCharacters(shouted);
+const shoutedListing = lib
+  .buildListing({ config: shouted, characters: shoutedCharacters, pageCount: shoutedCharacters.length })
+  .find((listing) => listing.market === 'tokopedia');
+for (const finding of lib.checkListing(shoutedListing, 'tokopedia')) caught.add(finding.rule);
+
+const wanted = [
+  'merek-pihak-lain',
+  'kontak-di-luar',
+  'lapak-lain',
+  'kata-promosi',
+  'nama-huruf-kapital',
+];
 const missed = wanted.filter((rule) => !caught.has(rule));
 
 console.log('\nkata penjual sendiri — kontrol positif untuk pemeriksa aturan');
 if (missed.length) {
   failures += missed.length;
-  console.log(`  shopee     FAIL — tidak tertangkap: ${missed.join(', ')}`);
+  console.log(`  lapak      FAIL — tidak tertangkap: ${missed.join(', ')}`);
 } else {
-  console.log(`  shopee     tertangkap: ${[...caught].join(', ')}`);
+  console.log(`  lapak      tertangkap: ${[...caught].join(', ')}`);
 }
 
 console.log(

@@ -7,7 +7,7 @@ import { buildUploadGuides, guideToText } from '@/lib/upload';
 import type { FieldKind, UploadField, UploadGuide, UploadStep } from '@/lib/upload';
 import type { PolicyField } from '@/lib/policy';
 import { formatSize } from '@/lib/download';
-import type { GeneratedImage } from '@/lib/cover';
+import { IMAGE_SPECS, type GeneratedImage } from '@/lib/cover';
 import type { GeneratedFile } from '@/lib/pdf';
 import type { Config } from '@/lib/types';
 
@@ -128,6 +128,50 @@ function FieldRow({
 
       {field.note ? <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-mute">{field.note}</p> : null}
     </div>
+  );
+}
+
+/** One generated canvas, with its size and a way to save it on its own. */
+function ImageCard({
+  image,
+  delay,
+  onDownload,
+}: {
+  image: GeneratedImage;
+  delay: number;
+  onDownload: (image: GeneratedImage) => void;
+}) {
+  const ripple = useRipple<HTMLButtonElement>();
+  return (
+    <figure className="card-lift animate-pop-in overflow-hidden" style={{ animationDelay: `${delay}ms` }}>
+      <div className="flex items-center justify-center bg-sunk p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={image.url}
+          alt={`Pratinjau ${image.label}`}
+          className="max-h-44 w-auto rounded-lg border border-line bg-sheet shadow-xs"
+        />
+      </div>
+      <figcaption className="flex items-center gap-2 border-t border-line px-3 py-2.5">
+        <span className="min-w-0">
+          <span className="block truncate text-[13px] font-medium">{image.label}</span>
+          <span className="text-[11px] text-ink-mute">
+            {image.width} × {image.height} · {formatSize(image.size)}
+          </span>
+        </span>
+        <button
+          type="button"
+          className="btn-quiet ml-auto !rounded-full !px-2.5"
+          aria-label={`Unduh ${image.label}`}
+          onClick={(event) => {
+            ripple(event);
+            onDownload(image);
+          }}
+        >
+          <DownloadIcon />
+        </button>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -271,6 +315,26 @@ export function ExportDialog({
     panel.current?.scrollTo({ top: 0 });
   }, [tab]);
 
+  /*
+   * Sixteen canvases in one flat grid is a pile; the seller is never looking
+   * for "an image", they are filling one marketplace's photo slots. So the
+   * set is grouped the way it is used, in the order the specs declare — which
+   * is also the upload order each guide asks for.
+   */
+  const imageGroups = useMemo(() => {
+    const order: string[] = [];
+    const groups = new Map<string, GeneratedImage[]>();
+    for (const image of images) {
+      const market = IMAGE_SPECS.find((spec) => spec.id === image.id)?.market ?? 'Lainnya';
+      if (!groups.has(market)) {
+        groups.set(market, []);
+        order.push(market);
+      }
+      groups.get(market)?.push(image);
+    }
+    return order.map((market) => ({ market, images: groups.get(market) ?? [] }));
+  }, [images]);
+
   const tabs = [
     { id: 'images', label: `Gambar (${images.length})` },
     ...guides.map((guide) => ({ id: guide.market, label: guide.label })),
@@ -349,41 +413,26 @@ export function ExportDialog({
 
           <div ref={panel} className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
             {tab === 'images' ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {images.map((image, index) => (
-                  <figure
-                    key={image.name}
-                    className="card-lift animate-pop-in overflow-hidden"
-                    style={{ animationDelay: `${index * 60}ms` }}
-                  >
-                    <div className="flex items-center justify-center bg-sunk p-4">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={image.url}
-                        alt={`Pratinjau ${image.label}`}
-                        className="max-h-44 w-auto rounded-lg border border-line bg-sheet shadow-xs"
-                      />
-                    </div>
-                    <figcaption className="flex items-center gap-2 border-t border-line px-3 py-2.5">
-                      <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-medium">{image.label}</span>
-                        <span className="text-[11px] text-ink-mute">
-                          {image.width} × {image.height} · {formatSize(image.size)}
-                        </span>
+              <div className="space-y-5">
+                {imageGroups.map((group) => (
+                  <section key={group.market} className="space-y-2">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-[13.5px] font-semibold tracking-tight">{group.market}</h3>
+                      <span className="text-[11.5px] text-ink-mute">
+                        {group.images.length} gambar — unggah sesuai urutan ini
                       </span>
-                      <button
-                        type="button"
-                        className="btn-quiet ml-auto !rounded-full !px-2.5"
-                        aria-label={`Unduh ${image.label}`}
-                        onClick={(event) => {
-                          ripple(event);
-                          onDownloadImage(image);
-                        }}
-                      >
-                        <DownloadIcon />
-                      </button>
-                    </figcaption>
-                  </figure>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {group.images.map((image, index) => (
+                        <ImageCard
+                          key={image.name}
+                          image={image}
+                          delay={index * 60}
+                          onDownload={onDownloadImage}
+                        />
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
             ) : guide ? (
@@ -493,8 +542,8 @@ export function ExportDialog({
 
           <footer className="flex shrink-0 items-center gap-3 border-t border-line px-5 py-3">
             <p className="hidden text-[12px] text-ink-mute sm:block">
-              ZIP berisi file cetak{config.svgFiles ? ', SVG per halaman' : ''}, gambar listing, teks,
-              langkah unggah, dan lisensi font.
+              ZIP berisi berkas pengantar, file cetak{config.svgFiles ? ', SVG per halaman' : ''},
+              gambar listing, teks, langkah unggah, dan lisensi font.
             </p>
             <button
               type="button"
