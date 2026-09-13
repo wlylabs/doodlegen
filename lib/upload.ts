@@ -136,6 +136,9 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
   const imagesFor = (market: MarketSpec['id']): ImageSpec[] =>
     IMAGE_SPECS.filter((spec) => spec.market === IMAGE_MARKET[market]);
 
+  /** How many canvases this channel actually gets, so no tip has to remember. */
+  const photoCount = (market: MarketSpec['id']): number => imagesFor(market).length;
+
   const image = (market: MarketSpec['id']): { value: string; note: string } => {
     const specs = imagesFor(market);
     const spec = specs.find((item) => item.kind === 'cover') ?? specs[0] ?? IMAGE_SPECS[0];
@@ -207,7 +210,6 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
 
   function shopeeGuide(): GuideBody {
     const copy = copyFields('shopee');
-    const photo = image('shopee');
     return {
       entry: 'Aplikasi Shopee Seller → Produk → Tambah Produk (atau Seller Centre → Produk Saya → Tambah Produk Baru).',
       steps: [
@@ -220,11 +222,11 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
               kind: 'pick',
               label: 'Rasio foto',
               value: '1:1',
-              note: 'Shopee memotong foto yang bukan 1:1 di halaman pencarian, dan potongannya tidak bisa diatur. Ketiga gambar kit ini sudah 1:1.',
+              note: `Shopee memotong foto yang bukan 1:1 di halaman pencarian, dan potongannya tidak bisa diatur. Semua gambar Shopee di kit ini (${photoCount('shopee')} buah) sudah 1:1.`,
             },
           ],
           tips: [
-            'Unggah ketiganya berurutan: foto utama, isi lengkap, lalu cara kerja. Slot foto kedua dan ketiga itu yang dilihat pembeli yang masih ragu.',
+            `Unggah ${photoCount('shopee')} gambarnya berurutan: foto utama, isi lengkap, mockup kertas, lalu cara kerja. Slot foto kedua dan seterusnya itu yang dilihat pembeli yang masih ragu — Shopee sendiri menyediakan sampai 9 slot, jadi sisanya bisa kamu isi foto hasil cetakmu sendiri.`,
           ],
         },
         {
@@ -369,7 +371,6 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
 
   function tokopediaGuide(): GuideBody {
     const copy = copyFields('tokopedia');
-    const photo = image('tokopedia');
     return {
       entry: 'Tokopedia Seller (aplikasi) atau seller.tokopedia.com → Produk → Tambah Produk.',
       steps: [
@@ -377,7 +378,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
           title: 'Foto Produk',
           fields: photoFields('tokopedia', 'Foto Produk *'),
           tips: [
-            'Set yang sama dengan Shopee: 1200 × 1200, aman di atas batas minimum Tokopedia. Unggah ketiganya berurutan.',
+            `Set yang sama dengan Shopee: 1200 × 1200, aman di atas batas minimum Tokopedia. Unggah ${photoCount('tokopedia')} gambarnya berurutan.`,
           ],
         },
         {
@@ -486,7 +487,6 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
 
   function etsyGuide(): GuideBody {
     const copy = copyFields('etsy');
-    const photo = image('etsy');
     // A word pack is the one shape of this product that is worth selling as a
     // custom order, because the seller can regenerate it in a minute.
     const personalisation =
@@ -510,7 +510,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
             { kind: 'pick', label: 'Video', value: 'Lewati', note: 'Opsional, dan tidak wajib untuk instant download.' },
           ],
           tips: [
-            'Etsy menerima sampai 10 foto. Empat kanvas dari kit ini mengisi empat slot pertama; sisanya bisa kamu tambahi foto hasil cetak sendiri.',
+            `Etsy menerima sampai 10 foto. ${photoCount('etsy')} kanvas dari kit ini mengisi ${photoCount('etsy')} slot pertama; sisanya bisa kamu tambahi foto hasil cetak sendiri.`,
           ],
         },
         {
@@ -596,6 +596,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
       checklist: [
         'Preview listing-nya sebelum publish: judul, foto utama, dan harga adalah tiga hal yang dilihat sekaligus di hasil pencarian.',
         'Etsy menarik dan menyetor PPN/VAT untuk pembeli di wilayah tertentu secara otomatis; harga yang kamu tulis adalah harga dasar.',
+        'Kebijakan pengembalian diatur sekali di Shop Manager → Settings → Policies, bukan per listing. Nyatakan di sana bahwa berkas digital tidak menerima pengembalian — itu yang dipakai Etsy kalau ada permintaan refund, bukan kalimat di deskripsi.',
         'Setelah terbit, buka listing-nya sekali sebagai pembeli dan unduh berkasnya sendiri untuk memastikan yang terkirim benar.',
       ],
     };
@@ -603,7 +604,6 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
 
   function tptGuide(): GuideBody {
     const copy = copyFields('tpt');
-    const photo = image('tpt');
     return {
       entry: 'TeachersPayTeachers.com → Sell on TPT → My Products → Add a New Product.',
       steps: [
@@ -679,6 +679,8 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
     const photo = image('gumroad');
     const square =
       IMAGE_SPECS.find((spec) => spec.id === 'gumroad-thumb') ?? IMAGE_SPECS[0];
+    const inside =
+      IMAGE_SPECS.find((spec) => spec.id === 'gumroad-inside') ?? IMAGE_SPECS[0];
     return {
       entry: 'Gumroad.com → Products → New product. Draf yang sama bisa dipakai di Payhip, Lemon Squeezy, dan Karyakarsa.',
       steps: [
@@ -706,6 +708,12 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
           fields: [
             { kind: 'asset', label: 'Cover', value: photo.value, note: `${photo.note} Rasio 16:9 yang dipakai halaman produk Gumroad.` },
             { kind: 'asset', label: 'Thumbnail', value: `${square.label} — ${square.note}`, note: 'Kartu produk Gumroad memakai gambar persegi; kit ini menyediakannya terpisah, jadi tidak perlu memotong sampulnya sendiri.' },
+            {
+              kind: 'asset',
+              label: 'Gambar tambahan',
+              value: `${inside.label} — ${inside.note}`,
+              note: 'Halaman produk Gumroad menampilkan sampul sebagai korsel, bukan satu gambar. Kisi isi paket adalah gambar kedua yang menjawab "isinya apa saja" — pertanyaan yang tidak bisa dijawab pembeli sendiri sebelum membayar.',
+            },
           ],
         },
         {
@@ -757,6 +765,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
   function pinterestGuide(): GuideBody {
     const copy = copyFields('pinterest');
     const photo = image('pinterest');
+    const second = imagesFor('pinterest').find((spec) => spec.kind !== 'cover');
     return {
       entry: 'Pinterest.com → Create → Create Pin. Ini bukan lapak: pin hanya bertugas mengirim orang ke listing-mu.',
       steps: [
@@ -775,6 +784,12 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
           title: 'Gambar pin',
           fields: [
             { kind: 'asset', label: 'Image', value: photo.value, note: `${photo.note} Rasio 2:3 adalah bentuk yang tidak dipotong di beranda Pinterest.` },
+            {
+              kind: 'asset',
+              label: 'Gambar pin kedua',
+              value: second ? `${second.label} — ${second.note}` : '—',
+              note: 'Satu produk pantas dapat beberapa pin dengan gambar berbeda — itu cara Pinterest dipakai, bukan pengulangan. Kanvas kedua ini 2:3 juga, jadi tinggal dibuat pin baru dengan tautan tujuan yang sama.',
+            },
             {
               kind: 'text',
               label: 'Alt text',
@@ -809,7 +824,7 @@ export function buildUploadGuides(input: ListingInput): UploadGuide[] {
       ],
       checklist: [
         'Sebarkan pin ke beberapa papan dalam beberapa hari, bukan sekaligus dalam satu jam.',
-        'Buat 2–3 pin dengan gambar berbeda untuk satu produk yang sama; itu cara Pinterest dipakai, bukan pengulangan.',
+        'Buat 2–3 pin dengan gambar berbeda untuk satu produk yang sama; kit ini sudah menyiapkan dua kanvas 2:3 untuk itu, dan sisanya bisa foto hasil cetakmu sendiri.',
         'Kalau kamu punya domain sendiri, klaim di Settings → Claimed accounts supaya pin memuat nama tokomu.',
       ],
     };

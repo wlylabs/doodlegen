@@ -295,7 +295,7 @@ export function KitShowcase() {
             <SectionHead
               eyebrow="Kit marketplace"
               title="Bagian yang biasanya makan waktu semalam, ikut keluar bersama berkasnya"
-              lede="Halaman cetak hanya setengah dari produk digital. Setengah lagi adalah dua belas gambar listing, judul, deskripsi, tag, lembar ketentuan — dan urutan mengisi formulir tambah produk di lapaknya. DoodleGen menyiapkan semuanya dari setelan yang sama, jadi angka di deskripsi selalu cocok dengan isi berkasnya."
+              lede={`Halaman cetak hanya setengah dari produk digital. Setengah lagi adalah ${IMAGE_SPECS.length} gambar listing, judul, deskripsi, tag, lembar ketentuan — dan urutan mengisi formulir tambah produk di lapaknya. DoodleGen menyiapkan semuanya dari setelan yang sama, jadi angka di deskripsi selalu cocok dengan isi berkasnya.`}
             />
 
             {/* One ruled panel, matching the copy panel opposite it. */}

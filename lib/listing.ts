@@ -1,5 +1,5 @@
 import { subjectOf } from './charset';
-import { brandName, layoutLabel, printedTitle, productTitle, styleLabel } from './naming';
+import { brandName, layoutLabel, packSlug, printedTitle, productTitle, styleLabel } from './naming';
 import { checkListing, findingToText, marketRules } from './policy';
 import { FONTS, GRIDS, MARKETS, PAPERS, papersFor } from './presets';
 import type { MarketSpec } from './presets';
@@ -259,6 +259,12 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
   const tptBody = [
     `${title.en} — ${countEn('print-and-go page')} of ${words.en.focus} for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
     '',
+    // Said before the contents rather than after them: a teacher buying at
+    // 10pm on a Sunday is checking whether the file is usable tomorrow
+    // morning, and a digital listing that never says it is a download is the
+    // one that ends in a "where is my parcel" case.
+    'Instant digital download — the PDF is in your TPT purchases as soon as checkout finishes, and nothing is shipped.',
+    '',
     'WHAT IS INCLUDED',
     ...includedEn.map((line) => `- ${line}`),
     `- ${layout.en} layout, drawn in ${family}`,
@@ -282,6 +288,8 @@ export function buildListing({ config, characters }: ListingInput): ListingCopy[
     `# ${title.en}`,
     '',
     `${countEn('print-ready worksheet')} for ${subject.en.toLowerCase()}, in ${style.en.toLowerCase()} style.`,
+    '',
+    'Instant digital download — the files are yours the moment payment clears, and no physical item is shipped.',
     '',
     '## What is inside',
     ...includedEn.map((line) => `- ${line}`),
@@ -511,11 +519,166 @@ export function buyerReadme({ config, characters, pageCount }: ListingInput): st
     .join('\n');
 }
 
-/** File names inside the pack, in the language the pack is written in. */
-export function packFileNames(config: Config): { readme: string; licence: string } {
+/**
+ * File names inside the pack, in the language the pack is written in. The
+ * index is numbered `00` so the archive opens on the file that explains the
+ * rest, whatever order the seller's file manager sorts in.
+ */
+export function packFileNames(config: Config): { index: string; readme: string; licence: string } {
   return config.language === 'id'
-    ? { readme: 'BACA-DULU.txt', licence: 'LISENSI-FONT.txt' }
-    : { readme: 'READ-ME-FIRST.txt', licence: 'FONT-LICENSE.txt' };
+    ? { index: '00-MULAI-DARI-SINI.txt', readme: 'BACA-DULU.txt', licence: 'LISENSI-FONT.txt' }
+    : { index: '00-START-HERE.txt', readme: 'READ-ME-FIRST.txt', licence: 'FONT-LICENSE.txt' };
+}
+
+/** How many files landed in each numbered folder of the kit. */
+export interface PackContents {
+  print: number;
+  images: number;
+  copy: number;
+  steps: number;
+  svg: number;
+}
+
+/**
+ * The first file in the archive, addressed to the seller rather than to the
+ * buyer.
+ *
+ * A kit is not self-explanatory the moment it has more than one folder in it,
+ * and the mistake it invites is not a small one: the copy, the listing images
+ * and the upload steps are the seller's own working material, and a seller in
+ * a hurry uploads the whole ZIP as the product file. So this says, before
+ * anything else, which folder the buyer is allowed to receive — then what is
+ * in the rest, in the order they are worked through, and where each
+ * marketplace's draft currently stands against its own limits.
+ */
+export function sellerIndex(
+  { config, characters, pageCount }: ListingInput,
+  {
+    folders,
+    contents,
+    readme,
+    licence,
+  }: {
+    folders: Record<'print' | 'images' | 'copy' | 'steps' | 'svg', string>;
+    contents: PackContents;
+    readme: string;
+    licence: string;
+  },
+): string {
+  const indonesian = config.language === 'id';
+  const title = printedTitle(config, characters);
+  const papers = paperLine(config);
+  const listings = buildListing({ config, characters, pageCount });
+
+  /** Folder, then what is in it, lined up so the archive reads as a list. */
+  const row = (name: string, says: string) => `  ${name.padEnd(22)}${says}`;
+
+  const shelves = [
+    row(
+      `${folders.print}/`,
+      indonesian
+        ? `${contents.print} berkas PDF, ${pageCount} halaman (${papers})`
+        : `${contents.print} PDF file(s), ${pageCount} pages (${papers})`,
+    ),
+    row(
+      `${folders.images}/`,
+      indonesian
+        ? `${contents.images} gambar PNG, sudah pada ukuran tiap lapak`
+        : `${contents.images} PNG canvases, each already at its channel's size`,
+    ),
+    row(
+      `${folders.copy}/`,
+      indonesian
+        ? `${contents.copy} berkas: judul, deskripsi, dan tag per lapak`
+        : `${contents.copy} files: title, description and tags per channel`,
+    ),
+    row(
+      `${folders.steps}/`,
+      indonesian
+        ? `${contents.steps} berkas: formulir tambah produk, kolom demi kolom`
+        : `${contents.steps} files: the add-product form, field by field`,
+    ),
+    contents.svg
+      ? row(
+          `${folders.svg}/`,
+          indonesian
+            ? `${contents.svg} berkas SVG ukuran trim, bisa diedit`
+            : `${contents.svg} editable SVG files at trim size`,
+        )
+      : null,
+    row(readme, indonesian ? 'untuk pembeli — ikut dikirim' : 'for the buyer — goes with the files'),
+    row(
+      licence,
+      indonesian ? 'lisensi huruf yang tertanam di PDF' : 'licence of the face embedded in the PDF',
+    ),
+  ].filter((line): line is string => line !== null);
+
+  const steps = indonesian
+    ? [
+        `1. Buka ${folders.steps}/<lapak>.txt dan ikuti kolomnya dari atas.`,
+        `2. Tempel judul, deskripsi, dan tag dari ${folders.copy}/<lapak>.txt.`,
+        `3. Unggah gambar dari ${folders.images}/ sesuai urutan slot foto di panduan itu.`,
+        `4. Unggah berkas produknya dari ${folders.print}/${contents.svg ? ` (dan ${folders.svg}/ kalau SVG ikut dijual)` : ''}.`,
+        '5. Simpan sebagai draf, buka pratinjaunya sebagai pembeli, baru terbitkan.',
+      ]
+    : [
+        `1. Open ${folders.steps}/<channel>.txt and work down the fields.`,
+        `2. Paste the title, description and tags from ${folders.copy}/<channel>.txt.`,
+        `3. Upload the images from ${folders.images}/ in the photo-slot order that guide gives.`,
+        `4. Upload the product files from ${folders.print}/${contents.svg ? ` (and ${folders.svg}/ if you sell the SVGs)` : ''}.`,
+        '5. Save as a draft, preview it as a buyer, then publish.',
+      ];
+
+  const summary = listings.map((listing) => {
+    const market = MARKETS.find((item) => item.id === listing.market);
+    const limit = market ? `/${market.titleMax}` : '';
+    // Neither Indonesian lapak has a tag field: those words are keywords to
+    // work into the name and the description, and a summary that called them
+    // tags would send a seller looking for a box that is not on the form.
+    const keywordsOnly = listing.market === 'shopee' || listing.market === 'tokopedia';
+    const tags = keywordsOnly
+      ? `${listing.tags.length} ${indonesian ? 'kata kunci (tanpa kolom tag)' : 'keywords (no tag field)'}`
+      : `${listing.tags.length} ${indonesian ? 'tag' : 'tags'}`;
+    return `  ${listing.label.padEnd(22)}${indonesian ? 'judul' : 'title'} ${listing.title.length}${limit} · ${tags} · ${indonesian ? 'fokus' : 'focus'} "${listing.focus}"`;
+  });
+
+  // Everything the marketplaces would hold a listing over, gathered from all
+  // six drafts into one list. Per-marketplace files carry the same findings;
+  // a seller who reads only this file should still not paste a violation.
+  const warnings = listings.flatMap((listing) =>
+    checkListing(listing, listing.market).map((finding) => `  ${listing.label}: ${findingToText(finding)}`),
+  );
+
+  const heading = indonesian ? 'KIT MARKETPLACE — DOODLEGEN' : 'MARKETPLACE KIT — DOODLEGEN';
+
+  return [
+    heading,
+    '='.repeat(heading.length),
+    title,
+    `SKU ${packSlug(config, characters).toUpperCase()}`,
+    '',
+    indonesian ? 'ISI ARSIP' : 'WHAT IS IN HERE',
+    ...shelves,
+    '',
+    indonesian
+      ? `PENTING: yang boleh diterima pembeli hanya isi ${folders.print}/${contents.svg ? ` dan ${folders.svg}/` : ''}. Folder lainnya bahan jualanmu — jangan diunggah sebagai berkas produk.`
+      : `IMPORTANT: the buyer receives ${folders.print}/${contents.svg ? ` and ${folders.svg}/` : ''} and nothing else. The other folders are your own working material — never upload them as the product file.`,
+    '',
+    indonesian ? 'URUTAN KERJA' : 'THE ORDER TO WORK IN',
+    ...steps,
+    '',
+    indonesian ? 'RINGKASAN TIAP LAPAK' : 'EACH CHANNEL AT A GLANCE',
+    ...summary,
+    '',
+    ...(warnings.length
+      ? [indonesian ? 'PERIKSA SEBELUM DITEMPEL' : 'CHECK BEFORE YOU PASTE', ...warnings, '']
+      : [
+          indonesian
+            ? 'Semua draf di atas sudah lolos pemeriksaan aturan lapak masing-masing.'
+            : 'Every draft above passes its own marketplace\'s listing rules.',
+          '',
+        ]),
+  ].join('\n');
 }
 
 /** The note that introduces the font licence shipped with the pack. */

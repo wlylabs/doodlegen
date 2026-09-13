@@ -1,5 +1,12 @@
 import { planDocument } from './geometry';
-import { buildListing, buyerReadme, copyToText, licenceNote, packFileNames } from './listing';
+import {
+  buildListing,
+  buyerReadme,
+  copyToText,
+  licenceNote,
+  packFileNames,
+  sellerIndex,
+} from './listing';
 import { packSlug, printedTitle } from './naming';
 import { buildUploadGuides, guideToText } from './upload';
 import { FONTS, papersFor } from './presets';
@@ -99,6 +106,7 @@ export async function buildBundle({
 
   // Editable vectors: the route into Canva, Figma, Illustrator and Cricut,
   // and a second thing to sell on the same listing.
+  let svgCount = 0;
   if (config.svgFiles) {
     const paper = papersFor(config.paper)[0];
     const plans = planDocument({ font, config, paper, characters });
@@ -106,6 +114,7 @@ export async function buildBundle({
     for (const file of svgFilesFor(font, plans, config, characters)) {
       svgFolder?.file(file.name, file.content);
       entries.push(`${folders.svg}/${file.name}`);
+      svgCount += 1;
     }
   }
 
@@ -120,11 +129,38 @@ export async function buildBundle({
   // channel, walking that channel's own add-product form field by field, so
   // the pack can be listed from a phone with the ZIP open beside the app.
   const stepsFolder = root.folder(folders.steps);
-  for (const guide of buildUploadGuides({ config, characters, pageCount })) {
+  const guides = buildUploadGuides({ config, characters, pageCount });
+  for (const guide of guides) {
     const name = `${guide.market}.txt`;
     stepsFolder?.file(name, guideToText(guide));
     entries.push(`${folders.steps}/${name}`);
   }
+
+  /*
+   * The seller's own first file. Five numbered folders are self-explanatory
+   * only to whoever numbered them, and the mistake the archive invites — the
+   * whole ZIP uploaded as the product file, listing copy and upload guides
+   * included — is the one this names before anything else.
+   */
+  root.file(
+    names.index,
+    sellerIndex(
+      { config, characters, pageCount },
+      {
+        folders,
+        contents: {
+          print: files.length,
+          images: images.length,
+          copy: listings.length,
+          steps: guides.length,
+          svg: svgCount,
+        },
+        readme: names.readme,
+        licence: names.licence,
+      },
+    ),
+  );
+  entries.push(names.index);
 
   // The read-me and the licence travel with the PDFs to the buyer, so they
   // are written in the pack's language, not the seller's.
