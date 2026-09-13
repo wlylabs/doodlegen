@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRipple } from './motion';
+import { useEffect, useRef } from 'react';
+import { toast, toastSuccess } from '@/lib/toast';
 
 /** A new worker is only checked for this often, however often the app is opened. */
 const UPDATE_INTERVAL = 60 * 60 * 1000;
@@ -11,11 +11,14 @@ const UPDATE_INTERVAL = 60 * 60 * 1000;
  * current one, offers the reload rather than taking it: the studio holds
  * unsaved settings and a half-finished export, so the moment the app swaps
  * versions is the user's to pick.
+ *
+ * The offer is a toast with an action, in the one stack every other passing
+ * message in the app uses. It used to be a bar this component drew itself,
+ * which meant two overlays that had to agree about where the bottom of the
+ * screen is and which of them was allowed to sit there.
  */
 export function ServiceWorkerRegistrar() {
-  const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const reloading = useRef(false);
-  const ripple = useRipple<HTMLButtonElement>();
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
@@ -24,20 +27,35 @@ export function ServiceWorkerRegistrar() {
     let registration: ServiceWorkerRegistration | null = null;
     let checkedAt = 0;
 
+    const offer = (worker: ServiceWorker) => {
+      toast('Versi baru DoodleGen sudah siap.', {
+        // It waits as long as it takes: this is a decision, not a notice, and
+        // a build that installs mid-export must not swap itself in unasked.
+        duration: null,
+        key: 'sw-update',
+        action: {
+          label: 'Muat ulang',
+          // The worker steps aside; `controllerchange` then reloads onto it.
+          run: () => worker.postMessage({ type: 'SKIP_WAITING' }),
+        },
+      });
+    };
+
     const watch = (found: ServiceWorkerRegistration) => {
       registration = found;
       // Already waiting from an earlier visit in another tab.
-      if (found.waiting && navigator.serviceWorker.controller) setWaiting(found.waiting);
+      if (found.waiting && navigator.serviceWorker.controller) offer(found.waiting);
 
       found.addEventListener('updatefound', () => {
         const installing = found.installing;
         if (!installing) return;
         installing.addEventListener('statechange', () => {
+          if (installing.state !== 'installed') return;
           // No controller means this is the first install, not an update:
-          // there is nothing to reload for.
-          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-            setWaiting(installing);
-          }
+          // there is nothing to reload for, but it is worth saying that the
+          // app has just become usable without a connection.
+          if (navigator.serviceWorker.controller) offer(installing);
+          else toastSuccess('DoodleGen tersimpan di perangkat — bisa dipakai tanpa koneksi.');
         });
       });
     };
@@ -75,41 +93,42 @@ export function ServiceWorkerRegistrar() {
     };
   }, []);
 
-  const apply = useCallback(() => {
-    if (!waiting) return;
-    setWaiting(null);
-    // The worker steps aside; `controllerchange` then reloads the page onto it.
-    waiting.postMessage({ type: 'SKIP_WAITING' });
-  }, [waiting]);
+  return null;
+}
 
-  if (!waiting) return null;
+/**
+ * Says when the connection goes, and when it comes back.
+ *
+ * Worth saying in this app specifically, because the answer is reassuring:
+ * nothing here needs the network once the shell is cached, so losing it
+ * changes nothing about what the studio can do. An app that says so is an
+ * app someone keeps working in.
+ */
+export function ConnectionWatcher() {
+  useEffect(() => {
+    // `onLine` is only ever trustworthy as a negative, and only after the
+    // first event: a fresh load that is already offline says so here.
+    if (navigator.onLine === false) {
+      toast('Sedang offline. Studio tetap jalan — PDF dibuat di perangkat ini.', {
+        duration: null,
+        key: 'connection',
+      });
+    }
 
-  return (
-    <div
-      role="status"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-    >
-      <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2.5 shadow-pop">
-        <span className="text-[13px] text-ink-soft">Versi baru DoodleGen sudah siap.</span>
-        <button
-          type="button"
-          className="btn-quiet !border-accent-line !text-accent"
-          onClick={(event) => {
-            ripple(event);
-            apply();
-          }}
-        >
-          Muat ulang
-        </button>
-        <button
-          type="button"
-          className="btn-ghost !px-2"
-          aria-label="Nanti saja"
-          onClick={() => setWaiting(null)}
-        >
-          Nanti
-        </button>
-      </div>
-    </div>
-  );
+    const onOffline = () =>
+      toast('Sedang offline. Studio tetap jalan — PDF dibuat di perangkat ini.', {
+        duration: null,
+        key: 'connection',
+      });
+    const onOnline = () => toastSuccess('Koneksi kembali.', { key: 'connection' });
+
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
+    return () => {
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
+    };
+  }, []);
+
+  return null;
 }

@@ -3,10 +3,14 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { CheckIcon, ChevronIcon, CoverMark, KitIcon, LayoutMark } from '../diagrams';
+import { InstallButton } from '../InstallPrompt';
+import { Logo } from '../Logo';
 import { CountUp, Reveal, useRipple } from '../motion';
 import { IMAGE_SPECS } from '@/lib/cover';
 import { COVER_STYLES } from '@/lib/covers';
+import { FAQ } from '@/lib/content';
 import { MARKETS, STARTER_PRESETS } from '@/lib/presets';
+import { SECTIONS } from '@/lib/site';
 
 /** "2000 x 2000" reads as 1:1; the tile says which shape it is. */
 function ratioOf(width: number, height: number): string {
@@ -14,6 +18,9 @@ function ratioOf(width: number, height: number): string {
   const factor = divisor(width, height);
   return `${width / factor}:${height / factor}`;
 }
+
+/** One shape for every link in the footer's three columns. */
+const FOOT_LINK = 'text-[13px] font-medium text-ink-soft transition-colors hover:text-accent-ink';
 
 const MARKETPLACES = [
   'Etsy',
@@ -405,48 +412,6 @@ export function Presets() {
   );
 }
 
-const FAQ = [
-  {
-    question: 'Hasilnya boleh dijual ulang?',
-    answer:
-      'Boleh. Keempat font memakai SIL Open Font License 1.1 yang mengizinkan penyematan font di PDF dan penjualan berkas hasilnya. Teks lisensi lengkap ikut dalam ZIP, dan halaman ketentuan di dalam PDF mengatur apa yang boleh dilakukan pembeli Anda.',
-  },
-  {
-    question: 'Kenapa perlu A4 dan US Letter sekaligus?',
-    answer:
-      'Pembeli Indonesia dan Eropa mencetak di A4, pembeli Amerika Utara di US Letter. Mencetak A4 pada kertas Letter memaksa penskalaan dan mengecilkan margin. DoodleGen menata ulang halaman untuk setiap ukuran, bukan sekadar menskalakan, lalu mengeluarkan dua berkas.',
-  },
-  {
-    question: 'Apakah file saya diunggah ke server?',
-    answer:
-      'Tidak ada yang dikirim ke mana pun. Font dimuat ke browser, layout dihitung di perangkat Anda, dan PDF dirakit di tab yang sedang terbuka. Setelah dibuka sekali, studio bahkan tetap jalan tanpa koneksi.',
-  },
-  {
-    question: 'Berapa halaman maksimal dalam satu berkas?',
-    answer:
-      'Dua ratus halaman per berkas, cukup untuk rentang angka 1–200 atau daftar kata yang panjang. Satu set A–Z 26 halaman biasanya berukuran sekitar 20 KB karena tidak ada gambar raster di dalamnya.',
-  },
-  {
-    question: 'Bisa diedit di Canva atau Cricut?',
-    answer:
-      'Bisa. Selain PDF, setiap lembar latihan ikut sebagai berkas SVG seukuran kertas aslinya — Canva, Figma, Illustrator, Inkscape, dan Cricut Design Space semuanya membukanya, dan isinya bentuk yang sama persis dengan yang dicetak PDF-nya. DoodleGen sendiri tidak menyambung ke akun Canva: aplikasinya jalan tanpa server dan tanpa login, dan gambar pihak ketiga hampir tidak pernah membawa hak jual ulang yang Anda butuhkan.',
-  },
-  {
-    question: 'Kenapa lembar latihannya tidak berwarna?',
-    answer:
-      'Karena warnanya datang dari anak yang mewarnai. Di luar itu, warna pada lembar latihan berarti plat cetak tambahan di percetakan, hasil fotokopi yang kotor, dan tinta printer rumahan yang habis lebih cepat. Warna dipakai di tempat yang memang menjual: halaman sampul dan gambar listing — dengan empat palet, dan sampul yang menampilkan huruf sudah diwarnai di sebelah huruf yang masih kosong.',
-  },
-  {
-    question: 'Kalau saya jual ke pembeli luar negeri?',
-    answer:
-      'Pilih bahasa berkas "English" di langkah 05. Halaman sampul, halaman ketentuan, kaki halaman, dan panduan cetak untuk pembeli ikut berbahasa Inggris, dan nama folder di dalam ZIP juga. Gambar listing tidak perlu diatur: kanvas Etsy, TPT, Gumroad, dan Pinterest selalu berbahasa Inggris, kanvas Shopee/Tokopedia selalu berbahasa Indonesia.',
-  },
-  {
-    question: 'Bisa pakai nama anak atau kata pesanan pelanggan?',
-    answer:
-      'Bisa. Pilih jenis konten "Kata & Nama", lalu tulis satu kata per baris. Cocok untuk pesanan custom di Shopee dan Tokopedia maupun paket sight words di Etsy atau TPT.',
-  },
-];
 
 export function Faq() {
   const [open, setOpen] = useState<number | null>(0);
@@ -512,6 +477,17 @@ export function Cta() {
          * stops the scroll on its own.
          */}
         <div className="relative overflow-hidden rounded-3xl border border-line bg-band px-6 py-14 text-center sm:px-12 lg:py-20">
+          {/*
+           * The one place on the page the brand ramp is spent, other than the
+           * mark itself: a warm rise off the bottom edge of the closing panel.
+           * It is a wash rather than a fill — the panel has to stay the dark
+           * slab that stops the scroll, and a gradient across the whole of it
+           * would turn the last thing on the page into an advertisement.
+           */}
+          <div
+            aria-hidden="true"
+            className="brand-gradient pointer-events-none absolute inset-x-0 bottom-0 h-2/3 opacity-[0.14] blur-2xl"
+          />
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 opacity-[0.35]"
@@ -552,22 +528,60 @@ export function Cta() {
 
 export function Footer() {
   return (
-    <footer className="border-t border-line bg-surface py-10">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:px-6">
-        <p className="text-[13px] text-ink-mute">
-          DoodleGen — generator halaman mewarnai dan tracing siap cetak.
-        </p>
-        <div className="flex flex-wrap items-center gap-5 sm:ml-auto">
-          <Link href="/studio" className="text-[13px] font-medium text-ink-soft transition-colors hover:text-accent">
-            Studio
-          </Link>
-          <a href="#standar" className="text-[13px] font-medium text-ink-soft transition-colors hover:text-accent">
-            Standar cetak
-          </a>
-          <a href="#faq" className="text-[13px] font-medium text-ink-soft transition-colors hover:text-accent">
-            FAQ
-          </a>
-          <span className="text-[13px] text-ink-mute">Font: SIL OFL 1.1</span>
+    /*
+     * The footer is the site's own map: the mark, what this is in one line,
+     * and every route and section the page has. It is the last thing a reader
+     * who did not find what they came for looks at, so a row of four links
+     * that happen to fit is not enough — everything the nav offers is here,
+     * plus the two things the nav has no room to say.
+     */
+    <footer className="border-t border-line bg-surface">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))]">
+        <div>
+          <Logo />
+          <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-ink-mute">
+            Generator halaman mewarnai dan tracing siap cetak. Jalan penuh di browser — tidak ada
+            berkas yang dikirim ke server mana pun.
+          </p>
+          <div className="mt-5">
+            <InstallButton />
+          </div>
+        </div>
+
+        <nav aria-label="Halaman">
+          <p className="field-label">Halaman</p>
+          <ul className="mt-3 flex flex-col gap-2.5">
+            <li>
+              <Link href="/" className={FOOT_LINK}>
+                Beranda
+              </Link>
+            </li>
+            <li>
+              <Link href="/studio" className={FOOT_LINK}>
+                Studio
+              </Link>
+            </li>
+          </ul>
+        </nav>
+
+        <nav aria-label="Bagian halaman">
+          <p className="field-label">Di halaman ini</p>
+          <ul className="mt-3 flex flex-col gap-2.5">
+            {SECTIONS.map((section) => (
+              <li key={section.id}>
+                <a href={`#${section.id}`} className={FOOT_LINK}>
+                  {section.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+
+      <div className="border-t border-line">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-[12.5px] text-ink-mute sm:flex-row sm:items-center sm:px-6">
+          <p>DoodleGen — halaman mewarnai &amp; tracing siap cetak.</p>
+          <p className="sm:ml-auto">Font: SIL Open Font License 1.1</p>
         </div>
       </div>
     </footer>

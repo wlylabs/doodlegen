@@ -167,3 +167,26 @@ export function useCopy(resetAfter = 1800) {
 
   return { copied, copy };
 }
+
+/**
+ * The name of the modifier key on the keyboard actually in front of someone:
+ * "⌘" on an Apple layout, "Ctrl" everywhere else.
+ *
+ * It starts at "Ctrl" and corrects itself after mount rather than reading the
+ * platform during render, because the server has no keyboard to look at and a
+ * label that differs between the two renders is a hydration mismatch.
+ */
+export function useModifierLabel(): string {
+  const [label, setLabel] = useState('Ctrl');
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    // `platform` is deprecated but still the most direct answer where it
+    // exists; the user agent string is the fallback, including iPadOS, which
+    // reports itself as a Mac.
+    const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform || ua);
+    if (apple) setLabel('⌘');
+  }, []);
+
+  return label;
+}

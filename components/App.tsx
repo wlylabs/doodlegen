@@ -2,15 +2,35 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CommandPalette, type Command } from './CommandPalette';
 import { ExportDialog } from './ExportDialog';
 import { GenerateBar, type Progress } from './GenerateBar';
 import { InstallButton } from './InstallPrompt';
 import { Logo } from './Logo';
 import { PreviewDeck } from './PreviewDeck';
 import { PresetRail, SettingsPanel } from './SettingsPanel';
-import { ThemeToggle } from './Theme';
-import { CheckIcon, ChevronIcon, LinkIcon, Spinner } from './diagrams';
-import { useCopy, useRipple } from './motion';
+import { ShortcutsDialog } from './ShortcutsDialog';
+import { ThemeToggle, setTheme } from './Theme';
+import {
+  CheckIcon,
+  ChevronIcon,
+  DownloadIcon,
+  GenerateIcon,
+  HomeIcon,
+  KeyboardIcon,
+  KitIcon,
+  LinkIcon,
+  MoonIcon,
+  SearchIcon,
+  ShareIcon,
+  SlidersIcon,
+  SparkIcon,
+  Spinner,
+  SunIcon,
+  SystemIcon,
+} from './diagrams';
+import { useCopy, useModifierLabel, useRipple } from './motion';
+import { toastError, toastSuccess } from '@/lib/toast';
 import { buildCharacters, validate } from '@/lib/charset';
 import { IMAGE_SPECS, renderListingImages, type GeneratedImage } from '@/lib/cover';
 import { downloadBlob, downloadFile, downloadZip, sharePdfs } from '@/lib/download';
@@ -77,11 +97,15 @@ export function App() {
   const [files, setFiles] = useState<GeneratedFile[]>([]);
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [kitOpen, setKitOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const runId = useRef(0);
   const abort = useRef<AbortController | null>(null);
+  const settings = useRef<HTMLElement>(null);
   const { copied, copy } = useCopy();
   const ripple = useRipple<HTMLButtonElement>();
+  const modifier = useModifierLabel();
 
   const update = useCallback((patch: Partial<Config>) => {
     setConfig((previous) => ({ ...previous, ...patch }));
@@ -206,7 +230,15 @@ export function App() {
       } catch (cause) {
         if (runId.current === id) {
           const aborted = cause instanceof DOMException && cause.name === 'AbortError';
-          setError(aborted ? 'Dibatalkan.' : cause instanceof Error ? cause.message : 'Gagal membuat PDF.');
+          const message = aborted
+            ? 'Dibatalkan.'
+            : cause instanceof Error
+              ? cause.message
+              : 'Gagal membuat PDF.';
+          setError(message);
+          // The bar says it too, but the eye that asked for this is on the
+          // preview or the panel, not on the line under the summary.
+          if (!aborted) toastError(message);
         }
         return null;
       } finally {
@@ -246,11 +278,24 @@ export function App() {
       const bundle = await buildBundle({ config, characters, files, images, font });
       downloadBlob(bundle.blob, bundle.name);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Gagal menyiapkan ZIP.');
+      const message = cause instanceof Error ? cause.message : 'Gagal menyiapkan ZIP.';
+      setError(message);
+      toastError(message);
     } finally {
       setBundling(false);
     }
   }, [config, characters, files, images, font]);
+
+  /**
+   * The setup as a link. Copying is silent by nature — the clipboard gives no
+   * sign it took anything — so the confirmation is the whole point, and it is
+   * said in the one place the app says everything else.
+   */
+  const onCopyLink = useCallback(async () => {
+    const ok = await copy(shareUrl(config), 'share');
+    if (ok) toastSuccess('Tautan setelan disalin.');
+    else toastError('Peramban menolak akses papan klip.');
+  }, [config, copy]);
 
   /**
    * One action, because the intent behind it is the same either way: send this
@@ -260,8 +305,8 @@ export function App() {
    */
   const onShare = useCallback(async () => {
     if (files.length && (await sharePdfs(files)) !== 'unavailable') return;
-    void copy(shareUrl(config), 'share');
-  }, [files, config, copy]);
+    void onCopyLink();
+  }, [files, onCopyLink]);
 
   /*
    * A link sent with the setup in it should arrive as the pack, not as a form
@@ -278,17 +323,242 @@ export function App() {
     void build(false);
   }, [ready, busy, blocked, build]);
 
-  // The one shortcut worth having: build without reaching for the mouse.
+  /**
+   * Puts the cursor in the settings.
+   *
+   * Not a toggle, because the same key has to mean something at both sizes:
+   * below `lg` the panel is a sheet and has to be opened first, above it the
+   * panel is already on screen and the only thing left to do is go there. A
+   * toggle would be a key that visibly does nothing on a desktop.
+   */
+  const focusSettings = useCallback(() => {
+    if (window.matchMedia('(max-width: 1023.98px)').matches) setPanelOpen(true);
+    // A sheet that was closed is `visibility: hidden`, and nothing inside it
+    // can take focus until the class has come off — which is after this
+    // render, not during it.
+    window.requestAnimationFrame(() => {
+      settings.current
+        ?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        ?.focus();
+    });
+  }, []);
+
+  /*
+   * Escape closes the sheet — but only when the sheet is what is on top. A
+   * modal dialog answers Escape itself, and the keydown it raises on its way
+   * out still reaches a window listener, which would otherwise close the
+   * panel behind it at the same time.
+   */
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (paletteOpen || shortcutsOpen || kitOpen) return;
+      setPanelOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [panelOpen, paletteOpen, shortcutsOpen, kitOpen]);
+
+  /*
+   * The keyboard.
+   *
+   * Two rules keep this from firing while someone is typing a word list: a
+   * plain key never does anything if the event came from a field, and every
+   * modified combination is one the browser does not already own.
+   */
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && ready && !busy) {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target?.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '');
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
-        onGenerate();
+        setPaletteOpen((open) => !open);
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (ready && !busy) onGenerate();
+        return;
+      }
+      if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (event.key === '?') {
+        event.preventDefault();
+        setShortcutsOpen(true);
+      } else if (event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        focusSettings();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onGenerate, ready, busy]);
+  }, [onGenerate, focusSettings, ready, busy]);
+
+  /*
+   * Everything the studio can do, in one list.
+   *
+   * A command that cannot run right now is listed and disabled rather than
+   * hidden: a palette whose contents change shape between openings cannot be
+   * learned, and "Kit marketplace, greyed out" answers the question "why is
+   * nothing happening" that a missing row leaves open.
+   */
+  const commands = useMemo<Command[]>(() => {
+    const list: Command[] = [
+      {
+        id: 'generate',
+        group: 'Aksi',
+        label: files.length ? 'Generate ulang PDF' : 'Generate PDF',
+        keywords: 'buat bikin pdf render cetak',
+        hint: `${modifier} ↵`,
+        icon: <GenerateIcon />,
+        disabled: !ready || blocked || busy,
+        run: onGenerate,
+      },
+      {
+        id: 'kit',
+        group: 'Aksi',
+        label: 'Buat kit marketplace',
+        keywords: 'listing etsy gumroad shopee gambar deskripsi zip',
+        icon: <KitIcon />,
+        disabled: !ready || blocked || busy,
+        run: () => void onExportKit(),
+      },
+      {
+        id: 'cancel',
+        group: 'Aksi',
+        label: 'Batalkan proses',
+        keywords: 'stop hentikan',
+        disabled: !busy,
+        run: onCancel,
+      },
+      {
+        id: 'copy-link',
+        group: 'Berbagi',
+        label: 'Salin tautan setelan',
+        keywords: 'share bagikan url link',
+        icon: <LinkIcon />,
+        run: () => void onCopyLink(),
+      },
+      {
+        id: 'send',
+        group: 'Berbagi',
+        label: 'Kirim berkas hasil',
+        keywords: 'share bagikan whatsapp email',
+        icon: <ShareIcon />,
+        disabled: !files.length,
+        run: () => void onShare(),
+      },
+      {
+        id: 'zip',
+        group: 'Berbagi',
+        label: 'Unduh semua sebagai ZIP',
+        keywords: 'download simpan',
+        icon: <DownloadIcon />,
+        disabled: files.length < 2,
+        run: onDownloadAll,
+      },
+      {
+        id: 'open-kit',
+        group: 'Berbagi',
+        label: 'Buka kit listing',
+        keywords: 'deskripsi tag gambar',
+        icon: <KitIcon />,
+        disabled: !images.length,
+        run: () => setKitOpen(true),
+      },
+    ];
+
+    for (const preset of STARTER_PRESETS) {
+      list.push({
+        id: `preset-${preset.id}`,
+        group: 'Mulai cepat',
+        label: preset.label,
+        keywords: `${preset.note} ${preset.market} preset`,
+        hint: preset.id === presetId ? 'dipakai' : undefined,
+        icon: <SparkIcon />,
+        run: () => update(preset.patch),
+      });
+    }
+
+    list.push(
+      {
+        id: 'panel',
+        group: 'Tampilan',
+        label: 'Ke panel pengaturan',
+        keywords: 'setelan panel opsi buka',
+        hint: 'S',
+        icon: <SlidersIcon />,
+        run: focusSettings,
+      },
+      {
+        id: 'theme-light',
+        group: 'Tampilan',
+        label: 'Tema terang',
+        keywords: 'light mode warna',
+        icon: <SunIcon />,
+        run: () => setTheme('light'),
+      },
+      {
+        id: 'theme-dark',
+        group: 'Tampilan',
+        label: 'Tema gelap',
+        keywords: 'dark mode malam warna',
+        icon: <MoonIcon />,
+        run: () => setTheme('dark'),
+      },
+      {
+        id: 'theme-system',
+        group: 'Tampilan',
+        label: 'Tema ikuti sistem',
+        keywords: 'auto otomatis',
+        icon: <SystemIcon />,
+        run: () => setTheme('system'),
+      },
+      {
+        id: 'shortcuts',
+        group: 'Bantuan',
+        label: 'Pintasan papan ketik',
+        keywords: 'keyboard shortcut tombol',
+        hint: '?',
+        icon: <KeyboardIcon />,
+        run: () => setShortcutsOpen(true),
+      },
+      {
+        id: 'home',
+        group: 'Bantuan',
+        label: 'Ke beranda',
+        keywords: 'landing depan tentang',
+        icon: <HomeIcon />,
+        run: () => {
+          window.location.href = '/';
+        },
+      },
+    );
+
+    return list;
+  }, [
+    files.length,
+    images.length,
+    ready,
+    blocked,
+    busy,
+    presetId,
+    onGenerate,
+    onExportKit,
+    onCancel,
+    focusSettings,
+    onCopyLink,
+    onShare,
+    onDownloadAll,
+    update,
+    modifier,
+  ]);
 
   const summary = summarise(config, characters);
 
@@ -323,18 +593,39 @@ export function App() {
              */}
             <ThemeToggle className="hidden md:inline-flex" />
 
+            {/*
+             * The way into everything the bar has no room for. It is drawn as
+             * a search field rather than a button because that is the shape
+             * the gesture has: a box you type into. On a phone it collapses to
+             * its glyph, where the keyboard behind it is hypothetical anyway.
+             */}
+            <button
+              type="button"
+              className="btn-quiet !gap-2 sm:!pr-2"
+              aria-label="Buka daftar perintah"
+              aria-keyshortcuts="Meta+K Control+K"
+              onClick={(event) => {
+                ripple(event);
+                setPaletteOpen(true);
+              }}
+            >
+              <SearchIcon />
+              <span className="hidden text-ink-mute sm:inline">Perintah</span>
+              <kbd className="kbd hidden sm:inline-flex">{modifier} K</kbd>
+            </button>
+
             <button
               type="button"
               className="btn-quiet"
               onClick={(event) => {
                 ripple(event);
-                void copy(shareUrl(config), 'share');
+                void onCopyLink();
               }}
             >
               <span className={copied === 'share' ? 'text-accent' : ''}>
                 {copied === 'share' ? <CheckIcon /> : <LinkIcon />}
               </span>
-              <span className="hidden sm:inline">
+              <span className="hidden lg:inline">
                 {copied === 'share' ? 'Tautan disalin' : 'Bagikan setelan'}
               </span>
             </button>
@@ -349,7 +640,10 @@ export function App() {
               aria-controls="settings-panel"
               className="btn-quiet lg:hidden"
             >
-              <span className="max-w-[22vw] truncate">{panelOpen ? 'Tutup' : 'Pengaturan'}</span>
+              <SlidersIcon />
+              <span className="hidden max-w-[22vw] truncate sm:inline">
+                {panelOpen ? 'Tutup' : 'Pengaturan'}
+              </span>
               <span className={`transition-transform duration-300 ${panelOpen ? 'rotate-180' : ''}`}>
                 <ChevronIcon direction="down" />
               </span>
@@ -358,30 +652,56 @@ export function App() {
         </div>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <main id="main" className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        {/*
+         * Under `lg` the settings are a bottom sheet rather than a drawer that
+         * pushes the proof up the screen. It is what the same control is on
+         * every phone: it comes up over the work, it is dismissed by the
+         * scrim, by Escape or by the bar it came from, and the page behind it
+         * holds still while it is up. Above `lg` none of this applies and it
+         * is a column again.
+         */}
+        <div
+          aria-hidden="true"
+          onClick={() => setPanelOpen(false)}
+          className={`fixed inset-0 z-30 bg-overlay backdrop-blur-[2px] transition-opacity duration-300 lg:hidden ${
+            panelOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        />
+
         <aside
+          ref={settings}
           id="settings-panel"
-          className={`rail shrink-0 overflow-y-auto border-line bg-surface transition-[max-height] duration-300 ease-out
-            lg:max-h-none lg:w-[392px] lg:border-r xl:w-[428px]
-            ${panelOpen ? 'max-h-[65vh] border-b' : 'max-h-0 lg:max-h-none'}`}
+          aria-label="Pengaturan paket"
+          className={`fixed inset-x-0 bottom-0 z-40 flex max-h-[86dvh] flex-col rounded-t-2xl border-t border-line
+            bg-surface shadow-pop transition-[transform,visibility] duration-300 ease-out will-change-transform pb-safe
+            lg:static lg:z-auto lg:max-h-none lg:w-[392px] lg:translate-y-0 lg:rounded-none lg:border-r
+            lg:border-t-0 lg:pb-0 lg:shadow-none lg:visible xl:w-[428px]
+            ${panelOpen ? 'translate-y-0' : 'invisible translate-y-full'}`}
         >
-          <PresetRail
-            activeId={presetId}
-            onApply={(id) => {
-              const preset = STARTER_PRESETS.find((item) => item.id === id);
-              if (preset) update(preset.patch);
-            }}
-          />
-          <SettingsPanel config={config} font={font} update={update} />
-          {issues.length ? (
-            <div className="mx-5 mb-6 animate-fade-up rounded-xl border border-accent-line bg-accent-soft px-3.5 py-3">
-              {issues.map((issue) => (
-                <p key={issue.message} className="text-[12.5px] leading-snug text-accent-ink">
-                  {issue.message}
-                </p>
-              ))}
-            </div>
-          ) : null}
+          {/* The grab bar every sheet on a phone has. Decorative — the sheet
+              is not draggable — but it is what marks the edge as a handle. */}
+          <span aria-hidden="true" className="sheet-grip" />
+
+          <div className="rail min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <PresetRail
+              activeId={presetId}
+              onApply={(id) => {
+                const preset = STARTER_PRESETS.find((item) => item.id === id);
+                if (preset) update(preset.patch);
+              }}
+            />
+            <SettingsPanel config={config} font={font} update={update} />
+            {issues.length ? (
+              <div className="mx-5 mb-6 animate-fade-up rounded-xl border border-accent-line bg-accent-soft px-3.5 py-3">
+                {issues.map((issue) => (
+                  <p key={issue.message} className="text-[12.5px] leading-snug text-accent-ink">
+                    {issue.message}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </aside>
 
         <section className="min-h-0 min-w-0 flex-1 bg-sunk">
@@ -432,6 +752,41 @@ export function App() {
         onOpenKit={() => setKitOpen(true)}
         onShare={() => void onShare()}
         shareCopied={copied === 'share'}
+      />
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        commands={commands}
+      />
+
+      <ShortcutsDialog
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+        groups={[
+          {
+            title: 'Umum',
+            items: [
+              { keys: [modifier, 'K'], label: 'Buka daftar perintah' },
+              { keys: ['?'], label: 'Pintasan papan ketik' },
+              { keys: ['Esc'], label: 'Tutup panel atau dialog' },
+            ],
+          },
+          {
+            title: 'Studio',
+            items: [
+              { keys: [modifier, '↵'], label: 'Generate PDF' },
+              { keys: ['S'], label: 'Ke panel pengaturan' },
+            ],
+          },
+          {
+            title: 'Di dalam daftar perintah',
+            items: [
+              { keys: ['↑', '↓'], label: 'Pindah pilihan' },
+              { keys: ['↵'], label: 'Jalankan' },
+            ],
+          },
+        ]}
       />
 
       <ExportDialog

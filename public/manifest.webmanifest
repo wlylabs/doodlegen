@@ -1,7 +1,7 @@
 {
-  "name": "DoodleGen — Halaman Mewarnai Alfabet & Angka",
+  "name": "DoodleGen — Halaman Mewarnai & Tracing Siap Cetak",
   "short_name": "DoodleGen",
-  "description": "Alat internal untuk menyusun halaman mewarnai dan tracing alfabet serta angka, siap cetak dalam A4 dan US Letter.",
+  "description": "Susun halaman mewarnai dan tracing alfabet, angka, dan kata, lalu unduh PDF vektor A4 dan US Letter beserta kit listing marketplace. Jalan penuh di perangkat, termasuk tanpa koneksi.",
   "id": "/",
   "start_url": "/studio/",
   "scope": "/",
@@ -11,7 +11,7 @@
   "handle_links": "preferred",
   "prefer_related_applications": false,
   "orientation": "any",
-  "background_color": "#FAFAF9",
+  "background_color": "#F7F8FA",
   "theme_color": "#FFFFFF",
   "lang": "id",
   "dir": "ltr",
